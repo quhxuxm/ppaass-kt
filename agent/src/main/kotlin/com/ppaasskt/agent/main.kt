@@ -1,4 +1,4 @@
-package com.ppaasskt
+package com.ppaasskt.agent
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
