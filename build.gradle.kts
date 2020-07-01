@@ -1,6 +1,9 @@
 buildscript {
     repositories {
         mavenLocal()
+        maven("http://maven.aliyun.com/nexus/content/groups/public/")
+        maven("http://maven.aliyun.com/repository/google/")
+        maven("http://maven.aliyun.com/repository/jcenter/")
         mavenCentral()
     }
 
@@ -29,6 +32,9 @@ allprojects {
     }
     repositories {
         mavenLocal();
+        maven("http://maven.aliyun.com/nexus/content/groups/public/")
+        maven("http://maven.aliyun.com/repository/google/")
+        maven("http://maven.aliyun.com/repository/jcenter/")
         mavenCentral();
     }
     dependencyManagement {

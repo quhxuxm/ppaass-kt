@@ -8,23 +8,26 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.context.ApplicationContext
 
 @SpringBootApplication
-class ProxyMain {
+class ProxyLauncher {
 
-    companion object {
-        val logger: Logger = LoggerFactory.getLogger(ProxyMain::class.java);
+    private val logger: Logger = LoggerFactory.getLogger(ProxyLauncher::class.java);
+
+    fun launch(vararg arguments: String) {
+        val context: ApplicationContext = SpringApplication.run(ProxyLauncher::class.java)
+        val proxy = context.getBean(IProxy::class.java);
+        try {
+            logger.debug("Begin to initialize proxy server.")
+            proxy.init();
+            logger.debug("Begin to start proxy server.")
+            proxy.start();
+            logger.debug("Success to start proxy server.")
+        } catch (e: Exception) {
+            proxy.stop();
+        }
     }
 }
 
 fun main(args: Array<String>) {
-    val context: ApplicationContext = SpringApplication.run(ProxyMain::class.java)
-    val proxy = context.getBean(IProxy::class.java);
-    try {
-        ProxyMain.logger.debug("Begin to initialize proxy server.")
-        proxy.init();
-        ProxyMain.logger.debug("Begin to start proxy server.")
-        proxy.start();
-        ProxyMain.logger.debug("Success to start proxy server.")
-    } catch (e: Exception) {
-        proxy.stop();
-    }
+    val launcher = ProxyLauncher();
+    launcher.launch(*args);
 }
