@@ -1,6 +1,7 @@
 package com.ppaass.kt.proxy
 
 import com.ppaass.kt.proxy.api.IProxy
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -10,7 +11,7 @@ import org.springframework.context.ApplicationContext
 class ProxyMain {
 
     companion object {
-        val logger = LoggerFactory.getLogger(ProxyMain::class.java);
+        val logger: Logger = LoggerFactory.getLogger(ProxyMain::class.java);
     }
 }
 
