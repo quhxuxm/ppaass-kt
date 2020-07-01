@@ -15,9 +15,13 @@ enum class MessageEncryptionType(val mask: String) {
     }
 }
 
-interface IMessageBody {
+interface IMessageBody<T : IMessageBody<T>> {
     val originalData: ByteArray?;
+
+    fun decode(bytes: ByteArray): T;
+
+    fun encode(messageBody: T): ByteArray;
 }
 
-data class Message<T : IMessageBody>(val secureToken: String, val encryptionType: MessageEncryptionType, val body: T) {
+data class Message<T : IMessageBody<T>>(val secureToken: String, val encryptionType: MessageEncryptionType, val body: T) {
 }

@@ -6,8 +6,15 @@ enum class AgentMessageBodyType {
 
 data class AgentMessageBody(override val originalData: ByteArray?,
                             val bodyType: AgentMessageBodyType, val id: String, val targetAddress: String?,
-                            val targetPort: Int?) : IMessageBody {
+                            val targetPort: Int?) : IMessageBody<AgentMessageBody> {
 
+    override fun decode(bytes: ByteArray): AgentMessageBody {
+        TODO("Not yet implemented")
+    }
+
+    override fun encode(messageBody: AgentMessageBody): ByteArray {
+        TODO("Not yet implemented")
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
