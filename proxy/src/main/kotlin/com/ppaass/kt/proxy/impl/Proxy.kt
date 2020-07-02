@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service
 
 @Service
 class Proxy : IProxy {
-
     companion object {
         val logger: Logger = LoggerFactory.getLogger(Proxy::class.java);
     }

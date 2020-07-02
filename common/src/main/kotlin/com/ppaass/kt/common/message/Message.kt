@@ -17,11 +17,11 @@ enum class MessageEncryptionType(val mask: String) {
     }
 }
 
-sealed class IMessageBody<T : IMessageBody<T>> {
+sealed class MessageBody {
     abstract val originalData: ByteArray?;
 }
 
-data class Message<T : IMessageBody<T>>(val secureToken: String, val encryptionType: MessageEncryptionType, val body: T) {
+data class Message<T : MessageBody>(val secureToken: String, val encryptionType: MessageEncryptionType, val body: T) {
 }
 
 enum class AgentMessageBodyType {
@@ -30,7 +30,7 @@ enum class AgentMessageBodyType {
 
 data class AgentMessageBody(override val originalData: ByteArray?,
                             val bodyType: AgentMessageBodyType, val id: String, val targetAddress: String?,
-                            val targetPort: Int?) : IMessageBody<AgentMessageBody>() {
+                            val targetPort: Int?) : MessageBody() {
 }
 
 enum class ProxyMessageBodyType {
@@ -38,5 +38,5 @@ enum class ProxyMessageBodyType {
 }
 
 data class ProxyMessageBody(override val originalData: ByteArray?, val bodyType: ProxyMessageBodyType, val id: String, val targetAddress: String?,
-                            val targetPort: Int?) : IMessageBody<ProxyMessageBody>() {
+                            val targetPort: Int?) : MessageBody() {
 }
