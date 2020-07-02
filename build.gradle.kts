@@ -31,11 +31,11 @@ allprojects {
         plugin("org.jetbrains.kotlin.plugin.spring")
     }
     repositories {
-        mavenLocal();
+        mavenLocal()
         maven("http://maven.aliyun.com/nexus/content/groups/public/")
         maven("http://maven.aliyun.com/repository/google/")
         maven("http://maven.aliyun.com/repository/jcenter/")
-        mavenCentral();
+        mavenCentral()
     }
     dependencyManagement {
         dependencies {
