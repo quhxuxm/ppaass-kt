@@ -14,7 +14,7 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
-class HeartbeatChannelHandler : ChannelInboundHandlerAdapter() {
+internal class HeartbeatChannelHandler : ChannelInboundHandlerAdapter() {
     override fun userEventTriggered(proxyContext: ChannelHandlerContext, evt: Any) {
         if (evt !is IdleStateEvent) {
             super.userEventTriggered(proxyContext, evt)
