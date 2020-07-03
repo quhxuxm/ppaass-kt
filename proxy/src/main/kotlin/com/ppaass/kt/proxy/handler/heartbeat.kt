@@ -1,6 +1,6 @@
 package com.ppaass.kt.proxy.handler
 
-import com.ppaass.kt.common.message.MessageEncryptionType
+import com.ppaass.kt.common.message.MessageBodyEncryptionType
 import com.ppaass.kt.common.message.ProxyMessage
 import com.ppaass.kt.common.message.ProxyMessageBodyType
 import com.ppaass.kt.common.message.proxyMessageBody
@@ -26,7 +26,7 @@ internal class HeartbeatChannelHandler : ChannelInboundHandlerAdapter() {
         val utcDateTime = ZonedDateTime.now()
         val utcDataTimeString = utcDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
         val proxyMessage =
-                ProxyMessage(UUID.randomUUID().toString(), MessageEncryptionType.BASE64_AES,
+                ProxyMessage(UUID.randomUUID().toString(), MessageBodyEncryptionType.random(),
                         proxyMessageBody(ProxyMessageBodyType.HEARTBEAT, UUID.randomUUID().toString()) {
                             originalData = utcDataTimeString.toByteArray()
                         })

@@ -23,7 +23,7 @@ private class TransferDataFromTargetToProxyHandler(private val proxyChannel: Cha
                                                    private val agentMessage: AgentMessage) :
         ChannelInboundHandlerAdapter() {
     override fun channelRead(targetChannelContext: ChannelHandlerContext, msg: Any) {
-        val proxyMessage = ProxyMessage(agentMessage.secureToken, MessageEncryptionType.AES_BASE64,
+        val proxyMessage = ProxyMessage(agentMessage.secureToken, MessageBodyEncryptionType.random(),
                 proxyMessageBody(ProxyMessageBodyType.OK, agentMessage.body.id) {
                     targetAddress = agentMessage.body.targetAddress
                     targetPort = agentMessage.body.targetPort
@@ -118,7 +118,7 @@ internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: P
 
             if (!it.isSuccess) {
                 val failProxyMessage =
-                        ProxyMessage(agentMessage.secureToken, MessageEncryptionType.AES_BASE64,
+                        ProxyMessage(agentMessage.secureToken, MessageBodyEncryptionType.random(),
                                 proxyMessageBody(ProxyMessageBodyType.CONNECT_FAIL, UUID.randomUUID().toString()) {
                                     this.targetAddress = targetAddress
                                     this.targetPort = targetPort
