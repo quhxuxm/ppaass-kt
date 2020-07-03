@@ -18,7 +18,10 @@ enum class MessageEncryptionType(val mask: String) {
 }
 
 sealed class MessageBody {
-    abstract val originalData: ByteArray?;
+    abstract val originalData: ByteArray?
+    abstract var targetAddress: String?
+    abstract var targetPort: Int?
+    abstract val id: String
 }
 
 class Message<T : MessageBody>(val secureToken: String, val messageEncryptionType: MessageEncryptionType, val body: T) {
@@ -31,10 +34,10 @@ enum class AgentMessageBodyType {
     CONNECT, DATA
 }
 
-class AgentMessageBody(val bodyType: AgentMessageBodyType, val id: String) : MessageBody() {
+class AgentMessageBody(val bodyType: AgentMessageBodyType, override val id: String) : MessageBody() {
     override var originalData: ByteArray? = null
-    var targetAddress: String? = null
-    var targetPort: Int? = null
+    override var targetAddress: String? = null
+    override var targetPort: Int? = null
 
     override fun toString(): String {
         return "AgentMessageBody(originalData=${originalData?.contentToString()}," +
@@ -46,10 +49,10 @@ enum class ProxyMessageBodyType {
     OK, HEARTBEAT, CONNECT_FAIL
 }
 
-class ProxyMessageBody(val bodyType: ProxyMessageBodyType, val id: String) : MessageBody() {
+class ProxyMessageBody(val bodyType: ProxyMessageBodyType, override val id: String) : MessageBody() {
     override var originalData: ByteArray? = null
-    var targetAddress: String? = null
-    var targetPort: Int? = null
+    override var targetAddress: String? = null
+    override var targetPort: Int? = null
 
     override fun toString(): String {
         return "ProxyMessageBody(originalData=${originalData?.contentToString()}, " +

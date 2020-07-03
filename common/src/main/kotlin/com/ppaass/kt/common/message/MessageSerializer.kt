@@ -119,9 +119,10 @@ private object MessageBodySerializer {
         val originalData = if (originalDataLength == 0) {
             null
         } else {
-            ByteArray(originalDataLength)
+            val tempOriginalData = ByteArray(originalDataLength)
+            messageBodyByteBuf.readBytes(tempOriginalData)
+            tempOriginalData
         }
-        messageBodyByteBuf.readBytes(originalData)
         return agentMessageBody(bodyType, messageId) {
             this.originalData = originalData
             this.targetAddress = targetAddress
@@ -153,9 +154,10 @@ private object MessageBodySerializer {
         val originalData = if (originalDataLength == 0) {
             null
         } else {
-            ByteArray(originalDataLength)
+            val tempOriginalData = ByteArray(originalDataLength)
+            messageBodyByteBuf.readBytes(tempOriginalData)
+            tempOriginalData
         }
-        messageBodyByteBuf.readBytes(originalData)
         return proxyMessageBody(bodyType, messageId) {
             this.originalData = originalData
             this.targetAddress = targetAddress

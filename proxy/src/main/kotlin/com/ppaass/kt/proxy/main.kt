@@ -19,6 +19,7 @@ class ProxyLauncher {
             proxy.start();
             logger.debug("Success to start proxy server.")
         } catch (e: Exception) {
+            logger.error("Fail to stat proxy server because of exception", e)
             proxy.stop();
         }
     }

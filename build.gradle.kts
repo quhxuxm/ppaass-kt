@@ -43,6 +43,7 @@ allprojects {
                 mavenBom("org.springframework.boot:spring-boot-dependencies:2.3.1.RELEASE")
             }
             dependency("io.netty:netty-all:4.1.49.Final")
+            dependency("org.lz4:lz4-java:1.7.1")
         }
     }
 }
