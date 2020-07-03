@@ -1,4 +1,4 @@
-package com.ppaass.kt.proxy.impl.netty.handler
+package com.ppaass.kt.proxy.handler
 
 import com.ppaass.kt.common.message.MessageEncryptionType
 import com.ppaass.kt.common.message.ProxyMessage

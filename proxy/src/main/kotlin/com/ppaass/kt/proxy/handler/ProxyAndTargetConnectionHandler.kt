@@ -1,9 +1,9 @@
-package com.ppaass.kt.proxy.impl.netty.handler
+package com.ppaass.kt.proxy.handler
 
 import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.message.*
 import com.ppaass.kt.common.netty.handler.ResourceClearHandler
-import com.ppaass.kt.proxy.impl.ProxyConfiguration
+import com.ppaass.kt.proxy.ProxyConfiguration
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufUtil
@@ -98,7 +98,8 @@ internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: P
                 with(targetChannel.pipeline()) {
                     addLast(LoggingHandler(LogLevel.INFO))
                     addLast(businessEventExecutors,
-                            TransferDataFromTargetToProxyHandler(proxyContext.channel(), agentMessage))
+                            TransferDataFromTargetToProxyHandler(
+                                    proxyContext.channel(), agentMessage))
                     addLast(ResourceClearHandler(proxyContext.channel()))
                 }
             }
@@ -128,7 +129,9 @@ internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: P
             val targetChannel = it.channel()
             with(proxyContext.pipeline()) {
                 remove(this@ProxyAndTargetConnectionHandler)
-                addLast(businessEventExecutors, TransferDataFromProxyToTargetHandler(targetChannel))
+                addLast(businessEventExecutors,
+                        TransferDataFromProxyToTargetHandler(
+                                targetChannel))
                 addLast(ResourceClearHandler(targetChannel))
                 proxyContext.fireChannelRead(agentMessage)
             }
