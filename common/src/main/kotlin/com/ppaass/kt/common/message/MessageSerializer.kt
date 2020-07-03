@@ -1,6 +1,5 @@
 package com.ppaass.kt.common.message
 
-import com.ppaass.kt.common.exception.PpaassException
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufAllocator
 import io.netty.buffer.ByteBufUtil
@@ -56,41 +55,42 @@ private object MessageBodyEncryptionUtil {
 
 private object MessageBodySerializer {
     val logger = LoggerFactory.getLogger(MessageBodySerializer::class.java);
-    fun encodeProxyMessageBody(message: ProxyMessageBody, messageBodyEncryptionType: MessageEncryptionType, secureToken: String): ByteBuf {
+
+    fun encodeProxyMessageBody(message: ProxyMessageBody?, messageBodyEncryptionType: MessageEncryptionType, secureToken: String): ByteBuf {
         logger.debug("Encode proxy message body.")
         val result = ByteBufAllocator.DEFAULT.buffer()
-        val bodyTypeByteArray = message.bodyType.name.toByteArray(Charsets.UTF_8)
+        val bodyTypeByteArray = message?.bodyType?.name?.toByteArray(Charsets.UTF_8) ?: byteArrayOf()
         result.writeInt(bodyTypeByteArray.size)
         result.writeBytes(bodyTypeByteArray)
-        val messageIdByteArray = message.id.toByteArray(Charsets.UTF_8);
+        val messageIdByteArray = message?.id?.toByteArray(Charsets.UTF_8) ?: byteArrayOf();
         result.writeInt(messageIdByteArray.size)
         result.writeBytes(messageIdByteArray)
-        val targetAddressByteArray = message.targetAddress?.toByteArray() ?: byteArrayOf()
+        val targetAddressByteArray = message?.targetAddress?.toByteArray() ?: byteArrayOf()
         result.writeInt(targetAddressByteArray.size)
         result.writeBytes(targetAddressByteArray)
-        val targetPortWriteToByteArray = message.targetPort ?: -1
+        val targetPortWriteToByteArray = message?.targetPort ?: -1
         result.writeInt(targetPortWriteToByteArray)
-        val targetOriginalDataByteArray = message.originalData ?: byteArrayOf()
+        val targetOriginalDataByteArray = message?.originalData ?: byteArrayOf()
         result.writeInt(targetOriginalDataByteArray.size)
         result.writeBytes(targetOriginalDataByteArray)
         return MessageBodyEncryptionUtil.encrypt(result, messageBodyEncryptionType, secureToken)
     }
 
-    fun encodeAgentMessageBody(message: AgentMessageBody, messageBodyEncryptionType: MessageEncryptionType, secureToken: String): ByteBuf {
+    fun encodeAgentMessageBody(message: AgentMessageBody?, messageBodyEncryptionType: MessageEncryptionType, secureToken: String): ByteBuf {
         logger.debug("Encode agent message body.")
         val result = ByteBufAllocator.DEFAULT.buffer()
-        val bodyTypeByteArray = message.bodyType.name.toByteArray(Charsets.UTF_8)
+        val bodyTypeByteArray = message?.bodyType?.name?.toByteArray(Charsets.UTF_8) ?: byteArrayOf()
         result.writeInt(bodyTypeByteArray.size)
         result.writeBytes(bodyTypeByteArray)
-        val messageIdByteArray = message.id.toByteArray(Charsets.UTF_8);
+        val messageIdByteArray = message?.id?.toByteArray(Charsets.UTF_8) ?: byteArrayOf();
         result.writeInt(messageIdByteArray.size)
         result.writeBytes(messageIdByteArray)
-        val targetAddressByteArray = message.targetAddress?.toByteArray() ?: byteArrayOf()
+        val targetAddressByteArray = message?.targetAddress?.toByteArray() ?: byteArrayOf()
         result.writeInt(targetAddressByteArray.size)
         result.writeBytes(targetAddressByteArray)
-        val targetPortWriteToByteArray = message.targetPort ?: -1
+        val targetPortWriteToByteArray = message?.targetPort ?: -1
         result.writeInt(targetPortWriteToByteArray)
-        val targetOriginalDataByteArray = message.originalData ?: byteArrayOf()
+        val targetOriginalDataByteArray = message?.originalData ?: byteArrayOf()
         result.writeInt(targetOriginalDataByteArray.size)
         result.writeBytes(targetOriginalDataByteArray)
         return MessageBodyEncryptionUtil.encrypt(result, messageBodyEncryptionType, secureToken)
@@ -109,7 +109,13 @@ private object MessageBodySerializer {
         val originalDataLength = messageBodyByteBuf.readInt()
         val originalData = ByteArray(originalDataLength)
         messageBodyByteBuf.readBytes(originalData)
-        return AgentMessageBody(originalData, bodyType, messageId, targetAddress, targetPort)
+        return agentMessageBody {
+            this.originalData = originalData
+            this.bodyType = bodyType
+            this.id = messageId
+            this.targetAddress = targetAddress
+            this.targetPort = targetPort
+        }
     }
 
     fun decodeProxyMessageBody(messageBytes: ByteBuf, messageBodyEncryptionType: MessageEncryptionType, secureToken: String): ProxyMessageBody {
@@ -125,49 +131,75 @@ private object MessageBodySerializer {
         val originalDataLength = messageBodyByteBuf.readInt()
         val originalData = ByteArray(originalDataLength)
         messageBodyByteBuf.readBytes(originalData)
-        return ProxyMessageBody(originalData, bodyType, messageId, targetAddress, targetPort)
+        return proxyMessageBody {
+            this.originalData = originalData
+            this.bodyType = bodyType
+            this.id = messageId
+            this.targetAddress = targetAddress
+            this.targetPort = targetPort
+        }
     }
 }
 
 object MessageSerializer {
+    val DEFAULT_ENCRYPTION_TYPE = MessageEncryptionType.AES_BASE64
+    val DEFAULT_SECURE_TOKEN = UUID.randomUUID().toString()
     val logger = LoggerFactory.getLogger(MessageSerializer::class.java);
-    fun <T : MessageBody> encode(message: Message<T>): ByteBuf {
-        logger.debug("Encode message.")
+
+    fun encodeAgentMessage(message: AgentMessage): ByteBuf {
         val result = ByteBufAllocator.DEFAULT.buffer()
-        result.writeInt(message.secureToken.length)
-        result.writeBytes(message.secureToken.toByteArray(Charsets.UTF_8))
-        result.writeInt(message.encryptionType.mask.length)
-        result.writeBytes(message.encryptionType.mask.toByteArray(Charsets.UTF_8))
-        when (val messageBody = message.body) {
-            is ProxyMessageBody -> {
-                result.writeBytes(MessageBodySerializer.encodeProxyMessageBody(messageBody, message.encryptionType, message.secureToken));
-            }
-            is AgentMessageBody -> {
-                result.writeBytes(MessageBodySerializer.encodeAgentMessageBody(messageBody, message.encryptionType, message.secureToken));
-            }
-        }
+        result.writeInt(message.secureToken?.length ?: 0)
+        result.writeBytes(message.secureToken?.toByteArray(Charsets.UTF_8) ?: byteArrayOf())
+        result.writeInt(message.encryptionType?.mask?.length ?: DEFAULT_ENCRYPTION_TYPE.mask.length)
+        result.writeBytes(message.encryptionType?.mask?.toByteArray(Charsets.UTF_8) ?: byteArrayOf())
+        result.writeBytes(
+                MessageBodySerializer.encodeAgentMessageBody(message.body,
+                        message.encryptionType ?: DEFAULT_ENCRYPTION_TYPE,
+                        message.secureToken ?: DEFAULT_SECURE_TOKEN));
         return result
     }
 
-    fun <T : MessageBody> decode(messageBytes: ByteBuf, messageBodyClass: Class<T>): Message<T> {
+    fun encodeProxyMessage(message: ProxyMessage): ByteBuf {
+        val result = ByteBufAllocator.DEFAULT.buffer()
+        result.writeInt(message.secureToken?.length ?: 0)
+        result.writeBytes(message.secureToken?.toByteArray(Charsets.UTF_8) ?: byteArrayOf())
+        result.writeInt(message.encryptionType?.mask?.length ?: DEFAULT_ENCRYPTION_TYPE.mask.length)
+        result.writeBytes(message.encryptionType?.mask?.toByteArray(Charsets.UTF_8) ?: byteArrayOf())
+        result.writeBytes(
+                MessageBodySerializer.encodeProxyMessageBody(message.body,
+                        message.encryptionType ?: DEFAULT_ENCRYPTION_TYPE,
+                        message.secureToken ?: DEFAULT_SECURE_TOKEN));
+        return result
+    }
+
+    fun decodeAgentMessage(messageBytes: ByteBuf): AgentMessage {
         val secureTokenLength = messageBytes.readInt()
         val secureToken = messageBytes.readCharSequence(secureTokenLength, Charsets.UTF_8).toString()
         val encryptionTypeMaskLength = messageBytes.readInt()
         val encryptionTypeMask = messageBytes.readCharSequence(encryptionTypeMaskLength, Charsets.UTF_8).toString()
         val encryptionType = MessageEncryptionType.fromMask(encryptionTypeMask)
         val messageBodyByteBuf = messageBytes.readBytes(messageBytes.readableBytes())
-        val messageBody = when (messageBodyClass) {
-            AgentMessageBody::class.java -> {
-                MessageBodySerializer.decodeAgentMessageBody(messageBodyByteBuf, encryptionType, secureToken)
-            }
-            ProxyMessageBody::class.java -> {
-                MessageBodySerializer.decodeProxyMessageBody(messageBodyByteBuf, encryptionType, secureToken)
-            }
-            else -> {
-                throw PpaassException()
-            }
+        val messageBody = MessageBodySerializer.decodeAgentMessageBody(messageBodyByteBuf, encryptionType, secureToken)
+        return agentMessage {
+            this.secureToken = secureToken
+            this.encryptionType = encryptionType
+            this.body = messageBody
         }
-        return Message(secureToken, encryptionType, messageBodyClass.cast(messageBody));
+    }
+
+    fun decodeProxyMessage(messageBytes: ByteBuf): ProxyMessage {
+        val secureTokenLength = messageBytes.readInt()
+        val secureToken = messageBytes.readCharSequence(secureTokenLength, Charsets.UTF_8).toString()
+        val encryptionTypeMaskLength = messageBytes.readInt()
+        val encryptionTypeMask = messageBytes.readCharSequence(encryptionTypeMaskLength, Charsets.UTF_8).toString()
+        val encryptionType = MessageEncryptionType.fromMask(encryptionTypeMask)
+        val messageBodyByteBuf = messageBytes.readBytes(messageBytes.readableBytes())
+        val messageBody = MessageBodySerializer.decodeProxyMessageBody(messageBodyByteBuf, encryptionType, secureToken)
+        return proxyMessage {
+            this.secureToken = secureToken
+            this.encryptionType = encryptionType
+            this.body = messageBody
+        }
     }
 }
 

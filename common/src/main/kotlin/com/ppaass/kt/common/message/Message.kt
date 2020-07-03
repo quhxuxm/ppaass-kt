@@ -21,22 +21,73 @@ sealed class MessageBody {
     abstract val originalData: ByteArray?;
 }
 
-data class Message<T : MessageBody>(val secureToken: String, val encryptionType: MessageEncryptionType, val body: T) {
+class Message<T : MessageBody> {
+    var secureToken: String? = null
+    var encryptionType: MessageEncryptionType? = null
+    var body: T? = null
+
+    override fun toString(): String {
+        return "Message(secureToken=$secureToken, encryptionType=$encryptionType, body=$body)"
+    }
 }
 
 enum class AgentMessageBodyType {
     CONNECT, DATA
 }
 
-data class AgentMessageBody(override val originalData: ByteArray?,
-                            val bodyType: AgentMessageBodyType, val id: String, val targetAddress: String?,
-                            val targetPort: Int?) : MessageBody() {
+class AgentMessageBody : MessageBody() {
+    override var originalData: ByteArray? = null
+    var bodyType: AgentMessageBodyType? = null
+    var id: String? = null
+    var targetAddress: String? = null
+    var targetPort: Int? = null
+
+    override fun toString(): String {
+        return "AgentMessageBody(originalData=${originalData?.contentToString()}, bodyType=$bodyType, id=$id, targetAddress=$targetAddress, targetPort=$targetPort)"
+    }
 }
 
 enum class ProxyMessageBodyType {
     OK, HEARTBEAT, CONNECT_FAIL
 }
 
-data class ProxyMessageBody(override val originalData: ByteArray?, val bodyType: ProxyMessageBodyType, val id: String, val targetAddress: String?,
-                            val targetPort: Int?) : MessageBody() {
+class ProxyMessageBody : MessageBody() {
+    override var originalData: ByteArray? = null
+    var bodyType: ProxyMessageBodyType? = null
+    var id: String? = null
+    var targetAddress: String? = null
+    var targetPort: Int? = null
+
+    override fun toString(): String {
+        return "ProxyMessageBody(originalData=${originalData?.contentToString()}, bodyType=$bodyType, id=$id, targetAddress=$targetAddress, targetPort=$targetPort)"
+    }
 }
+
+typealias ProxyMessage = Message<ProxyMessageBody>
+typealias AgentMessage = Message<AgentMessageBody>
+
+fun proxyMessage(block: Message<ProxyMessageBody>.() -> Unit): ProxyMessage {
+    val message = Message<ProxyMessageBody>()
+    block(message)
+    return message
+}
+
+fun proxyMessageBody(block: ProxyMessageBody.() -> Unit): ProxyMessageBody {
+    val messageBody = ProxyMessageBody()
+    block(messageBody)
+    return messageBody
+}
+
+fun agentMessage(block: Message<AgentMessageBody>.() -> Unit): AgentMessage {
+    val message = Message<AgentMessageBody>()
+    block(message)
+    return message
+}
+
+fun agentMessageBody(block: AgentMessageBody.() -> Unit): AgentMessageBody {
+    val messageBody = AgentMessageBody()
+    block(messageBody)
+    return messageBody
+}
+
+
