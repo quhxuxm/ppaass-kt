@@ -1,26 +1,51 @@
 package com.ppaass.kt.proxy.impl
 
+import com.ppaass.kt.common.netty.codec.AgentMessageDecoder
+import com.ppaass.kt.common.netty.codec.ProxyMessageEncoder
 import com.ppaass.kt.proxy.api.IProxy
+import com.ppaass.kt.proxy.impl.netty.handler.HeartbeatChannelHandler
+import com.ppaass.kt.proxy.impl.netty.handler.ProxyAndTargetConnectionHandler
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.ChannelOption
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioServerSocketChannel
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder
+import io.netty.handler.codec.LengthFieldPrepender
+import io.netty.handler.codec.compression.Lz4FrameDecoder
+import io.netty.handler.codec.compression.Lz4FrameEncoder
+import io.netty.handler.stream.ChunkedWriteHandler
 import io.netty.handler.timeout.IdleStateHandler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 @Service
-class ProxyChannelInitializer(private val proxyConfiguration: ProxyConfiguration) : ChannelInitializer<SocketChannel>() {
+class ProxyChannelInitializer(private val proxyConfiguration: ProxyConfiguration,
+                              private val proxyAndTargetConnectionHandler: ProxyAndTargetConnectionHandler) :
+        ChannelInitializer<SocketChannel>() {
     override fun initChannel(proxyChannel: SocketChannel) {
-        proxyChannel.pipeline().addLast(IdleStateHandler(0, 0, proxyConfiguration.agentConnectionIdleSeconds))
+        proxyChannel.pipeline().apply {
+            addLast(IdleStateHandler(0, 0, proxyConfiguration.agentConnectionIdleSeconds))
+            addLast(HeartbeatChannelHandler())
+            //Inbound
+            addLast(ChunkedWriteHandler())
+            addLast(Lz4FrameDecoder())
+            addLast(LengthFieldBasedFrameDecoder(Int.MAX_VALUE, 0, 4, 0, 4))
+            addLast(AgentMessageDecoder())
+            addLast(proxyAndTargetConnectionHandler)
+            //Outbound
+            addLast(Lz4FrameEncoder())
+            addLast(LengthFieldPrepender(4))
+            addLast(ProxyMessageEncoder())
+        }
     }
 }
 
 @Service
-class Proxy(private val proxyConfiguration: ProxyConfiguration, proxyChannelInitializer: ProxyChannelInitializer) : IProxy {
+class Proxy(private val proxyConfiguration: ProxyConfiguration, proxyChannelInitializer: ProxyChannelInitializer) :
+        IProxy {
     companion object {
         val logger: Logger = LoggerFactory.getLogger(Proxy::class.java);
     }
@@ -33,13 +58,15 @@ class Proxy(private val proxyConfiguration: ProxyConfiguration, proxyChannelInit
         this.masterThreadGroup = NioEventLoopGroup(this.proxyConfiguration.masterIoEventThreadNumber)
         this.workerThreadGroup = NioEventLoopGroup(this.proxyConfiguration.workerIoEventThreadNumber)
         this.serverBootstrap = ServerBootstrap()
-        this.serverBootstrap.group(this.masterThreadGroup, this.workerThreadGroup)
-        this.serverBootstrap.channel(NioServerSocketChannel::class.java)
-        this.serverBootstrap.option(ChannelOption.SO_BACKLOG, this.proxyConfiguration.soBacklog)
-        this.serverBootstrap.option(ChannelOption.TCP_NODELAY, true)
-        this.serverBootstrap.option(ChannelOption.SO_REUSEADDR, true)
-        this.serverBootstrap.childOption(ChannelOption.TCP_NODELAY, true)
-        this.serverBootstrap.childHandler(proxyChannelInitializer)
+        this.serverBootstrap.apply {
+            group(masterThreadGroup, workerThreadGroup)
+            channel(NioServerSocketChannel::class.java)
+            option(ChannelOption.SO_BACKLOG, proxyConfiguration.soBacklog)
+            option(ChannelOption.TCP_NODELAY, true)
+            option(ChannelOption.SO_REUSEADDR, true)
+            childOption(ChannelOption.TCP_NODELAY, true)
+            childHandler(proxyChannelInitializer)
+        }
     }
 
     override fun start() {

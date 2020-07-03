@@ -9,15 +9,12 @@ import org.springframework.context.ApplicationContext
 
 @SpringBootApplication
 class ProxyLauncher {
-
     private val logger: Logger = LoggerFactory.getLogger(ProxyLauncher::class.java);
 
     fun launch(vararg arguments: String) {
         val context: ApplicationContext = SpringApplication.run(ProxyLauncher::class.java)
         val proxy = context.getBean(IProxy::class.java);
         try {
-            logger.debug("Begin to initialize proxy server.")
-            proxy.init();
             logger.debug("Begin to start proxy server.")
             proxy.start();
             logger.debug("Success to start proxy server.")
