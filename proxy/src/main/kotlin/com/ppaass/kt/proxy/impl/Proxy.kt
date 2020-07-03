@@ -19,11 +19,12 @@ import io.netty.handler.stream.ChunkedWriteHandler
 import io.netty.handler.timeout.IdleStateHandler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 
 @Service
-class ProxyChannelInitializer(private val proxyConfiguration: ProxyConfiguration,
-                              private val proxyAndTargetConnectionHandler: ProxyAndTargetConnectionHandler) :
+private class ProxyChannelInitializer(private val proxyConfiguration: ProxyConfiguration,
+                                      private val proxyAndTargetConnectionHandler: ProxyAndTargetConnectionHandler) :
         ChannelInitializer<SocketChannel>() {
     override fun initChannel(proxyChannel: SocketChannel) {
         proxyChannel.pipeline().apply {
@@ -44,12 +45,14 @@ class ProxyChannelInitializer(private val proxyConfiguration: ProxyConfiguration
 }
 
 @Service
-class Proxy(private val proxyConfiguration: ProxyConfiguration, proxyChannelInitializer: ProxyChannelInitializer) :
+class Proxy(private val proxyConfiguration: ProxyConfiguration) :
         IProxy {
     companion object {
         val logger: Logger = LoggerFactory.getLogger(Proxy::class.java);
     }
 
+    @Autowired
+    private lateinit var proxyChannelInitializer: ProxyChannelInitializer
     private val masterThreadGroup: NioEventLoopGroup
     private val workerThreadGroup: NioEventLoopGroup
     private val serverBootstrap: ServerBootstrap

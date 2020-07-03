@@ -65,7 +65,7 @@ private class TransferDataFromProxyToTargetHandler(private val targetChannel: Ch
 
 @Service
 @ChannelHandler.Sharable
-class ProxyAndTargetConnectionHandler(private val proxyConfiguration: ProxyConfiguration) :
+internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: ProxyConfiguration) :
         SimpleChannelInboundHandler<AgentMessage>() {
     private val businessEventExecutors: EventExecutorGroup
     private val targetDataTransferBootstrap: Bootstrap
@@ -112,7 +112,7 @@ class ProxyAndTargetConnectionHandler(private val proxyConfiguration: ProxyConfi
             return
         }
 
-        this.targetDataTransferBootstrap.connect(targetAddress, targetPort).addListener {
+        this.targetDataTransferBootstrap.connect(targetAddress, targetPort).syncUninterruptibly().addListener {
             it as ChannelFuture
 
             if (!it.isSuccess) {
