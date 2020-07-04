@@ -4,24 +4,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.stereotype.Service
 import java.util.*
 
-interface IStaticAgentConfiguration {
-    var masterIoEventThreadNumber: Int?
-    var workerIoEventThreadNumber: Int?
-    var businessEventThreadNumber: Int?
-    var proxyDataTransferIoEventThreadNumber: Int?
-    var soBacklog: Int?
-    var port: Int?
-    var proxyServerAddress: String?
-    var proxyServerPort: Int?
-    var proxyConnectionTimeout: Int?
-    var defaultLocale: Locale?
-    var clientConnectionIdleSeconds: Int?
-    var proxyServerReceiveDataAverageBufferMinSize: Long?
-    var proxyServerReceiveDataAverageBufferInitialSize: Long?
-    var proxyServerReceiveDataAverageBufferMaxSize: Long?
-    var proxyServerSoRcvbuf: Long?
-}
-
 @ConfigurationProperties(prefix = "ppaass.agent")
 @Service
 class StaticAgentConfiguration {
@@ -34,7 +16,7 @@ class StaticAgentConfiguration {
     var proxyServerAddress: String? = null
     var proxyServerPort = 0
     var proxyConnectionTimeout = 0
-    var defaultLocale: Locale? = null
+    var defaultLocale: Locale? = Locale.getDefault()
     var clientConnectionIdleSeconds = 0
     var proxyServerReceiveDataAverageBufferMinSize = 0
     var proxyServerReceiveDataAverageBufferInitialSize = 0
@@ -43,4 +25,5 @@ class StaticAgentConfiguration {
 }
 
 interface IAgentConfiguration {
+    val staticAgentConfiguration: StaticAgentConfiguration
 }
