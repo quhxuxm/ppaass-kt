@@ -2,6 +2,7 @@ package com.ppaass.kt.proxy
 
 import com.ppaass.kt.common.netty.codec.AgentMessageDecoder
 import com.ppaass.kt.common.netty.codec.ProxyMessageEncoder
+import com.ppaass.kt.common.netty.handler.ResourceClearHandler
 import com.ppaass.kt.proxy.handler.HeartbeatChannelHandler
 import com.ppaass.kt.proxy.handler.ProxyAndTargetConnectionHandler
 import io.netty.bootstrap.ServerBootstrap
@@ -61,6 +62,7 @@ private class ProxyChannelInitializer(private val proxyConfiguration: ProxyConfi
             addLast(LengthFieldBasedFrameDecoder(Int.MAX_VALUE, 0, 4, 0, 4))
             addLast(AgentMessageDecoder())
             addLast(proxyAndTargetConnectionHandler)
+            addLast(ResourceClearHandler(proxyChannel))
             //Outbound
             addLast(Lz4FrameEncoder())
             addLast(LengthFieldPrepender(4))
