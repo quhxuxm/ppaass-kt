@@ -22,24 +22,25 @@ import org.slf4j.LoggerFactory
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.ConfigurationProperties
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationContext
 import org.springframework.stereotype.Service
 
 @ConfigurationProperties("ppaass.proxy")
 @Service
 class ProxyConfiguration {
-    var masterIoEventThreadNumber = 0
-    var workerIoEventThreadNumber = 0
-    var businessEventThreadNumber = 0
-    var targetDataTransferIoEventThreadNumber = 0
-    var soBacklog = 0
-    var port = 0
-    var targetConnectionTimeout = 0
-    var agentConnectionIdleSeconds = 0
-    var targetReceiveDataAverageBufferMinSize = 0
-    var targetReceiveDataAverageBufferInitialSize = 0
-    var targetReceiveDataAverageBufferMaxSize = 0
-    var targetSoRcvbuf = 0
+    var masterIoEventThreadNumber: Int = 0
+    var workerIoEventThreadNumber: Int = 0
+    var businessEventThreadNumber: Int = 0
+    var targetDataTransferIoEventThreadNumber: Int = 0
+    var soBacklog: Int = 0
+    var port: Int = 0
+    var targetConnectionTimeout: Int = 0
+    var agentConnectionIdleSeconds: Int = 0
+    var targetReceiveDataAverageBufferMinSize: Int = 0
+    var targetReceiveDataAverageBufferInitialSize: Int = 0
+    var targetReceiveDataAverageBufferMaxSize: Int = 0
+    var targetSoRcvbuf: Int = 0
     var remainingBytesInProxyWriteBufferToPauseTargetAutoRead: Long = 0
 }
 
@@ -111,6 +112,7 @@ private class Proxy(private val proxyConfiguration: ProxyConfiguration,
 }
 
 @SpringBootApplication
+@EnableConfigurationProperties(ProxyConfiguration::class)
 class ProxyLauncher {
     private val logger: Logger = LoggerFactory.getLogger(ProxyLauncher::class.java);
 

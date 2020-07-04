@@ -21,6 +21,7 @@ plugins {
     kotlin("jvm") version "1.3.72"
     id("org.springframework.boot") version "2.3.1.RELEASE"
     id("io.spring.dependency-management") version "1.0.6.RELEASE"
+    kotlin("kapt") version "1.3.72"
 }
 
 allprojects {
@@ -29,6 +30,7 @@ allprojects {
         plugin("org.jetbrains.kotlin.jvm")
         plugin("kotlin-allopen")
         plugin("org.jetbrains.kotlin.plugin.spring")
+        plugin("kotlin-kapt")
     }
     repositories {
         mavenLocal()
