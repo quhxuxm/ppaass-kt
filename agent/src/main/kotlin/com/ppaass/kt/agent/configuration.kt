@@ -50,6 +50,7 @@ class AgentConfiguration(final val staticAgentConfiguration: StaticAgentConfigur
         private val logger = LoggerFactory.getLogger(AgentConfiguration::class.java)
         private const val USER_CONFIGURATION_FILE_NAME = ".ppaass"
         private const val USER_HOME_PROPERTY = "user.home"
+        private val RANDOM_USER_TOKEN = UUID.randomUUID().toString().replace("-", "")
     }
 
     final var userToken: String? = null
@@ -63,7 +64,7 @@ class AgentConfiguration(final val staticAgentConfiguration: StaticAgentConfigur
         this.proxyPort = staticAgentConfiguration.proxyServerPort
         this.port = staticAgentConfiguration.port
         this.messageBodyEncryptionType = MessageBodyEncryptionType.random()
-        this.userToken = UUID.randomUUID().toString().replace("-", "")
+        this.userToken = RANDOM_USER_TOKEN
         val userDirectory = System.getProperty(USER_HOME_PROPERTY)
         val configurationFilePath = Path.of(userDirectory, USER_CONFIGURATION_FILE_NAME)
         val file = File(configurationFilePath.toUri())
@@ -73,7 +74,7 @@ class AgentConfiguration(final val staticAgentConfiguration: StaticAgentConfigur
             this.port = savedAgentConfiguration.port ?: this.port
             this.proxyAddress = savedAgentConfiguration.proxyAddress ?: this.proxyAddress
             this.proxyPort = savedAgentConfiguration.proxyPort ?: this.proxyPort
-            this.userToken = savedAgentConfiguration.userToken ?: UUID.randomUUID().toString().replace("-", "")
+            this.userToken = savedAgentConfiguration.userToken ?: RANDOM_USER_TOKEN
         }
     }
 

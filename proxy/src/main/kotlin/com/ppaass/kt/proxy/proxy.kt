@@ -25,11 +25,24 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationContext
 import org.springframework.stereotype.Service
 
+/**
+ * Proxy interface
+ */
 internal interface IProxy {
+    /**
+     * Start proxy
+     */
     fun start();
+
+    /**
+     * Stop proxy
+     */
     fun stop();
 }
 
+/**
+ * The channel initializer for proxy
+ */
 @Service
 private class ProxyChannelInitializer(private val proxyConfiguration: ProxyConfiguration,
                                       private val proxyAndTargetConnectionHandler: ProxyAndTargetConnectionHandler) :
@@ -53,6 +66,9 @@ private class ProxyChannelInitializer(private val proxyConfiguration: ProxyConfi
     }
 }
 
+/**
+ * The proxy implementation
+ */
 @Service
 private class Proxy(private val proxyConfiguration: ProxyConfiguration,
                     private val proxyChannelInitializer: ProxyChannelInitializer) :
@@ -92,8 +108,11 @@ private class Proxy(private val proxyConfiguration: ProxyConfiguration,
     }
 }
 
+/**
+ * The proxy launcher
+ */
 @SpringBootApplication
-@EnableConfigurationProperties(ProxyConfiguration::class)
+@EnableConfigurationProperties
 class ProxyLauncher {
     private val logger: Logger = LoggerFactory.getLogger(ProxyLauncher::class.java);
 
