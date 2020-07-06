@@ -65,6 +65,7 @@ internal class HttpAgent(private val agentConfiguration: AgentConfiguration) : A
     init {
         this.channelInitializer = object : ChannelInitializer<SocketChannel>() {
             override fun initChannel(socketChannel: SocketChannel) {
+                with()
             }
         }
     }
