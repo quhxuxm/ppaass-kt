@@ -123,7 +123,6 @@ class AgentLauncher {
                 .headless(false).run(*arguments)
         EventQueue.invokeLater {
             val mainFrame = context.getBean(MainFrame::class.java)
-            Runtime.getRuntime().addShutdownHook(Thread(Runnable { mainFrame.stop() }))
             mainFrame.start()
         }
     }

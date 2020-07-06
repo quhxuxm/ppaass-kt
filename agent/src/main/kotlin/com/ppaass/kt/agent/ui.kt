@@ -6,7 +6,10 @@ import org.springframework.context.MessageSource
 import org.springframework.stereotype.Service
 import org.springframework.util.StringUtils
 import java.awt.*
-import java.awt.event.*
+import java.awt.event.ActionEvent
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
+import java.awt.event.WindowEvent
 import java.util.*
 import javax.swing.*
 import javax.swing.border.EmptyBorder
@@ -42,7 +45,7 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
     private fun initialize() {
         val contentPanel = initializeContent()
         this.contentPane = contentPanel
-        defaultCloseOperation = WindowConstants.EXIT_ON_CLOSE
+        defaultCloseOperation = EXIT_ON_CLOSE
         this.iconImage = Toolkit.getDefaultToolkit()
                 .getImage(MainFrame::class.java.classLoader.getResource(LOGO_BLACK))
         addWindowStateListener { e: WindowEvent ->
@@ -50,29 +53,7 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
                 this@MainFrame.isVisible = false
             }
         }
-        addWindowListener(object : WindowListener {
-            override fun windowDeiconified(e: WindowEvent?) {
-            }
 
-            override fun windowClosing(e: WindowEvent?) {
-                System.exit(0)
-            }
-
-            override fun windowClosed(e: WindowEvent?) {
-            }
-
-            override fun windowActivated(e: WindowEvent?) {
-            }
-
-            override fun windowDeactivated(e: WindowEvent?) {
-            }
-
-            override fun windowOpened(e: WindowEvent?) {
-            }
-
-            override fun windowIconified(e: WindowEvent?) {
-            }
-        })
         if (SystemTray.isSupported()) {
             val tray = SystemTray.getSystemTray()
             val image = Toolkit.getDefaultToolkit()
