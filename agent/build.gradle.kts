@@ -9,5 +9,6 @@ dependencies {
     implementation(group = "org.slf4j", name = "slf4j-api")
     implementation(group = "org.lz4", name = "lz4-java")
     implementation(group = "com.fasterxml.jackson.core", name = "jackson-databind")
+    implementation(group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin")
     implementation(project(":common"))
 }

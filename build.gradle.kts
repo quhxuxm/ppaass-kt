@@ -48,11 +48,12 @@ allprojects {
             }
             dependency("io.netty:netty-all:4.1.49.Final")
             dependency("org.lz4:lz4-java:1.7.1")
+            dependency("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.1")
         }
     }
 
     tasks.withType<KotlinCompile>().configureEach {
-        kotlinOptions.jvmTarget = "13"
+        kotlinOptions.jvmTarget = "11"
     }
 }
 

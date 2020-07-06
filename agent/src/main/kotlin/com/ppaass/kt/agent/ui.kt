@@ -1,17 +1,12 @@
 package com.ppaass.kt.agent
 
-import io.netty.channel.ChannelInitializer
-import io.netty.channel.socket.SocketChannel
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationContext
 import org.springframework.context.MessageSource
 import org.springframework.stereotype.Service
 import org.springframework.util.StringUtils
 import java.awt.*
-import java.awt.event.ActionEvent
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
-import java.awt.event.WindowEvent
+import java.awt.event.*
 import java.util.*
 import javax.swing.*
 import javax.swing.border.EmptyBorder
@@ -42,7 +37,7 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
         private const val PANEL_WIDTH = 500
     }
 
-    var agent: IAgent?
+    var agent: Agent? = null
 
     private fun initialize() {
         val contentPanel = initializeContent()
@@ -51,10 +46,34 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
         this.iconImage = Toolkit.getDefaultToolkit()
                 .getImage(MainFrame::class.java.classLoader.getResource(LOGO_BLACK))
         addWindowStateListener { e: WindowEvent ->
-            if (e.newState == 1 || e.newState == 7) {
+            if (e.newState == Frame.ICONIFIED || e.newState == 7) {
                 this@MainFrame.isVisible = false
             }
         }
+        addWindowListener(object : WindowListener {
+            override fun windowDeiconified(e: WindowEvent?) {
+            }
+
+            override fun windowClosing(e: WindowEvent?) {
+                this@MainFrame.agent?.stop()
+            }
+
+            override fun windowClosed(e: WindowEvent?) {
+                System.exit(0)
+            }
+
+            override fun windowActivated(e: WindowEvent?) {
+            }
+
+            override fun windowDeactivated(e: WindowEvent?) {
+            }
+
+            override fun windowOpened(e: WindowEvent?) {
+            }
+
+            override fun windowIconified(e: WindowEvent?) {
+            }
+        })
         if (SystemTray.isSupported()) {
             val tray = SystemTray.getSystemTray()
             val image = Toolkit.getDefaultToolkit()
@@ -175,10 +194,12 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
         stopAllProxyBtn.isEnabled = false
 
         stopAllProxyBtn.addActionListener { e: ActionEvent? ->
-            if (this.agent == null) {
+            val currentAgent = this.agent
+            if (currentAgent == null) {
+                logger.error("No agent to stop.")
                 return@addActionListener
             }
-            this.agent.stop()
+            currentAgent.stop()
             statusLabel.text = getMessage(STATUS_LABEL_DEFAULT_MESSAGE_KEY)
             tokenInput.isEnabled = true
             tokenInput.isFocusable = true
@@ -220,8 +241,11 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
             this.agentConfiguration.proxyPort = proxyPort
             this.agentConfiguration.proxyAddress = proxyAddressInput.text
             try {
-                restartAgent(HttpAgentChannelInitializer::class.java)
-            } catch (exp: AgentException) {
+                val httpAgent = this.applicationContext.getBean(HttpAgent::class.java)
+                httpAgent.stop()
+                httpAgent.start()
+                this.agent = httpAgent
+            } catch (e: Exception) {
                 statusLabel.text = getMessage(STATUS_AGENT_START_FAIL_MESSAGE_KEY)
                 return@addActionListener
             }
@@ -267,8 +291,11 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
             this.agentConfiguration.proxyPort = proxyPort
             this.agentConfiguration.proxyAddress = proxyAddressInput.text
             try {
-                restartAgent(Socks5AgentChannelInitializer::class.java)
-            } catch (exp: AgentException) {
+                val socksAgent = this.applicationContext.getBean(SocksAgent::class.java)
+                socksAgent.stop()
+                socksAgent.start()
+                this.agent = socksAgent
+            } catch (e: Exception) {
                 statusLabel.text = getMessage(STATUS_AGENT_START_FAIL_MESSAGE_KEY)
                 return@addActionListener
             }
@@ -311,19 +338,13 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
                 .getMessage(statusTokenValidationFailMessageKey, null, locale)
     }
 
-    private fun restartAgent(
-            channelInitializerClass: Class<out ChannelInitializer<SocketChannel>>) {
-        this.agent.stop()
-        val channelInitializer: ChannelInitializer<SocketChannel> =
-                this.applicationContext.getBean(channelInitializerClass)
-        logger.info("Begin to initialize ppaass desktop application client socks server...")
-        this.agent.init(channelInitializer)
-        logger.info("Begin to start ppaass desktop application client socks server...")
-        this.agent.start()
-    }
-
     fun start() {
         initialize()
         this.isVisible = true
+    }
+
+    fun stop() {
+        this.isVisible = false
+        this.agent?.stop()
     }
 }

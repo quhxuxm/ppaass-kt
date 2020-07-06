@@ -1,6 +1,7 @@
 package com.ppaass.kt.agent
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.ppaass.kt.common.message.MessageBodyEncryptionType
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.properties.ConfigurationProperties
@@ -44,8 +45,9 @@ fun storedAgentConfiguration(block: StoredAgentConfiguration.() -> Unit): Stored
 }
 
 @Service
-class AgentConfiguration(final val staticAgentConfiguration: StaticAgentConfiguration,
-                         final val objectMapper: ObjectMapper) {
+class AgentConfiguration(final val staticAgentConfiguration: StaticAgentConfiguration) {
+    final val objectMapper: ObjectMapper
+
     companion object {
         private val logger = LoggerFactory.getLogger(AgentConfiguration::class.java)
         private const val USER_CONFIGURATION_FILE_NAME = ".ppaass"
@@ -60,6 +62,7 @@ class AgentConfiguration(final val staticAgentConfiguration: StaticAgentConfigur
     final var messageBodyEncryptionType: MessageBodyEncryptionType? = null
 
     init {
+        this.objectMapper = jacksonObjectMapper()
         this.proxyAddress = staticAgentConfiguration.proxyServerAddress
         this.proxyPort = staticAgentConfiguration.proxyServerPort
         this.port = staticAgentConfiguration.port
