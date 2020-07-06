@@ -1,6 +1,8 @@
 package com.ppaass.kt.agent
 
 import com.ppaass.kt.agent.handler.HeartbeatHandler
+import com.ppaass.kt.agent.handler.http.HttpConnectionHandler
+import com.ppaass.kt.agent.handler.socks.SocksConnectionHandler
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.ChannelInitializer
@@ -69,6 +71,7 @@ internal sealed class Agent(private val agentConfiguration: AgentConfiguration) 
 @Service
 internal class HttpAgent(private val agentConfiguration: AgentConfiguration) : Agent(agentConfiguration) {
     final override val channelInitializer: ChannelInitializer<SocketChannel>
+    private val httpConnectionHandler = HttpConnectionHandler(this.agentConfiguration)
 
     init {
         this.channelInitializer = object : ChannelInitializer<SocketChannel>() {
@@ -82,7 +85,7 @@ internal class HttpAgent(private val agentConfiguration: AgentConfiguration) : A
                             HttpObjectAggregator(Int.MAX_VALUE, true))
                     addLast(ChunkedWriteHandler::class.java.name, ChunkedWriteHandler())
                     addLast(LoggingHandler(LogLevel.INFO))
-//                    addLast(this.httpSetupAgentToProxyConnectionHandler)
+                    addLast(this@HttpAgent.httpConnectionHandler)
                 }
             }
         }
@@ -92,6 +95,7 @@ internal class HttpAgent(private val agentConfiguration: AgentConfiguration) : A
 @Service
 internal class SocksAgent(private val agentConfiguration: AgentConfiguration) : Agent(agentConfiguration) {
     final override val channelInitializer: ChannelInitializer<SocketChannel>
+    private val socksConnectionHandler = SocksConnectionHandler(this.agentConfiguration)
 
     init {
         this.channelInitializer = object : ChannelInitializer<SocketChannel>() {
@@ -102,7 +106,7 @@ internal class SocksAgent(private val agentConfiguration: AgentConfiguration) : 
                     addLast(HeartbeatHandler())
                     addLast(SocksPortUnificationServerHandler())
                     addLast(LoggingHandler(LogLevel.INFO))
-//                    addLast(this.socks5ProtocolInitializer)
+                    addLast(this@SocksAgent.socksConnectionHandler)
                 }
             }
         }

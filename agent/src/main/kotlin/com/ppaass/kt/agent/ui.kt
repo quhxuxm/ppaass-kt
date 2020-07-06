@@ -196,6 +196,7 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
             startHttpProxyBtn.isEnabled = true
             startSocks5ProxyBtn.isEnabled = true
             stopAllProxyBtn.isEnabled = false
+            this.agent = null
         }
         startHttpProxyBtn.addActionListener { e: ActionEvent ->
             if (!preVerifyToken(tokenInput)) {
