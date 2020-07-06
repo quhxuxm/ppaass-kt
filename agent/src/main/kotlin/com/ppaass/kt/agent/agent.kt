@@ -1,5 +1,6 @@
 package com.ppaass.kt.agent
 
+import com.ppaass.kt.agent.handler.HeartbeatHandler
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.ChannelInitializer
@@ -8,6 +9,13 @@ import io.netty.channel.EventLoopGroup
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioServerSocketChannel
+import io.netty.handler.codec.http.HttpObjectAggregator
+import io.netty.handler.codec.http.HttpServerCodec
+import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler
+import io.netty.handler.logging.LogLevel
+import io.netty.handler.logging.LoggingHandler
+import io.netty.handler.stream.ChunkedWriteHandler
+import io.netty.handler.timeout.IdleStateHandler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -65,7 +73,17 @@ internal class HttpAgent(private val agentConfiguration: AgentConfiguration) : A
     init {
         this.channelInitializer = object : ChannelInitializer<SocketChannel>() {
             override fun initChannel(socketChannel: SocketChannel) {
-                with()
+                with(socketChannel.pipeline()) {
+                    addLast(IdleStateHandler(0, 0,
+                            agentConfiguration.staticAgentConfiguration.clientConnectionIdleSeconds))
+                    addLast(HeartbeatHandler())
+                    addLast(HttpServerCodec::class.java.name, HttpServerCodec())
+                    addLast(HttpObjectAggregator::class.java.name,
+                            HttpObjectAggregator(Int.MAX_VALUE, true))
+                    addLast(ChunkedWriteHandler::class.java.name, ChunkedWriteHandler())
+                    addLast(LoggingHandler(LogLevel.INFO))
+//                    addLast(this.httpSetupAgentToProxyConnectionHandler)
+                }
             }
         }
     }
@@ -77,8 +95,15 @@ internal class SocksAgent(private val agentConfiguration: AgentConfiguration) : 
 
     init {
         this.channelInitializer = object : ChannelInitializer<SocketChannel>() {
-            override fun initChannel(ch: SocketChannel?) {
-                TODO("Not yet implemented")
+            override fun initChannel(socketChannel: SocketChannel) {
+                with(socketChannel.pipeline()) {
+                    addLast(IdleStateHandler(0, 0,
+                            agentConfiguration.staticAgentConfiguration.clientConnectionIdleSeconds))
+                    addLast(HeartbeatHandler())
+                    addLast(SocksPortUnificationServerHandler())
+                    addLast(LoggingHandler(LogLevel.INFO))
+//                    addLast(this.socks5ProtocolInitializer)
+                }
             }
         }
     }

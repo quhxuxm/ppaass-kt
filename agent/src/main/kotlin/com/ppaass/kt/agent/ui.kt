@@ -55,11 +55,10 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
             }
 
             override fun windowClosing(e: WindowEvent?) {
-                this@MainFrame.agent?.stop()
+                System.exit(0)
             }
 
             override fun windowClosed(e: WindowEvent?) {
-                System.exit(0)
             }
 
             override fun windowActivated(e: WindowEvent?) {

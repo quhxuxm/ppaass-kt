@@ -3,7 +3,7 @@ package com.ppaass.kt.proxy
 import com.ppaass.kt.common.netty.codec.AgentMessageDecoder
 import com.ppaass.kt.common.netty.codec.ProxyMessageEncoder
 import com.ppaass.kt.common.netty.handler.ResourceClearHandler
-import com.ppaass.kt.proxy.handler.HeartbeatChannelHandler
+import com.ppaass.kt.proxy.handler.HeartbeatHandler
 import com.ppaass.kt.proxy.handler.ProxyAndTargetConnectionHandler
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.channel.ChannelInitializer
@@ -50,7 +50,7 @@ private class ProxyChannelInitializer(private val proxyConfiguration: ProxyConfi
     override fun initChannel(proxyChannel: SocketChannel) {
         proxyChannel.pipeline().apply {
             addLast(IdleStateHandler(0, 0, proxyConfiguration.agentConnectionIdleSeconds))
-            addLast(HeartbeatChannelHandler())
+            addLast(HeartbeatHandler())
             //Inbound
             addLast(ChunkedWriteHandler())
             addLast(Lz4FrameDecoder())
