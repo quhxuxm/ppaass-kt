@@ -142,7 +142,6 @@ private class TransferDataFromProxyToAgentHandler(private val agentChannel: Chan
                                 "Fail to send connect message from agent to proxy because of exception.",
                                 connectCommandFuture.cause())
                     }
-
                     proxyChannelConnectedPromise.setSuccess(connectCommandFuture.channel())
                 })
     }
@@ -226,21 +225,20 @@ class HttpConnectionHandler(private val agentConfiguration: AgentConfiguration) 
                     if (!promiseFuture.isSuccess) {
                         return
                     }
-
                     with(agentChannelContext.pipeline()) {
                         addLast(ResourceClearHandler(promiseFuture.now))
                     }
-                    val connectSuccessResponse = DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
-                    agentChannelContext.writeAndFlush(connectSuccessResponse)
+                    val okResponse = DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
+                    agentChannelContext.writeAndFlush(okResponse)
                             .addListener(object : ChannelFutureListener {
-                                override fun operationComplete(future: ChannelFuture) {
-                                    if (!future.isSuccess) {
+                                override fun operationComplete(okResponseFuture: ChannelFuture) {
+                                    if (!okResponseFuture.isSuccess) {
                                         throw PpaassException()
                                     }
-                                    with(future.channel().pipeline()) {
-                                        remove(io.netty.handler.codec.http.HttpServerCodec::class.java.name)
-                                        remove(io.netty.handler.codec.http.HttpObjectAggregator::class.java.name)
-                                        remove(io.netty.handler.stream.ChunkedWriteHandler::class.java.name)
+                                    with(okResponseFuture.channel().pipeline()) {
+                                        remove(HttpServerCodec::class.java.name)
+                                        remove(HttpObjectAggregator::class.java.name)
+                                        remove(ChunkedWriteHandler::class.java.name)
                                     }
                                 }
                             })
