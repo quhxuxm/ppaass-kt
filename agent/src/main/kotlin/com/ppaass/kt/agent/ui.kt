@@ -203,7 +203,11 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
                 statusLabel.text = getMessage(STATUS_TOKEN_VALIDATION_FAIL_MESSAGE_KEY)
                 return@addActionListener
             }
-            this.agentConfiguration.userToken = tokenInput.text
+            this.agentConfiguration.userToken = if (tokenInput.text.isEmpty()) {
+                UUID.randomUUID().toString().replace("-", "")
+            } else {
+                tokenInput.text
+            }
             var port: Int? = null
             try {
                 port = agentPortInput.text.toInt()

@@ -5,6 +5,7 @@ dependencies {
     }
     implementation(group = "org.springframework.boot", name = "spring-boot-autoconfigure")
     implementation(group = "org.springframework.boot", name = "spring-boot-autoconfigure-processor")
+    implementation(group = "org.springframework", name = "spring-web")
     implementation(group = "io.netty", name = "netty-all")
     implementation(group = "org.slf4j", name = "slf4j-api")
     implementation(group = "org.lz4", name = "lz4-java")

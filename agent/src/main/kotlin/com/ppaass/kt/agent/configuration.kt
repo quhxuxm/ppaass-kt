@@ -55,7 +55,7 @@ class AgentConfiguration(final val staticAgentConfiguration: StaticAgentConfigur
         private val RANDOM_USER_TOKEN = UUID.randomUUID().toString().replace("-", "")
     }
 
-    final var userToken: String? = null
+    final var userToken: String = RANDOM_USER_TOKEN
     final var proxyAddress: String? = null
     final var proxyPort: Int? = null
     final var port: Int? = null
@@ -67,7 +67,6 @@ class AgentConfiguration(final val staticAgentConfiguration: StaticAgentConfigur
         this.proxyPort = staticAgentConfiguration.proxyServerPort
         this.port = staticAgentConfiguration.port
         this.messageBodyEncryptionType = MessageBodyEncryptionType.random()
-        this.userToken = RANDOM_USER_TOKEN
         val userDirectory = System.getProperty(USER_HOME_PROPERTY)
         val configurationFilePath = Path.of(userDirectory, USER_CONFIGURATION_FILE_NAME)
         val file = File(configurationFilePath.toUri())
