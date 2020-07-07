@@ -52,6 +52,7 @@ internal sealed class Agent(private val agentConfiguration: AgentConfiguration) 
             option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
             option(ChannelOption.TCP_NODELAY, true)
             childOption(ChannelOption.TCP_NODELAY, true)
+            childHandler(channelInitializer)
         }
         this.serverBootstrap = newServerBootstrap
         this.masterThreadGroup = newMasterThreadGroup

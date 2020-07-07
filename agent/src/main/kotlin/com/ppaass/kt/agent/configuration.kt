@@ -56,14 +56,14 @@ class AgentConfiguration(final val staticAgentConfiguration: StaticAgentConfigur
     }
 
     final var userToken: String = RANDOM_USER_TOKEN
-    final var proxyAddress: String? = null
-    final var proxyPort: Int? = null
+    final var proxyAddress: String
+    final var proxyPort: Int = 0
     final var port: Int? = null
     final var messageBodyEncryptionType: MessageBodyEncryptionType? = null
 
     init {
         this.objectMapper = jacksonObjectMapper()
-        this.proxyAddress = staticAgentConfiguration.proxyServerAddress
+        this.proxyAddress = staticAgentConfiguration.proxyServerAddress ?: "localhost"
         this.proxyPort = staticAgentConfiguration.proxyServerPort
         this.port = staticAgentConfiguration.port
         this.messageBodyEncryptionType = MessageBodyEncryptionType.random()

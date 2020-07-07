@@ -273,7 +273,7 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
                 statusLabel.text = getMessage(STATUS_PROXY_PORT_VALIDATION_FAIL_MESSAGE_KEY)
                 return@addActionListener
             }
-            this.agentConfiguration.proxyPort = proxyPort
+            this.agentConfiguration.proxyPort = proxyPort ?: 0
             this.agentConfiguration.proxyAddress = proxyAddressInput.text
             try {
                 val socksAgent = this.applicationContext.getBean(SocksAgent::class.java)
