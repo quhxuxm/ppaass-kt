@@ -24,9 +24,7 @@ import io.netty.handler.codec.compression.Lz4FrameEncoder
 import io.netty.handler.codec.http.*
 import io.netty.handler.stream.ChunkedWriteHandler
 import io.netty.util.ReferenceCountUtil
-import io.netty.util.concurrent.DefaultPromise
-import io.netty.util.concurrent.EventExecutorGroup
-import io.netty.util.concurrent.Promise
+import io.netty.util.concurrent.*
 import org.slf4j.LoggerFactory
 import org.springframework.web.util.UriComponents
 import org.springframework.web.util.UriComponentsBuilder
@@ -223,23 +221,31 @@ class HttpConnectionHandler(private val agentConfiguration: AgentConfiguration) 
         val proxyChannelConnectedPromise = DefaultPromise<Channel>(this.businessEventExecutorGroup.next())
         if (HttpMethod.CONNECT === msg.method()) {
             //A https connect method
-            proxyChannelConnectedPromise.addListener {
-                if (!it.isSuccess) {
-                    return@addListener
-                }
-                val proxyChannel = it.now as Channel
-                with(agentChannelContext.pipeline()) {
-                    addLast(ResourceClearHandler(proxyChannel))
-                }
-                val connectSuccessResponse = DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
-                agentChannelContext.writeAndFlush(connectSuccessResponse).addListener {
-                    with(agentChannelContext.pipeline()) {
-                        remove(HttpServerCodec::class.java.name)
-                        remove(HttpObjectAggregator::class.java.name)
-                        remove(ChunkedWriteHandler::class.java.name)
+            proxyChannelConnectedPromise.addListener(object : GenericFutureListener<Future<Channel>> {
+                override fun operationComplete(promiseFuture: Future<Channel>) {
+                    if (!promiseFuture.isSuccess) {
+                        return
                     }
+
+                    with(agentChannelContext.pipeline()) {
+                        addLast(ResourceClearHandler(promiseFuture.now))
+                    }
+                    val connectSuccessResponse = DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
+                    agentChannelContext.writeAndFlush(connectSuccessResponse)
+                            .addListener(object : ChannelFutureListener {
+                                override fun operationComplete(future: ChannelFuture) {
+                                    if (!future.isSuccess) {
+                                        throw PpaassException()
+                                    }
+                                    with(future.channel().pipeline()) {
+                                        remove(io.netty.handler.codec.http.HttpServerCodec::class.java.name)
+                                        remove(io.netty.handler.codec.http.HttpObjectAggregator::class.java.name)
+                                        remove(io.netty.handler.stream.ChunkedWriteHandler::class.java.name)
+                                    }
+                                }
+                            })
                 }
-            }
+            })
             val httpConnectionInfo = HttpConnectionInfoUtil.parseHttpConnectionInfo(msg.uri())
             this.httpProxyBootstrap.handler(object : ChannelInitializer<SocketChannel>() {
                 override fun initChannel(httpsProxyChannel: SocketChannel) {
