@@ -54,6 +54,7 @@ internal sealed class Agent(private val agentConfiguration: AgentConfiguration) 
             childOption(ChannelOption.TCP_NODELAY, true)
             childHandler(this@Agent.channelInitializer)
         }
+        newServerBootstrap.bind(this.agentConfiguration.port).sync()
         this.serverBootstrap = newServerBootstrap
         this.masterThreadGroup = newMasterThreadGroup
         this.workerThreadGroup = newWorkerThreadGroup

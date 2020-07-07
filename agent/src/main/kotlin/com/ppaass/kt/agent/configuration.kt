@@ -57,8 +57,8 @@ class AgentConfiguration(final val staticAgentConfiguration: StaticAgentConfigur
 
     final var userToken: String = RANDOM_USER_TOKEN
     final var proxyAddress: String
-    final var proxyPort: Int = 0
-    final var port: Int? = null
+    final var proxyPort: Int = -1
+    final var port: Int = -1
     final var messageBodyEncryptionType: MessageBodyEncryptionType? = null
 
     init {

@@ -3,10 +3,7 @@ package com.ppaass.kt.agent.handler.http
 import com.ppaass.kt.agent.AgentConfiguration
 import com.ppaass.kt.agent.handler.DiscardHeartbeatHandler
 import com.ppaass.kt.common.exception.PpaassException
-import com.ppaass.kt.common.message.AgentMessage
-import com.ppaass.kt.common.message.AgentMessageBodyType
-import com.ppaass.kt.common.message.MessageBodyEncryptionType
-import com.ppaass.kt.common.message.agentMessageBody
+import com.ppaass.kt.common.message.*
 import com.ppaass.kt.common.netty.codec.AgentMessageEncoder
 import com.ppaass.kt.common.netty.codec.ProxyMessageDecoder
 import com.ppaass.kt.common.netty.handler.ResourceClearHandler
@@ -21,6 +18,7 @@ import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder
 import io.netty.handler.codec.LengthFieldPrepender
+import io.netty.handler.codec.MessageToMessageDecoder
 import io.netty.handler.codec.compression.Lz4FrameDecoder
 import io.netty.handler.codec.compression.Lz4FrameEncoder
 import io.netty.handler.codec.http.*
@@ -127,14 +125,14 @@ private object HttpConnectionInfoUtil {
 
 private class TransferDataFromProxyToAgentHandler(private val agentChannel: Channel, private val targetHost: String,
                                                   private val port: Int,
-                                                  private val channelCacheInfoMap: Map<String, ChannelCacheInfo>,
+                                                  private val channelCacheInfoMap: MutableMap<String, ChannelCacheInfo>,
                                                   private val clientChannelId: String,
                                                   private val agentConfiguration: AgentConfiguration,
                                                   private val proxyChannelConnectedPromise: Promise<Channel>) :
         ChannelInboundHandlerAdapter() {
     override fun channelActive(proxyChannelContext: ChannelHandlerContext) {
         val channelCacheInfo = ChannelCacheInfo(proxyChannelContext.channel(), this.targetHost, this.port)
-        this.channelCacheInfoMap.plus(Pair(clientChannelId, channelCacheInfo))
+        this.channelCacheInfoMap.put(clientChannelId, channelCacheInfo)
         HttpProxyUtil.writeToProxy(AgentMessageBodyType.CONNECT, agentConfiguration.userToken,
                 channelCacheInfo.channel, channelCacheInfo.targetHost,
                 channelCacheInfo.targetPort, null,
@@ -157,6 +155,15 @@ private class TransferDataFromProxyToAgentHandler(private val agentChannel: Chan
 
     override fun channelReadComplete(ctx: ChannelHandlerContext?) {
         this.agentChannel.flush()
+    }
+}
+
+@ChannelHandler.Sharable
+private class ProxyMessageOriginalDataDecoder : MessageToMessageDecoder<ProxyMessage>() {
+    override fun decode(ctx: ChannelHandlerContext, msg: ProxyMessage, out: MutableList<Any>) {
+        val proxyDataBuf = ctx.alloc().buffer()
+        proxyDataBuf.writeBytes(msg.body.originalData)
+        out.add(proxyDataBuf)
     }
 }
 
@@ -294,6 +301,9 @@ class HttpConnectionHandler(private val agentConfiguration: AgentConfiguration) 
                             4))
                     addLast(ProxyMessageDecoder())
                     addLast(DiscardHeartbeatHandler(agentChannelContext.channel()))
+                    addLast(ProxyMessageOriginalDataDecoder())
+                    addLast(HttpResponseDecoder())
+                    addLast(HttpObjectAggregator(Int.MAX_VALUE, true))
                     addLast(businessEventExecutorGroup,
                             TransferDataFromProxyToAgentHandler(agentChannelContext.channel(),
                                     httpConnectionInfo.host, httpConnectionInfo.port,

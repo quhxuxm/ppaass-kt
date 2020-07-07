@@ -6,7 +6,6 @@ import org.springframework.context.MessageSource
 import org.springframework.stereotype.Service
 import org.springframework.util.StringUtils
 import java.awt.*
-import java.awt.event.ActionEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.WindowEvent
@@ -126,7 +125,7 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
         agentPortTextFieldPanel.layout = BoxLayout(agentPortTextFieldPanel, BoxLayout.Y_AXIS)
         agentPortTextFieldPanel.border = EmptyBorder(5, 0, 10, 0)
         val agentPortInput = JTextField()
-        agentPortInput.text = this.agentConfiguration.port?.toString() ?: ""
+        agentPortInput.text = this.agentConfiguration.port.toString()
         agentPortInput.disabledTextColor = Color(200, 200, 200)
         agentPortTextFieldPanel.add(agentPortInput)
         contentPanel.add(agentPortTextFieldPanel)
@@ -158,7 +157,7 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
         proxyPortTextFieldPanel.layout = BoxLayout(proxyPortTextFieldPanel, BoxLayout.Y_AXIS)
         proxyPortTextFieldPanel.border = EmptyBorder(5, 0, 10, 0)
         val proxyPortInput = JTextField()
-        proxyPortInput.text = this.agentConfiguration.proxyPort?.toString() ?: ""
+        proxyPortInput.text = this.agentConfiguration.proxyPort.toString()
         proxyPortInput.disabledTextColor = Color(200, 200, 200)
         proxyPortTextFieldPanel.add(proxyPortInput)
         contentPanel.add(proxyPortTextFieldPanel)
@@ -173,7 +172,7 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
                 getMessage(BUTTON_START_SOCKS5_PROXY_MESSAGE_KEY))
         stopAllProxyBtn.isEnabled = false
 
-        stopAllProxyBtn.addActionListener { e: ActionEvent? ->
+        stopAllProxyBtn.addActionListener {
             val currentAgent = this.agent
             if (currentAgent == null) {
                 logger.error("No agent to stop.")
@@ -198,7 +197,7 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
             stopAllProxyBtn.isEnabled = false
             this.agent = null
         }
-        startHttpProxyBtn.addActionListener { e: ActionEvent ->
+        startHttpProxyBtn.addActionListener {
             if (!preVerifyToken(tokenInput)) {
                 statusLabel.text = getMessage(STATUS_TOKEN_VALIDATION_FAIL_MESSAGE_KEY)
                 return@addActionListener
@@ -208,7 +207,7 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
             } else {
                 tokenInput.text
             }
-            var port: Int? = null
+            var port: Int = -1
             try {
                 port = agentPortInput.text.toInt()
             } catch (exception: Exception) {
@@ -216,7 +215,7 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
                 return@addActionListener
             }
             this.agentConfiguration.port = port
-            var proxyPort: Int? = null
+            var proxyPort: Int = -1
             try {
                 proxyPort = proxyPortInput.text.toInt()
             } catch (exception: Exception) {
@@ -252,13 +251,13 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
             startSocks5ProxyBtn.isEnabled = false
             this.agentConfiguration.save()
         }
-        startSocks5ProxyBtn.addActionListener { e: ActionEvent ->
+        startSocks5ProxyBtn.addActionListener {
             if (!preVerifyToken(tokenInput)) {
                 statusLabel.text = getMessage(STATUS_TOKEN_VALIDATION_FAIL_MESSAGE_KEY)
                 return@addActionListener
             }
             this.agentConfiguration.userToken = tokenInput.text
-            var port: Int? = null
+            var port: Int = -1
             try {
                 port = agentPortInput.text.toInt()
             } catch (exception: Exception) {
@@ -266,7 +265,7 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
                 return@addActionListener
             }
             this.agentConfiguration.port = port
-            var proxyPort: Int? = null
+            var proxyPort: Int = -1
             try {
                 proxyPort = proxyPortInput.text.toInt()
             } catch (exception: Exception) {
