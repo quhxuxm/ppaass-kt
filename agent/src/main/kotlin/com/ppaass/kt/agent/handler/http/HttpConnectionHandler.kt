@@ -1,11 +1,14 @@
 package com.ppaass.kt.agent.handler.http
 
 import com.ppaass.kt.agent.AgentConfiguration
+import com.ppaass.kt.agent.handler.DiscardHeartbeatHandler
 import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.message.AgentMessage
 import com.ppaass.kt.common.message.AgentMessageBodyType
 import com.ppaass.kt.common.message.MessageBodyEncryptionType
 import com.ppaass.kt.common.message.agentMessageBody
+import com.ppaass.kt.common.netty.codec.ProxyMessageDecoder
+import com.ppaass.kt.common.netty.codec.ProxyMessageEncoder
 import com.ppaass.kt.common.netty.handler.ResourceClearHandler
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.ByteBuf
@@ -14,10 +17,12 @@ import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.*
 import io.netty.channel.embedded.EmbeddedChannel
 import io.netty.channel.nio.NioEventLoopGroup
+import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
-import io.netty.handler.codec.http.HttpMethod
-import io.netty.handler.codec.http.HttpRequest
-import io.netty.handler.codec.http.HttpRequestEncoder
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder
+import io.netty.handler.codec.compression.Lz4FrameDecoder
+import io.netty.handler.codec.http.*
+import io.netty.handler.stream.ChunkedWriteHandler
 import io.netty.util.ReferenceCountUtil
 import io.netty.util.concurrent.DefaultPromise
 import io.netty.util.concurrent.EventExecutorGroup
@@ -177,11 +182,33 @@ class HttpConnectionHandler(private val agentConfiguration: AgentConfiguration) 
                 if (!it.isSuccess) {
                     return@addListener
                 }
-                val proxyChannel = it.now
+                val proxyChannel = it.now as Channel
                 with(agentChannelContext.pipeline()) {
                     addLast(ResourceClearHandler(proxyChannel))
                 }
+                val connectSuccessResponse = DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
+                agentChannelContext.writeAndFlush(connectSuccessResponse).addListener {
+                    with(agentChannelContext.pipeline()) {
+                        remove(HttpServerCodec::class.java.name)
+                        remove(HttpObjectAggregator::class.java.name)
+                        remove(ChunkedWriteHandler::class.java.name)
+                    }
+                }
             }
+            this.httpProxyBootstrap.handler(object : ChannelInitializer<SocketChannel>() {
+                override fun initChannel(httpsProxyChannel: SocketChannel) {
+                    with(httpsProxyChannel.pipeline()) {
+                        addLast(ChunkedWriteHandler())
+                        addLast(Lz4FrameDecoder())
+                        addLast(LengthFieldBasedFrameDecoder(Integer.MAX_VALUE,
+                                0, 4, 0,
+                                4))
+                        addLast(ProxyMessageDecoder())
+                        addLast(DiscardHeartbeatHandler(agentChannelContext.channel()))
+                    }
+                }
+            })
+
             return
         }
         // A http request
