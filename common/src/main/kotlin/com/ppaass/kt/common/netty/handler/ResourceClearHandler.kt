@@ -15,7 +15,7 @@ class ResourceClearHandler(vararg channels: Channel) : ChannelInboundHandlerAdap
 
     override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
         if (ReferenceCountUtil.refCnt(msg) > 1) {
-            logger.trace("Release buffer, current channel: ${ctx.channel().id()}")
+            logger.debug("Release buffer, current channel: ${ctx.channel().id().asLongText()}")
             ReferenceCountUtil.release(msg)
         }
     }
@@ -23,24 +23,24 @@ class ResourceClearHandler(vararg channels: Channel) : ChannelInboundHandlerAdap
     override fun channelInactive(ctx: ChannelHandlerContext) {
         for (relatedChannel in this.relatedChannels) {
             if (relatedChannel.isActive) {
-                logger.trace("Close related channel on current channel inactive, current channel: ${ctx.channel().id()
+                logger.debug("Close related channel on current channel inactive, current channel: ${ctx.channel().id()
                         .asLongText()}, related channel: ${relatedChannel.id().asLongText()}")
                 relatedChannel.pipeline().lastContext().close()
             }
         }
-        logger.trace("Close current channel on inactive, current channel: ${ctx.channel().id()}")
+        logger.debug("Close current channel on inactive, current channel: ${ctx.channel().id().asLongText()}")
         ctx.close()
     }
 
     override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable?) {
         for (relatedChannel in relatedChannels) {
             if (relatedChannel.isActive) {
-                logger.trace("Close related channel on exception happen, current channel: ${ctx.channel().id()
+                logger.debug("Close related channel on exception happen, current channel: ${ctx.channel().id()
                         .asLongText()}, related channel: ${relatedChannel.id().asLongText()}")
                 relatedChannel.pipeline().lastContext().close()
             }
         }
-        logger.trace("Close current channel on exception, current channel: ${ctx.channel().id()}")
+        logger.debug("Close current channel on exception, current channel: ${ctx.channel().id().asLongText()}")
         ctx.close()
     }
 }

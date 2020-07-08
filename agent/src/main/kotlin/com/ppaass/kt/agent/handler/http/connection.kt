@@ -1,7 +1,7 @@
 package com.ppaass.kt.agent.handler.http
 
 import com.ppaass.kt.agent.AgentConfiguration
-import com.ppaass.kt.agent.handler.DiscardHeartbeatHandler
+import com.ppaass.kt.agent.handler.DiscardProxyHeartbeatHandler
 import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.message.*
 import com.ppaass.kt.common.netty.codec.AgentMessageEncoder
@@ -11,6 +11,7 @@ import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufUtil
 import io.netty.buffer.PooledByteBufAllocator
+import io.netty.buffer.Unpooled
 import io.netty.channel.*
 import io.netty.channel.embedded.EmbeddedChannel
 import io.netty.channel.nio.NioEventLoopGroup
@@ -66,6 +67,8 @@ private object HttpProxyUtil {
                     targetAddress = host
                     targetPort = port
                 })
+        logger.debug("The original data write from agent to proxy is: {}",
+                ByteBufUtil.prettyHexDump(Unpooled.wrappedBuffer(data)))
         return proxyChannel.writeAndFlush(agentMessage)
     }
 }
@@ -110,7 +113,7 @@ private object HttpConnectionInfoUtil {
         }
         if (hostNameAndPort.contains(SLASH)) {
             logger.error("Can not parse host name from uri: {}", uri)
-            throw PpaassException("Fail to parse host name from uri.")
+            throw PpaassException("Can not parse host name from uri: $uri")
         }
         val hostNameAndPortParts =
                 hostNameAndPort.split(HOST_NAME_AND_PORT_SEP).toTypedArray()
@@ -130,6 +133,10 @@ private class TransferDataFromProxyToAgentHandler(private val agentChannel: Chan
                                                   private val agentConfiguration: AgentConfiguration,
                                                   private val proxyChannelConnectedPromise: Promise<Channel>) :
         ChannelInboundHandlerAdapter() {
+    companion object {
+        private val logger = LoggerFactory.getLogger(TransferDataFromProxyToAgentHandler::class.java)
+    }
+
     override fun channelActive(proxyChannelContext: ChannelHandlerContext) {
         val channelCacheInfo = ChannelCacheInfo(proxyChannelContext.channel(), this.targetHost, this.port)
         this.channelCacheInfoMap.put(clientChannelId, channelCacheInfo)
@@ -140,8 +147,10 @@ private class TransferDataFromProxyToAgentHandler(private val agentChannel: Chan
                 .addListener(ChannelFutureListener { connectCommandFuture: ChannelFuture ->
                     if (!connectCommandFuture.isSuccess) {
                         proxyChannelConnectedPromise.setFailure(connectCommandFuture.cause())
+                        logger.error(
+                                "Fail to send connect message from agent to proxy, target host=${channelCacheInfo.targetHost}, target port =${channelCacheInfo.targetPort}")
                         throw PpaassException(
-                                "Fail to send connect message from agent to proxy because of exception.",
+                                "Fail to send connect message from agent to proxy, target host=${channelCacheInfo.targetHost}, target port =${channelCacheInfo.targetPort}",
                                 connectCommandFuture.cause())
                     }
                     proxyChannelConnectedPromise.setSuccess(connectCommandFuture.channel())
@@ -234,7 +243,10 @@ class HttpConnectionHandler(private val agentConfiguration: AgentConfiguration) 
                 agentChannelContext.writeAndFlush(okResponse)
                         .addListener(ChannelFutureListener { okResponseFuture ->
                             if (!okResponseFuture.isSuccess) {
-                                throw PpaassException()
+                                logger.error("Fail to send ok response to agent client because of exception.",
+                                        okResponseFuture.cause())
+                                throw PpaassException("Fail to send ok response to agent client because of exception",
+                                        okResponseFuture.cause())
                             }
                             with(okResponseFuture.channel().pipeline()) {
                                 remove(HttpServerCodec::class.java.name)
@@ -253,7 +265,7 @@ class HttpConnectionHandler(private val agentConfiguration: AgentConfiguration) 
                                 0, 4, 0,
                                 4))
                         addLast(ProxyMessageDecoder())
-                        addLast(DiscardHeartbeatHandler(agentChannelContext.channel()))
+                        addLast(DiscardProxyHeartbeatHandler(agentChannelContext.channel()))
                         addLast(businessEventExecutorGroup,
                                 TransferDataFromProxyToAgentHandler(agentChannelContext.channel(),
                                         httpConnectionInfo.host, httpConnectionInfo.port, channelCacheInfoMap,
@@ -270,9 +282,12 @@ class HttpConnectionHandler(private val agentConfiguration: AgentConfiguration) 
                     .addListener {
                         if (!it.isSuccess) {
                             agentChannelContext.close()
-                            throw PpaassException()
+                            logger.error("Fail to connect to proxy server because of exception.",
+                                    it.cause())
+                            throw PpaassException("Fail to connect to proxy server because of exception.", it.cause())
                         }
                     }
+            agentChannelContext.fireChannelRead(msg)
             return
         }
         // A http request
@@ -303,7 +318,7 @@ class HttpConnectionHandler(private val agentConfiguration: AgentConfiguration) 
                             0, 4, 0,
                             4))
                     addLast(ProxyMessageDecoder())
-                    addLast(DiscardHeartbeatHandler(agentChannelContext.channel()))
+                    addLast(DiscardProxyHeartbeatHandler(agentChannelContext.channel()))
                     addLast(ProxyMessageOriginalDataDecoder())
                     addLast(HttpResponseDecoder())
                     addLast(HttpObjectAggregator(Int.MAX_VALUE, true))
@@ -323,8 +338,11 @@ class HttpConnectionHandler(private val agentConfiguration: AgentConfiguration) 
                 .addListener {
                     if (!it.isSuccess) {
                         agentChannelContext.close()
-                        throw PpaassException()
+                        logger.error("Fail to connect to proxy server because of exception.",
+                                it.cause())
+                        throw PpaassException("Fail to connect to proxy server because of exception.", it.cause())
                     }
                 }
+        agentChannelContext.fireChannelRead(msg)
     }
 }
