@@ -13,3 +13,6 @@ dependencies {
     implementation(group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin")
     implementation(project(":common"))
 }
+springBoot {
+    mainClassName = "com.ppaass.kt.agent.MainKt"
+}

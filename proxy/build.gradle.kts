@@ -10,3 +10,7 @@ dependencies {
     implementation(group = "org.lz4", name = "lz4-java")
     implementation(project(":common"))
 }
+
+springBoot {
+    mainClassName = "com.ppaass.kt.proxy.MainKt"
+}

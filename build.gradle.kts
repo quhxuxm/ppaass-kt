@@ -21,9 +21,9 @@ version = "1.0-SNAPSHOT"
 plugins {
     java
     kotlin("jvm") version "1.3.72"
-    id("org.springframework.boot") version "2.3.1.RELEASE"
-    id("io.spring.dependency-management") version "1.0.6.RELEASE"
     kotlin("kapt") version "1.3.72"
+    id("org.springframework.boot") version "2.3.1.RELEASE" apply false
+    id("io.spring.dependency-management") version "1.0.9.RELEASE"
 }
 
 allprojects {
@@ -34,6 +34,7 @@ allprojects {
         plugin("org.jetbrains.kotlin.plugin.spring")
         plugin("kotlin-kapt")
     }
+
     repositories {
         mavenLocal()
         maven("http://maven.aliyun.com/nexus/content/groups/public/")
@@ -57,9 +58,27 @@ allprojects {
     }
 }
 
+
 subprojects {
     dependencies {
         implementation(kotlin("stdlib-jdk8"))
     }
 }
 
+project(":common") {
+    apply {
+        plugin("java-library")
+    }
+}
+
+project(":agent") {
+    apply {
+        plugin("org.springframework.boot")
+    }
+}
+
+project(":proxy") {
+    apply {
+        plugin("org.springframework.boot")
+    }
+}
