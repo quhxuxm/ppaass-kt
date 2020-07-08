@@ -15,8 +15,8 @@
                               onMatch="ACCEPT"/>
         </Console>
         <RollingFile name="FILE_APPENDER"
-                     fileName="./log/ppaass-proxy.log"
-                     filePattern="./log/archive/ppaass-proxy.%d{yyyy-MM-dd}.log">
+                     fileName="./log/ppaass-kt-proxy.log"
+                     filePattern="./log/archive/ppaass-kt-proxy.%d{yyyy-MM-dd}.log">
             <PatternLayout pattern="${LOG_PATTERN}"/>
             <LevelRangeFilter minLevel="FATAL"
                               maxLevel="DEBUG"
@@ -30,20 +30,20 @@
     <Loggers>
         <logger name="org.springframework"
                 additivity="false"
-                level="ERROR">
+                level="error">
             <appender-ref ref="FILE_APPENDER"/>
         </logger>
         <logger name="io.netty.handler.logging.LoggingHandler"
                 additivity="false"
-                level="ERROR">
+                level="error">
             <appender-ref ref="FILE_APPENDER"/>
         </logger>
-        <logger name="com.ppaass"
+        <logger name="com.ppaass.kt"
                 additivity="false"
-                level="ERROR">
+                level="debug">
             <appender-ref ref="FILE_APPENDER"/>
         </logger>
-        <Root level="ERROR">
+        <Root level="error">
             <appender-ref ref="FILE_APPENDER"/>
         </Root>
     </Loggers>

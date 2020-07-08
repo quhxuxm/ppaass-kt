@@ -3,7 +3,6 @@ package com.ppaass.kt.common.netty.handler
 import io.netty.channel.Channel
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
-import io.netty.util.ReferenceCountUtil
 import org.slf4j.LoggerFactory
 
 class ResourceClearHandler(vararg channels: Channel) : ChannelInboundHandlerAdapter() {
@@ -12,13 +11,6 @@ class ResourceClearHandler(vararg channels: Channel) : ChannelInboundHandlerAdap
     }
 
     private val relatedChannels = channels
-
-    override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
-        if (ReferenceCountUtil.refCnt(msg) > 1) {
-            logger.debug("Release buffer, current channel: ${ctx.channel().id().asLongText()}")
-            ReferenceCountUtil.release(msg)
-        }
-    }
 
     override fun channelInactive(ctx: ChannelHandlerContext) {
         for (relatedChannel in this.relatedChannels) {
@@ -32,15 +24,15 @@ class ResourceClearHandler(vararg channels: Channel) : ChannelInboundHandlerAdap
         ctx.close()
     }
 
-    override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable?) {
+    override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
         for (relatedChannel in relatedChannels) {
             if (relatedChannel.isActive) {
                 logger.debug("Close related channel on exception happen, current channel: ${ctx.channel().id()
-                        .asLongText()}, related channel: ${relatedChannel.id().asLongText()}")
+                        .asLongText()}, related channel: ${relatedChannel.id().asLongText()}", cause)
                 relatedChannel.pipeline().lastContext().close()
             }
         }
-        logger.debug("Close current channel on exception, current channel: ${ctx.channel().id().asLongText()}")
+        logger.debug("Close current channel on exception, current channel: ${ctx.channel().id().asLongText()}", cause)
         ctx.close()
     }
 }

@@ -11,7 +11,6 @@ import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufUtil
 import io.netty.buffer.PooledByteBufAllocator
-import io.netty.buffer.Unpooled
 import io.netty.channel.*
 import io.netty.channel.embedded.EmbeddedChannel
 import io.netty.channel.nio.NioEventLoopGroup
@@ -67,8 +66,9 @@ private object HttpProxyUtil {
                     targetAddress = host
                     targetPort = port
                 })
-        logger.debug("The original data write from agent to proxy is: {}",
-                ByteBufUtil.prettyHexDump(Unpooled.wrappedBuffer(data)))
+        if (data != null) {
+            logger.debug("The agent message write from agent to proxy is:\n{}\n", agentMessage)
+        }
         return proxyChannel.writeAndFlush(agentMessage)
     }
 }
@@ -282,9 +282,10 @@ class HttpConnectionHandler(private val agentConfiguration: AgentConfiguration) 
                     .addListener {
                         if (!it.isSuccess) {
                             agentChannelContext.close()
-                            logger.error("Fail to connect to proxy server because of exception.",
+                            logger.error("Fail to connect to proxy server because of exception (1).",
                                     it.cause())
-                            throw PpaassException("Fail to connect to proxy server because of exception.", it.cause())
+                            throw PpaassException("Fail to connect to proxy server because of exception  (1).",
+                                    it.cause())
                         }
                     }
             agentChannelContext.fireChannelRead(msg)
@@ -338,9 +339,9 @@ class HttpConnectionHandler(private val agentConfiguration: AgentConfiguration) 
                 .addListener {
                     if (!it.isSuccess) {
                         agentChannelContext.close()
-                        logger.error("Fail to connect to proxy server because of exception.",
+                        logger.error("Fail to connect to proxy server because of exception (2).",
                                 it.cause())
-                        throw PpaassException("Fail to connect to proxy server because of exception.", it.cause())
+                        throw PpaassException("Fail to connect to proxy server because of exception (2).", it.cause())
                     }
                 }
         agentChannelContext.fireChannelRead(msg)

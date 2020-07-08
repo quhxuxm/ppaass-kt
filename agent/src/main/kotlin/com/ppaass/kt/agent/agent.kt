@@ -86,7 +86,6 @@ internal class HttpAgent(private val agentConfiguration: AgentConfiguration) : A
                     addLast(HttpObjectAggregator::class.java.name,
                             HttpObjectAggregator(Int.MAX_VALUE, true))
                     addLast(ChunkedWriteHandler::class.java.name, ChunkedWriteHandler())
-                    addLast(LoggingHandler(LogLevel.INFO))
                     addLast(this@HttpAgent.httpConnectionHandler)
                 }
             }

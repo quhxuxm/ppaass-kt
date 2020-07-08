@@ -59,6 +59,11 @@ sealed class MessageBody {
      * The message id.
      */
     abstract val id: String
+
+    override fun toString(): String {
+        return "MessageBody(id='$id', targetAddress=$targetAddress, targetPort=$targetPort, originalData:\n\n${String(
+                originalData ?: byteArrayOf())}\n\n)"
+    }
 }
 
 /**
@@ -66,6 +71,9 @@ sealed class MessageBody {
  */
 data class Message<T : MessageBody>(val secureToken: String, val messageBodyEncryptionType: MessageBodyEncryptionType,
                                     val body: T) {
+    override fun toString(): String {
+        return "Message(secureToken='$secureToken', messageBodyEncryptionType=$messageBodyEncryptionType, body=$body)"
+    }
 }
 
 /**
@@ -90,6 +98,10 @@ class AgentMessageBody(val bodyType: AgentMessageBodyType, override val id: Stri
     override var originalData: ByteArray? = null
     override var targetAddress: String? = null
     override var targetPort: Int? = null
+    override fun toString(): String {
+        return "AgentMessageBody(id='$id', bodyType=$bodyType, targetAddress=$targetAddress, targetPort=$targetPort, originalData:\n\n${String(
+                originalData ?: kotlin.byteArrayOf(), Charsets.UTF_8)}\n\n)"
+    }
 }
 
 /**
@@ -119,6 +131,10 @@ class ProxyMessageBody(val bodyType: ProxyMessageBodyType, override val id: Stri
     override var originalData: ByteArray? = null
     override var targetAddress: String? = null
     override var targetPort: Int? = null
+    override fun toString(): String {
+        return "ProxyMessageBody(id='$id', bodyType=$bodyType,  targetAddress=$targetAddress, targetPort=$targetPort), originalData:\n\n${String(
+                originalData ?: byteArrayOf(), Charsets.UTF_8)}\n\n"
+    }
 }
 
 /**

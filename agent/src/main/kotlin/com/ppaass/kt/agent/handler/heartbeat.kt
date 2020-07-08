@@ -11,20 +11,28 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 @ChannelHandler.Sharable
-class DiscardProxyHeartbeatHandler(private val agentChannel: Channel) : SimpleChannelInboundHandler<ProxyMessage>() {
+class DiscardProxyHeartbeatHandler(private val agentChannel: Channel) : ChannelInboundHandlerAdapter() {
     companion object {
         private val logger = LoggerFactory.getLogger(DiscardProxyHeartbeatHandler::class.java)
     }
 
-    override fun channelRead0(proxyChannelContext: ChannelHandlerContext, msg: ProxyMessage) {
-        if (ProxyMessageBodyType.HEARTBEAT !== msg.body.bodyType) {
+    override fun channelRead(proxyChannelContext: ChannelHandlerContext, msg: Any) {
+        try {
+            val proxyMessage = msg as ProxyMessage
+            if (ProxyMessageBodyType.HEARTBEAT !== proxyMessage.body.bodyType) {
+                super.channelRead(proxyChannelContext, msg)
+                return
+            }
+            val utcDataTimeString =
+                    String(proxyMessage.body.originalData ?: System.currentTimeMillis().toString().toByteArray())
+            logger.debug("Receive heartbeat form proxy channel: {}, current agent channel: {}, heartbeat time: {}",
+                    proxyChannelContext.channel().id().asLongText(), this.agentChannel.id().asLongText(),
+                    utcDataTimeString)
+            ReferenceCountUtil.release(msg)
+        } catch (classCaseExcep: ClassCastException) {
+            super.channelRead(proxyChannelContext, msg)
             return
         }
-        val utcDataTimeString = String(msg.body.originalData ?: System.currentTimeMillis().toString().toByteArray())
-        logger.debug("Receive heartbeat form proxy channel: {}, current agent channel: {}, heartbeat time: {}",
-                proxyChannelContext.channel().id().asLongText(), this.agentChannel.id().asLongText(),
-                utcDataTimeString)
-        ReferenceCountUtil.release(msg)
     }
 }
 
