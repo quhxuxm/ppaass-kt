@@ -139,7 +139,7 @@ private class TransferDataFromProxyToAgentHandler(private val agentChannel: Chan
 
     override fun channelActive(proxyChannelContext: ChannelHandlerContext) {
         val channelCacheInfo = ChannelCacheInfo(proxyChannelContext.channel(), this.targetHost, this.port)
-        this.channelCacheInfoMap.put(clientChannelId, channelCacheInfo)
+        this.channelCacheInfoMap[clientChannelId] = channelCacheInfo
         HttpProxyUtil.writeToProxy(AgentMessageBodyType.CONNECT, agentConfiguration.userToken,
                 channelCacheInfo.channel, channelCacheInfo.targetHost,
                 channelCacheInfo.targetPort, null,
@@ -153,15 +153,22 @@ private class TransferDataFromProxyToAgentHandler(private val agentChannel: Chan
                                 "Fail to send connect message from agent to proxy, target host=${channelCacheInfo.targetHost}, target port =${channelCacheInfo.targetPort}",
                                 connectCommandFuture.cause())
                     }
+                    logger.debug("Success connect to proxy, clientChannelId={}", clientChannelId)
                     proxyChannelConnectedPromise.setSuccess(connectCommandFuture.channel())
                 })
     }
 
     override fun channelRead(proxyChannelContext: ChannelHandlerContext, msg: Any) {
+        logger.debug(
+                "Current client channel to receive the proxy response (reading), clientChannelId={}",
+                this.clientChannelId)
         this.agentChannel.writeAndFlush(msg)
     }
 
-    override fun channelReadComplete(ctx: ChannelHandlerContext?) {
+    override fun channelReadComplete(ctx: ChannelHandlerContext) {
+        logger.debug(
+                "Current client channel to receive the proxy response (read complete), clientChannelId={}",
+                this.clientChannelId)
         this.agentChannel.flush()
     }
 }
@@ -214,25 +221,31 @@ class HttpOrHttpsConnectionHandler(private val agentConfiguration: AgentConfigur
         }
     }
 
+    private fun sendRequestToProxy(clientChannelId: String, msg: Any) {
+        val channelCacheInfo = channelCacheInfoMap[clientChannelId]
+        if (channelCacheInfo == null) {
+            logger.error("Fail to find channel cache information, clientChannelId={}", clientChannelId)
+            throw PpaassException()
+        }
+        HttpProxyUtil.writeToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
+                channelCacheInfo.channel, channelCacheInfo.targetHost, channelCacheInfo.targetPort,
+                msg, clientChannelId, MessageBodyEncryptionType.random())
+    }
+
     override fun channelRead(agentChannelContext: ChannelHandlerContext, msg: Any) {
         val clientChannelId = agentChannelContext.channel().id().asLongText()
+        logger.debug("Agent receive a client connection, clientChannelId={}", clientChannelId)
         if (msg !is HttpRequest) {
-            //A https connection
-            logger.debug("Incoming request is a https protocol, clientChannelId={}", clientChannelId)
-            val channelCacheInfo = channelCacheInfoMap.get(clientChannelId)
-            if (channelCacheInfo == null) {
-                logger.error("Fail to find https channel cache information with client channel id ${clientChannelId}")
-                throw PpaassException()
-            }
-            HttpProxyUtil.writeToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
-                    channelCacheInfo.channel, channelCacheInfo.targetHost, channelCacheInfo.targetPort,
-                    msg, clientChannelId, MessageBodyEncryptionType.random())
+            //A https request to send data
+            logger.debug("Incoming request is https protocol to send data, clientChannelId={}", clientChannelId)
+            this.sendRequestToProxy(clientChannelId, msg)
             agentChannelContext.fireChannelRead(msg)
             return
         }
         val proxyChannelConnectedPromise = DefaultPromise<Channel>(this.businessEventExecutorGroup.next())
         if (HttpMethod.CONNECT === msg.method()) {
-            //A https connect method
+            //A https request to setup the connection
+            logger.debug("Incoming request is https protocol to setup connection, clientChannelId={}", clientChannelId)
             proxyChannelConnectedPromise.addListener { promiseFuture ->
                 if (!promiseFuture.isSuccess) {
                     return@addListener
@@ -302,14 +315,7 @@ class HttpOrHttpsConnectionHandler(private val agentConfiguration: AgentConfigur
             with(agentChannelContext.pipeline()) {
                 addLast(ResourceClearHandler(proxyChannel))
             }
-            val channelCacheInfo = channelCacheInfoMap.get(clientChannelId)
-            if (channelCacheInfo == null) {
-                logger.error("Fail to find https channel cache information with client channel id ${clientChannelId}")
-                throw PpaassException()
-            }
-            HttpProxyUtil.writeToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
-                    channelCacheInfo.channel, channelCacheInfo.targetHost, channelCacheInfo.targetPort,
-                    msg, clientChannelId, MessageBodyEncryptionType.random())
+            this.sendRequestToProxy(clientChannelId, msg)
         }
         val httpConnectionInfo = HttpConnectionInfoUtil.parseHttpConnectionInfo(msg.uri())
         this.httpProxyBootstrap.handler(object : ChannelInitializer<SocketChannel>() {
