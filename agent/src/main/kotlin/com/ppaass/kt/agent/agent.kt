@@ -1,7 +1,7 @@
 package com.ppaass.kt.agent
 
 import com.ppaass.kt.agent.handler.HeartbeatHandler
-import com.ppaass.kt.agent.handler.http.HttpConnectionHandler
+import com.ppaass.kt.agent.handler.http.HttpOrHttpsConnectionHandler
 import com.ppaass.kt.agent.handler.socks.SocksConnectionHandler
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.PooledByteBufAllocator
@@ -73,7 +73,7 @@ internal sealed class Agent(private val agentConfiguration: AgentConfiguration) 
 @Service
 internal class HttpAgent(private val agentConfiguration: AgentConfiguration) : Agent(agentConfiguration) {
     final override val channelInitializer: ChannelInitializer<SocketChannel>
-    private val httpConnectionHandler = HttpConnectionHandler(this.agentConfiguration)
+    private val switchConnectionTypeHandler = HttpOrHttpsConnectionHandler(this.agentConfiguration)
 
     init {
         this.channelInitializer = object : ChannelInitializer<SocketChannel>() {
@@ -86,7 +86,7 @@ internal class HttpAgent(private val agentConfiguration: AgentConfiguration) : A
                     addLast(HttpObjectAggregator::class.java.name,
                             HttpObjectAggregator(Int.MAX_VALUE, true))
                     addLast(ChunkedWriteHandler::class.java.name, ChunkedWriteHandler())
-                    addLast(this@HttpAgent.httpConnectionHandler)
+                    addLast(this@HttpAgent.switchConnectionTypeHandler)
                 }
             }
         }

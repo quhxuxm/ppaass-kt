@@ -176,10 +176,11 @@ private class ProxyMessageOriginalDataDecoder : MessageToMessageDecoder<ProxyMes
 }
 
 @ChannelHandler.Sharable
-class HttpConnectionHandler(private val agentConfiguration: AgentConfiguration) : ChannelInboundHandlerAdapter() {
+class HttpOrHttpsConnectionHandler(private val agentConfiguration: AgentConfiguration) :
+        ChannelInboundHandlerAdapter() {
     companion object {
         private val channelCacheInfoMap = HashMap<String, ChannelCacheInfo>()
-        private val logger = LoggerFactory.getLogger(HttpConnectionHandler::class.java)
+        private val logger = LoggerFactory.getLogger(HttpOrHttpsConnectionHandler::class.java)
     }
 
     private val businessEventExecutorGroup: EventExecutorGroup
@@ -217,6 +218,7 @@ class HttpConnectionHandler(private val agentConfiguration: AgentConfiguration) 
         val clientChannelId = agentChannelContext.channel().id().asLongText()
         if (msg !is HttpRequest) {
             //A https connection
+            logger.debug("Incoming request is a https protocol, clientChannelId={}", clientChannelId)
             val channelCacheInfo = channelCacheInfoMap.get(clientChannelId)
             if (channelCacheInfo == null) {
                 logger.error("Fail to find https channel cache information with client channel id ${clientChannelId}")
@@ -345,5 +347,20 @@ class HttpConnectionHandler(private val agentConfiguration: AgentConfiguration) 
                     }
                 }
         agentChannelContext.fireChannelRead(msg)
+    }
+
+    override fun channelInactive(agentChannelContext: ChannelHandlerContext) {
+        channelCacheInfoMap.remove(
+                agentChannelContext.channel().id().asLongText())
+    }
+
+    override fun channelReadComplete(agentChannelContext: ChannelHandlerContext) {
+        agentChannelContext.flush()
+    }
+
+    override fun exceptionCaught(agentChannelContext: ChannelHandlerContext, cause: Throwable) {
+        channelCacheInfoMap.remove(
+                agentChannelContext.channel().id().asLongText())
+        agentChannelContext.fireExceptionCaught(cause)
     }
 }
