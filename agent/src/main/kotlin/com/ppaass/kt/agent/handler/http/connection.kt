@@ -148,12 +148,14 @@ private class TransferDataFromProxyToAgentHandler(private val agentChannel: Chan
                     if (!connectCommandFuture.isSuccess) {
                         proxyChannelConnectedPromise.setFailure(connectCommandFuture.cause())
                         logger.error(
-                                "Fail to send connect message from agent to proxy, target host=${channelCacheInfo.targetHost}, target port =${channelCacheInfo.targetPort}")
+                                "Fail to send connect message from agent to proxy, clientChannelId={}, targetHost={}, targetPort={}",
+                                clientChannelId, channelCacheInfo.targetHost, channelCacheInfo.targetPort)
                         throw PpaassException(
-                                "Fail to send connect message from agent to proxy, target host=${channelCacheInfo.targetHost}, target port =${channelCacheInfo.targetPort}",
+                                "Fail to send connect message from agent to proxy, clientChannelId=$clientChannelId, targetHost=${channelCacheInfo.targetHost}, targetPort =${channelCacheInfo.targetPort}",
                                 connectCommandFuture.cause())
                     }
-                    logger.debug("Success connect to proxy, clientChannelId={}", clientChannelId)
+                    logger.debug("Success connect to proxy, clientChannelId={}, targetHost={}, targetPort={}",
+                            clientChannelId, channelCacheInfo.targetHost, channelCacheInfo.targetPort)
                     proxyChannelConnectedPromise.setSuccess(connectCommandFuture.channel())
                 })
     }
