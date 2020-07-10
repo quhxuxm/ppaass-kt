@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+nohup java -jar -Xms256m -Xmx256m -XX:MaxDirectMemorySize=256m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=heap_dump.hprof proxy-1.0-SNAPSHOT.jar --spring.config.location=classpath:application.properties,file:./application.properties > run.log 2>&1 &
