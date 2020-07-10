@@ -15,10 +15,31 @@ import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.handler.logging.LogLevel
 import io.netty.handler.logging.LoggingHandler
+import io.netty.util.ReferenceCountUtil
 import io.netty.util.concurrent.EventExecutorGroup
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.util.*
+
+private class TransferDataFromTargetToProxyWriteResultListener(private val targetChannelContext: ChannelHandlerContext,
+                                                               private val agentMessage: AgentMessage) :
+        ChannelFutureListener {
+    companion object {
+        private val logger = LoggerFactory.getLogger(TransferDataFromTargetToProxyWriteResultListener::class.java)
+    }
+
+    override fun operationComplete(future: ChannelFuture) {
+        if (!future.isSuccess) {
+            logger.error(
+                    "Fail to transfer data from target to proxy, message id=${agentMessage.body.id}, " +
+                            "targetAddress=${agentMessage.body.targetAddress}, targetPort=${agentMessage.body.targetPort}")
+            throw PpaassException(
+                    "Fail to transfer data from target to proxy, message id=${agentMessage.body.id}, " +
+                            "targetAddress=${agentMessage.body.targetAddress}, targetPort=${agentMessage.body.targetPort}")
+        }
+        targetChannelContext.channel().read()
+    }
+}
 
 private class TransferDataFromTargetToProxyHandler(private val proxyChannel: Channel,
                                                    private val agentMessage: AgentMessage) :
@@ -34,21 +55,32 @@ private class TransferDataFromTargetToProxyHandler(private val proxyChannel: Cha
                     targetPort = agentMessage.body.targetPort
                     originalData = ByteBufUtil.getBytes(msg as ByteBuf)
                 })
-        this.proxyChannel.writeAndFlush(proxyMessage).addListener {
-            if (!it.isSuccess) {
-                logger.error(
-                        "Fail to transfer data from target to proxy, message id=${agentMessage.body.id}, " +
-                                "targetAddress=${agentMessage.body.targetAddress}, targetPort=${agentMessage.body.targetPort}")
-                throw PpaassException(
-                        "Fail to transfer data from target to proxy, message id=${agentMessage.body.id}, " +
-                                "targetAddress=${agentMessage.body.targetAddress}, targetPort=${agentMessage.body.targetPort}")
-            }
-            targetChannelContext.channel().read()
-        }
+        this.proxyChannel.writeAndFlush(proxyMessage)
+                .addListener(TransferDataFromTargetToProxyWriteResultListener(targetChannelContext, agentMessage))
     }
 
     override fun channelReadComplete(ctx: ChannelHandlerContext) {
         this.proxyChannel.flush()
+    }
+}
+
+private class TransferDataFromProxyToTargetWriteResultListener(private val targetChannel: Channel,
+                                                               private val agentMessage: AgentMessage) :
+        ChannelFutureListener {
+    companion object {
+        private val logger = LoggerFactory.getLogger(TransferDataFromProxyToTargetWriteResultListener::class.java)
+    }
+
+    override fun operationComplete(future: ChannelFuture) {
+        if (!future.isSuccess) {
+            logger.error(
+                    "Fail to transfer data from proxy to target, message id=${agentMessage.body.id}, " +
+                            "targetAddress=${agentMessage.body.targetAddress}, targetPort=${agentMessage.body.targetPort}")
+            throw PpaassException(
+                    "Fail to transfer data from proxy to target, message id=${agentMessage.body.id}, " +
+                            "targetAddress=${agentMessage.body.targetAddress}, targetPort=${agentMessage.body.targetPort}")
+        }
+        targetChannel.read()
     }
 }
 
@@ -60,21 +92,12 @@ private class TransferDataFromProxyToTargetHandler(private val targetChannel: Ch
 
     override fun channelRead0(proxyContext: ChannelHandlerContext, agentMessage: AgentMessage) {
         if (AgentMessageBodyType.CONNECT === agentMessage.body.bodyType) {
+            logger.debug("Incoming request is a CONNECT message.")
             targetChannel.read()
             return
         }
         targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData))
-                .addListener {
-                    if (!it.isSuccess) {
-                        logger.error(
-                                "Fail to transfer data from proxy to target, message id=${agentMessage.body.id}, " +
-                                        "targetAddress=${agentMessage.body.targetAddress}, targetPort=${agentMessage.body.targetPort}")
-                        throw PpaassException(
-                                "Fail to transfer data from proxy to target, message id=${agentMessage.body.id}, " +
-                                        "targetAddress=${agentMessage.body.targetAddress}, targetPort=${agentMessage.body.targetPort}")
-                    }
-                    targetChannel.read()
-                }
+                .addListener(TransferDataFromProxyToTargetWriteResultListener(targetChannel, agentMessage))
     }
 
     override fun channelReadComplete(proxyContext: ChannelHandlerContext) {
@@ -83,10 +106,54 @@ private class TransferDataFromProxyToTargetHandler(private val targetChannel: Ch
 }
 
 private class TargetDataTransferChannelInitializer(private val proxyContext: ChannelHandlerContext,
-                                                   private val agentMessage: AgentMessage) :
+                                                   private val agentMessage: AgentMessage,
+                                                   private val businessEventExecutors: EventExecutorGroup) :
         ChannelInitializer<SocketChannel>() {
-    override fun initChannel(ch: SocketChannel) {
-        TODO("Not yet implemented")
+    override fun initChannel(targetChannel: SocketChannel) {
+        with(targetChannel.pipeline()) {
+            addLast(LoggingHandler(LogLevel.INFO))
+            addLast(businessEventExecutors,
+                    TransferDataFromTargetToProxyHandler(
+                            proxyContext.channel(), agentMessage))
+            addLast(ResourceClearHandler(proxyContext.channel()))
+        }
+    }
+}
+
+private class TargetChannelConnectedListener(private val agentMessage: AgentMessage, private val targetAddress: String,
+                                             private val targetPort: Int,
+                                             private val proxyContext: ChannelHandlerContext,
+                                             private val businessEventExecutors: EventExecutorGroup) :
+        ChannelFutureListener {
+    companion object {
+        private val logger = LoggerFactory.getLogger(TargetChannelConnectedListener::class.java)
+    }
+
+    override fun operationComplete(future: ChannelFuture) {
+        if (!future.isSuccess) {
+            val failProxyMessage =
+                    ProxyMessage(agentMessage.secureToken, MessageBodyEncryptionType.random(),
+                            proxyMessageBody(ProxyMessageBodyType.CONNECT_FAIL, UUID.randomUUID().toString()) {
+                                this.targetAddress = this@TargetChannelConnectedListener.targetAddress
+                                this.targetPort = this@TargetChannelConnectedListener.targetPort
+                            })
+            proxyContext.channel().writeAndFlush(failProxyMessage).addListener(ChannelFutureListener.CLOSE)
+            logger.error(
+                    "Fail connect to ${targetAddress}:${targetPort}, message id=${agentMessage.body.id}")
+            return
+        }
+        logger.debug(
+                "Success connect to ${targetAddress}:${targetPort}, message id=${agentMessage.body.id}")
+        val targetChannel = future.channel()
+        with(proxyContext.pipeline()) {
+            remove(ProxyAndTargetConnectionHandler::class.java)
+            addLast(businessEventExecutors,
+                    TransferDataFromProxyToTargetHandler(
+                            targetChannel))
+            addLast(ResourceClearHandler(targetChannel))
+            proxyContext.fireChannelRead(agentMessage)
+        }
+        ReferenceCountUtil.release(agentMessage)
     }
 }
 
@@ -124,17 +191,8 @@ internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: P
     }
 
     override fun channelRead0(proxyContext: ChannelHandlerContext, agentMessage: AgentMessage) {
-        this.targetDataTransferBootstrap.handler(object : ChannelInitializer<SocketChannel>() {
-            override fun initChannel(targetChannel: SocketChannel) {
-                with(targetChannel.pipeline()) {
-                    addLast(LoggingHandler(LogLevel.INFO))
-                    addLast(businessEventExecutors,
-                            TransferDataFromTargetToProxyHandler(
-                                    proxyContext.channel(), agentMessage))
-                    addLast(ResourceClearHandler(proxyContext.channel()))
-                }
-            }
-        })
+        this.targetDataTransferBootstrap.handler(
+                TargetDataTransferChannelInitializer(proxyContext, agentMessage, this.businessEventExecutors))
         val targetAddress = agentMessage.body.targetAddress
         val targetPort = agentMessage.body.targetPort
         if (targetAddress == null) {
@@ -146,30 +204,10 @@ internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: P
             return
         }
         logger.debug("Begin to connect ${targetAddress}:${targetPort}, message id=${agentMessage.body.id}")
-        this.targetDataTransferBootstrap.connect(targetAddress, targetPort).syncUninterruptibly().addListener {
-            it as ChannelFuture
-            if (!it.isSuccess) {
-                val failProxyMessage =
-                        ProxyMessage(agentMessage.secureToken, MessageBodyEncryptionType.random(),
-                                proxyMessageBody(ProxyMessageBodyType.CONNECT_FAIL, UUID.randomUUID().toString()) {
-                                    this.targetAddress = targetAddress
-                                    this.targetPort = targetPort
-                                })
-                proxyContext.channel().writeAndFlush(failProxyMessage).addListener(ChannelFutureListener.CLOSE)
-                logger.error("Fail connect to ${targetAddress}:${targetPort}, message id=${agentMessage.body.id}")
-                return@addListener;
-            }
-            logger.debug("Success connect to ${targetAddress}:${targetPort}, message id=${agentMessage.body.id}")
-            val targetChannel = it.channel()
-            with(proxyContext.pipeline()) {
-                remove(this@ProxyAndTargetConnectionHandler)
-                addLast(businessEventExecutors,
-                        TransferDataFromProxyToTargetHandler(
-                                targetChannel))
-                addLast(ResourceClearHandler(targetChannel))
-                proxyContext.fireChannelRead(agentMessage)
-            }
-        }
+        ReferenceCountUtil.retain(agentMessage)
+        this.targetDataTransferBootstrap.connect(targetAddress, targetPort).syncUninterruptibly()
+                .addListener(TargetChannelConnectedListener(agentMessage, targetAddress, targetPort, proxyContext,
+                        this.businessEventExecutors))
     }
 
     override fun channelReadComplete(proxyContext: ChannelHandlerContext) {
