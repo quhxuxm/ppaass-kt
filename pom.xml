@@ -32,6 +32,11 @@
                 <version>1.3.72</version>
             </dependency>
             <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-reflect</artifactId>
+                <version>1.3.72</version>
+            </dependency>
+            <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>
                 <version>4.1.50.Final</version>
@@ -62,9 +67,9 @@
                 <version>1.3.72</version>
                 <configuration>
                     <jvmTarget>11</jvmTarget>
-                   <args>
-                    <arg>-Xjsr305=strict</arg>
-                </args>
+                    <args>
+                        <arg>-Xjsr305=strict</arg>
+                    </args>
                 </configuration>
                 <executions>
                     <execution>
@@ -80,6 +85,13 @@
                         </goals>
                     </execution>
                 </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <artifactId>kotlin-maven-allopen</artifactId>
+                        <version>1.3.72</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>

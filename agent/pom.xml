@@ -58,6 +58,10 @@
             <artifactId>spring-web</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-reflect</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.ppaass.kt</groupId>
             <artifactId>common</artifactId>
             <version>${project.version}</version>
