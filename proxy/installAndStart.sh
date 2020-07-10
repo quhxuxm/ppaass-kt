@@ -6,7 +6,7 @@ rm -rf /home/sourcecode
 # Build
 mkdir /home/sourcecode
 cd /home/sourcecode
-git clone https://github.com/quhxuxm/ppaass.git
+git clone https://github.com/quhxuxm/ppaass-kt.git ppaass
 cd /home/sourcecode/ppaass
 git pull
 mvn clean package
