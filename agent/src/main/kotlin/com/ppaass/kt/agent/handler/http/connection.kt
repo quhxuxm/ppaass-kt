@@ -316,7 +316,6 @@ private class HttpDataRequestPromiseListener(private val message: Any,
         if (!future.isSuccess) {
             return
         }
-
         with(agentChannelContext.pipeline()) {
             addLast(ResourceClearHandler(future.now))
         }
@@ -328,6 +327,7 @@ private class HttpDataRequestPromiseListener(private val message: Any,
         HttpProxyUtil.writeToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
                 channelCacheInfo.channel, channelCacheInfo.targetHost, channelCacheInfo.targetPort,
                 message, clientChannelId, MessageBodyEncryptionType.random())
+        ReferenceCountUtil.release(message)
     }
 }
 
@@ -403,7 +403,7 @@ class HttpOrHttpsConnectionHandler(private val agentConfiguration: AgentConfigur
     override fun channelRead(agentChannelContext: ChannelHandlerContext, msg: Any) {
         val clientChannelId = agentChannelContext.channel().id().asLongText()
         logger.debug("Agent receive a client connection, clientChannelId={}", clientChannelId)
-        if (msg !is HttpRequest) {
+        if (msg !is FullHttpRequest) {
             //A https request to send data
             logger.debug("Incoming request is https protocol to send data, clientChannelId={}", clientChannelId)
             this.sendRequestToProxy(clientChannelId, msg)
@@ -431,6 +431,7 @@ class HttpOrHttpsConnectionHandler(private val agentConfiguration: AgentConfigur
         // A http request
         logger.debug("Incoming request is http protocol,  clientChannelId={}", clientChannelId)
         val httpDataRequestPromise = DefaultPromise<Channel>(this.businessEventExecutorGroup.next())
+        msg.retain()
         httpDataRequestPromise.addListener(
                 HttpDataRequestPromiseListener(msg, agentChannelContext, clientChannelId,
                         channelCacheInfoMap, agentConfiguration))
