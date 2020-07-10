@@ -82,6 +82,14 @@ private class TransferDataFromProxyToTargetHandler(private val targetChannel: Ch
     }
 }
 
+private class TargetDataTransferChannelInitializer(private val proxyContext: ChannelHandlerContext,
+                                                   private val agentMessage: AgentMessage) :
+        ChannelInitializer<SocketChannel>() {
+    override fun initChannel(ch: SocketChannel) {
+        TODO("Not yet implemented")
+    }
+}
+
 @Service
 @ChannelHandler.Sharable
 internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: ProxyConfiguration) :
