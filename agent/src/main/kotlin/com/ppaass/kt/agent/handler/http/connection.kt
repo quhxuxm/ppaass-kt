@@ -183,7 +183,7 @@ private class TransferDataFromProxyToAgentHandler(private val agentChannel: Chan
 }
 
 @ChannelHandler.Sharable
-private class ProxyMessageOriginalDataDecoder : MessageToMessageDecoder<ProxyMessage>() {
+private class ExtractProxyMessageOriginalDataDecoder : MessageToMessageDecoder<ProxyMessage>() {
     override fun decode(ctx: ChannelHandlerContext, msg: ProxyMessage, out: MutableList<Any>) {
         val proxyDataBuf = ctx.alloc().buffer()
         proxyDataBuf.writeBytes(msg.body.originalData)
@@ -214,7 +214,7 @@ private class HttpDataTransferChannelInitializer(private val agentChannel: Chann
                     4))
             addLast(ProxyMessageDecoder())
             addLast(DiscardProxyHeartbeatHandler(agentChannel))
-            addLast(ProxyMessageOriginalDataDecoder())
+            addLast(ExtractProxyMessageOriginalDataDecoder())
             addLast(HttpResponseDecoder())
             addLast(HttpObjectAggregator(Int.MAX_VALUE, true))
             addLast(executorGroup,
@@ -253,6 +253,7 @@ private class HttpsDataTransferChannelInitializer(private val agentChannel: Chan
                     4))
             addLast(ProxyMessageDecoder())
             addLast(DiscardProxyHeartbeatHandler(agentChannel))
+            addLast(ExtractProxyMessageOriginalDataDecoder())
             addLast(executorGroup,
                     TransferDataFromProxyToAgentHandler(agentChannel,
                             httpConnectionInfo.host, httpConnectionInfo.port,
