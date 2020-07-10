@@ -1,1 +1,1 @@
-start javaw -jar -Xms512m -Xmx512m ui-1.0-SNAPSHOT.jar --spring.config.location=classpath:application.properties,file:./application.properties > run.log 2>&1 &
+start javaw -jar -Xms512m -Xmx512m agent-1.0-SNAPSHOT.jar --spring.config.location=classpath:application.properties,file:./application.properties > run.log 2>&1 &
