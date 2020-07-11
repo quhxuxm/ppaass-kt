@@ -15,7 +15,6 @@ import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.handler.logging.LogLevel
 import io.netty.handler.logging.LoggingHandler
-import io.netty.util.ReferenceCountUtil
 import io.netty.util.concurrent.EventExecutorGroup
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -153,7 +152,7 @@ private class TargetChannelConnectedListener(private val agentMessage: AgentMess
             addLast(ResourceClearHandler(targetChannel))
             proxyContext.fireChannelRead(agentMessage)
         }
-        ReferenceCountUtil.release(agentMessage)
+//        ReferenceCountUtil.release(agentMessage)
     }
 }
 
@@ -204,7 +203,7 @@ internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: P
             return
         }
         logger.debug("Begin to connect ${targetAddress}:${targetPort}, message id=${agentMessage.body.id}")
-        ReferenceCountUtil.retain(agentMessage)
+//        ReferenceCountUtil.retain(agentMessage)
         this.targetDataTransferBootstrap.connect(targetAddress, targetPort).syncUninterruptibly()
                 .addListener(TargetChannelConnectedListener(agentMessage, targetAddress, targetPort, proxyContext,
                         this.businessEventExecutors))
