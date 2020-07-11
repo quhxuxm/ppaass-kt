@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>common</artifactId>
-    <name>Ppaass Kt- Common</name>
+    <name>Ppaass Kt - Common</name>
     <dependencies>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>

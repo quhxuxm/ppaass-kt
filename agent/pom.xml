@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>agent</artifactId>
-    <name>Ppaass Kt- Agent</name>
+    <name>Ppaass Kt - Agent</name>
     <dependencies>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
