@@ -122,7 +122,8 @@ private class TargetDataTransferChannelInitializer(private val proxyContext: Cha
 private class TargetChannelConnectedListener(private val agentMessage: AgentMessage, private val targetAddress: String,
                                              private val targetPort: Int,
                                              private val proxyContext: ChannelHandlerContext,
-                                             private val businessEventExecutors: EventExecutorGroup) :
+                                             private val businessEventExecutors: EventExecutorGroup,
+                                             private val proxyAndTargetConnectionHandler: ProxyAndTargetConnectionHandler) :
         ChannelFutureListener {
     companion object {
         private val logger = LoggerFactory.getLogger(TargetChannelConnectedListener::class.java)
@@ -145,7 +146,7 @@ private class TargetChannelConnectedListener(private val agentMessage: AgentMess
                 "Success connect to ${targetAddress}:${targetPort}, message id=${agentMessage.body.id}")
         val targetChannel = future.channel()
         with(proxyContext.pipeline()) {
-            remove(ProxyAndTargetConnectionHandler::class.java)
+            remove(proxyAndTargetConnectionHandler)
             addLast(businessEventExecutors,
                     TransferDataFromProxyToTargetHandler(
                             targetChannel))
@@ -196,17 +197,18 @@ internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: P
         val targetPort = agentMessage.body.targetPort
         if (targetAddress == null) {
             logger.debug("Return because of targetAddress is null, message id=${agentMessage.body.id}")
+            proxyContext.close()
             return
         }
         if (targetPort == null) {
             logger.debug("Return because of targetPort is null, message id=${agentMessage.body.id}")
+            proxyContext.close()
             return
         }
         logger.debug("Begin to connect ${targetAddress}:${targetPort}, message id=${agentMessage.body.id}")
-//        ReferenceCountUtil.retain(agentMessage)
         this.targetDataTransferBootstrap.connect(targetAddress, targetPort).syncUninterruptibly()
                 .addListener(TargetChannelConnectedListener(agentMessage, targetAddress, targetPort, proxyContext,
-                        this.businessEventExecutors))
+                        this.businessEventExecutors, this))
     }
 
     override fun channelReadComplete(proxyContext: ChannelHandlerContext) {
