@@ -43,17 +43,17 @@ private class TransferDataFromTargetToProxyWriteResultListener(private val targe
 
 private class TransferDataFromTargetToProxyHandler(private val proxyChannel: Channel,
                                                    private val agentMessage: AgentMessage) :
-        ChannelInboundHandlerAdapter() {
+        SimpleChannelInboundHandler<ByteBuf>() {
     companion object {
         private val logger = LoggerFactory.getLogger(TransferDataFromTargetToProxyHandler::class.java)
     }
 
-    override fun channelRead(targetChannelContext: ChannelHandlerContext, msg: Any) {
+    override fun channelRead0(targetChannelContext: ChannelHandlerContext, targetMessage: ByteBuf) {
         val proxyMessage = ProxyMessage(agentMessage.secureToken, MessageBodyEncryptionType.random(),
                 proxyMessageBody(ProxyMessageBodyType.OK, agentMessage.body.id) {
                     targetAddress = agentMessage.body.targetAddress
                     targetPort = agentMessage.body.targetPort
-                    originalData = ByteBufUtil.getBytes(msg as ByteBuf)
+                    originalData = ByteBufUtil.getBytes(targetMessage)
                 })
         logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
         this.proxyChannel.writeAndFlush(proxyMessage)
@@ -82,7 +82,6 @@ private class TransferDataFromProxyToTargetWriteResultListener(private val targe
                     "Fail to transfer data from proxy to target, message id=${agentMessage.body.id}, " +
                             "targetAddress=${agentMessage.body.targetAddress}, targetPort=${agentMessage.body.targetPort}")
         }
-        ReferenceCountUtil.release(agentMessage)
         targetChannel.read()
     }
 }
@@ -99,7 +98,8 @@ private class TransferDataFromProxyToTargetHandler(private val targetChannel: Ch
             targetChannel.read()
             return
         }
-        targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData))
+        val originalDataByteBuf = Unpooled.wrappedBuffer(agentMessage.body.originalData)
+        targetChannel.writeAndFlush(originalDataByteBuf)
                 .addListener(TransferDataFromProxyToTargetWriteResultListener(targetChannel, agentMessage))
     }
 
@@ -144,7 +144,6 @@ private class TargetChannelConnectedListener(private val agentMessage: AgentMess
             proxyContext.channel().writeAndFlush(failProxyMessage).addListener(ChannelFutureListener.CLOSE)
             logger.error(
                     "Fail connect to ${targetAddress}:${targetPort}, message id=${agentMessage.body.id}")
-            ReferenceCountUtil.release(agentMessage)
             return
         }
         logger.debug(
@@ -213,8 +212,14 @@ internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: P
         }
         logger.debug("Begin to connect ${targetAddress}:${targetPort}, message id=${agentMessage.body.id}")
         this.targetDataTransferBootstrap.connect(targetAddress, targetPort).syncUninterruptibly()
-                .addListener(TargetChannelConnectedListener(agentMessage, targetAddress, targetPort, proxyContext,
-                        this.businessEventExecutors, this))
+                .addListener(TargetChannelConnectedListener(
+                        agentMessage = agentMessage,
+                        targetAddress = targetAddress,
+                        targetPort = targetPort,
+                        proxyContext = proxyContext,
+                        businessEventExecutors = this.businessEventExecutors,
+                        proxyAndTargetConnectionHandler = this))
+        ReferenceCountUtil.release(agentMessage)
     }
 
     override fun channelReadComplete(proxyContext: ChannelHandlerContext) {

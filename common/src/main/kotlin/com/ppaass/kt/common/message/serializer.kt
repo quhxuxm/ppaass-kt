@@ -193,10 +193,11 @@ internal object MessageSerializer {
         result.writeBytes(message.secureToken.toByteArray(Charsets.UTF_8))
         result.writeInt(message.messageBodyEncryptionType.mask.length)
         result.writeBytes(message.messageBodyEncryptionType.mask.toByteArray(Charsets.UTF_8))
-        result.writeBytes(
-                MessageBodySerializer.encodeAgentMessageBody(message.body,
-                        message.messageBodyEncryptionType,
-                        message.secureToken));
+        val bodyByteBuf = MessageBodySerializer.encodeAgentMessageBody(message.body,
+                message.messageBodyEncryptionType,
+                message.secureToken)
+        result.writeBytes(bodyByteBuf);
+        ReferenceCountUtil.release(bodyByteBuf)
         return result
     }
 
@@ -206,10 +207,11 @@ internal object MessageSerializer {
         result.writeBytes(message.secureToken.toByteArray(Charsets.UTF_8))
         result.writeInt(message.messageBodyEncryptionType.mask.length)
         result.writeBytes(message.messageBodyEncryptionType.mask.toByteArray(Charsets.UTF_8))
-        result.writeBytes(
-                MessageBodySerializer.encodeProxyMessageBody(message.body,
-                        message.messageBodyEncryptionType,
-                        message.secureToken));
+        val bodyByteBuf = MessageBodySerializer.encodeProxyMessageBody(message.body,
+                message.messageBodyEncryptionType,
+                message.secureToken)
+        result.writeBytes(bodyByteBuf);
+        ReferenceCountUtil.release(bodyByteBuf)
         return result
     }
 
@@ -220,8 +222,10 @@ internal object MessageSerializer {
         val encryptionTypeMask = messageBytes.readCharSequence(encryptionTypeMaskLength, Charsets.UTF_8).toString()
         val encryptionType = MessageBodyEncryptionType.fromMask(encryptionTypeMask) ?: throw PpaassException()
         val messageBodyByteBuf = messageBytes.readBytes(messageBytes.readableBytes())
-        return AgentMessage(secureToken, encryptionType,
+        val agentMessage = AgentMessage(secureToken, encryptionType,
                 MessageBodySerializer.decodeAgentMessageBody(messageBodyByteBuf, encryptionType, secureToken))
+        ReferenceCountUtil.release(messageBodyByteBuf)
+        return agentMessage
     }
 
     fun decodeProxyMessage(messageBytes: ByteBuf): ProxyMessage {
@@ -231,8 +235,10 @@ internal object MessageSerializer {
         val encryptionTypeMask = messageBytes.readCharSequence(encryptionTypeMaskLength, Charsets.UTF_8).toString()
         val encryptionType = MessageBodyEncryptionType.fromMask(encryptionTypeMask) ?: throw PpaassException()
         val messageBodyByteBuf = messageBytes.readBytes(messageBytes.readableBytes())
-        return ProxyMessage(secureToken, encryptionType,
+        val proxyMessage = ProxyMessage(secureToken, encryptionType,
                 MessageBodySerializer.decodeProxyMessageBody(messageBodyByteBuf, encryptionType, secureToken))
+        ReferenceCountUtil.release(messageBodyByteBuf)
+        return proxyMessage
     }
 }
 

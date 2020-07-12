@@ -25,6 +25,7 @@ class ResourceClearHandler(vararg channels: Channel) : ChannelInboundHandlerAdap
     }
 
     override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
+        logger.error("Exception happen in current channel: ${ctx.channel().id().asLongText()}", cause)
         for (relatedChannel in relatedChannels) {
             if (relatedChannel.isActive) {
                 logger.debug("Close related channel on exception happen, current channel: ${ctx.channel().id()
