@@ -15,6 +15,7 @@ import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.handler.logging.LogLevel
 import io.netty.handler.logging.LoggingHandler
+import io.netty.util.ReferenceCountUtil
 import io.netty.util.concurrent.EventExecutorGroup
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -54,8 +55,10 @@ private class TransferDataFromTargetToProxyHandler(private val proxyChannel: Cha
                     targetPort = agentMessage.body.targetPort
                     originalData = ByteBufUtil.getBytes(msg as ByteBuf)
                 })
+        logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
         this.proxyChannel.writeAndFlush(proxyMessage)
                 .addListener(TransferDataFromTargetToProxyWriteResultListener(targetChannelContext, agentMessage))
+        ReferenceCountUtil.release(proxyMessage)
     }
 
     override fun channelReadComplete(ctx: ChannelHandlerContext) {
@@ -79,6 +82,7 @@ private class TransferDataFromProxyToTargetWriteResultListener(private val targe
                     "Fail to transfer data from proxy to target, message id=${agentMessage.body.id}, " +
                             "targetAddress=${agentMessage.body.targetAddress}, targetPort=${agentMessage.body.targetPort}")
         }
+        ReferenceCountUtil.release(agentMessage)
         targetChannel.read()
     }
 }
@@ -140,6 +144,7 @@ private class TargetChannelConnectedListener(private val agentMessage: AgentMess
             proxyContext.channel().writeAndFlush(failProxyMessage).addListener(ChannelFutureListener.CLOSE)
             logger.error(
                     "Fail connect to ${targetAddress}:${targetPort}, message id=${agentMessage.body.id}")
+            ReferenceCountUtil.release(agentMessage)
             return
         }
         logger.debug(
@@ -153,7 +158,6 @@ private class TargetChannelConnectedListener(private val agentMessage: AgentMess
             addLast(ResourceClearHandler(targetChannel))
             proxyContext.fireChannelRead(agentMessage)
         }
-//        ReferenceCountUtil.release(agentMessage)
     }
 }
 
@@ -197,11 +201,13 @@ internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: P
         val targetPort = agentMessage.body.targetPort
         if (targetAddress == null) {
             logger.debug("Return because of targetAddress is null, message id=${agentMessage.body.id}")
+            ReferenceCountUtil.release(agentMessage)
             proxyContext.close()
             return
         }
         if (targetPort == null) {
             logger.debug("Return because of targetPort is null, message id=${agentMessage.body.id}")
+            ReferenceCountUtil.release(agentMessage)
             proxyContext.close()
             return
         }

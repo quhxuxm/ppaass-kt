@@ -136,6 +136,7 @@ private object MessageBodySerializer {
             messageBodyByteBuf.readBytes(tempOriginalData)
             tempOriginalData
         }
+        ReferenceCountUtil.release(messageBodyByteBuf)
         return agentMessageBody(bodyType, messageId) {
             this.originalData = originalData
             this.targetAddress = targetAddress
@@ -171,6 +172,7 @@ private object MessageBodySerializer {
             messageBodyByteBuf.readBytes(tempOriginalData)
             tempOriginalData
         }
+        ReferenceCountUtil.release(messageBodyByteBuf)
         return proxyMessageBody(bodyType, messageId) {
             this.originalData = originalData
             this.targetAddress = targetAddress

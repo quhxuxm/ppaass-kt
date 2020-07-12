@@ -2,7 +2,7 @@ package com.ppaass.kt.agent
 
 import com.ppaass.kt.agent.handler.HeartbeatHandler
 import com.ppaass.kt.agent.handler.http.HttpOrHttpsConnectionHandler
-import com.ppaass.kt.agent.handler.socks.SocksConnectionHandler
+import com.ppaass.kt.agent.handler.socks.SwitchSocksVersionConnectionHandler
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.ChannelInitializer
@@ -14,8 +14,6 @@ import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.handler.codec.http.HttpObjectAggregator
 import io.netty.handler.codec.http.HttpServerCodec
 import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler
-import io.netty.handler.logging.LogLevel
-import io.netty.handler.logging.LoggingHandler
 import io.netty.handler.stream.ChunkedWriteHandler
 import io.netty.handler.timeout.IdleStateHandler
 import org.slf4j.Logger
@@ -73,7 +71,7 @@ internal sealed class Agent(private val agentConfiguration: AgentConfiguration) 
 @Service
 internal class HttpAgent(private val agentConfiguration: AgentConfiguration) : Agent(agentConfiguration) {
     final override val channelInitializer: ChannelInitializer<SocketChannel>
-    private val switchConnectionTypeHandler = HttpOrHttpsConnectionHandler(this.agentConfiguration)
+    private val httpOrHttpsConnectionHandler = HttpOrHttpsConnectionHandler(this.agentConfiguration)
 
     init {
         this.channelInitializer = object : ChannelInitializer<SocketChannel>() {
@@ -86,7 +84,7 @@ internal class HttpAgent(private val agentConfiguration: AgentConfiguration) : A
                     addLast(HttpObjectAggregator::class.java.name,
                             HttpObjectAggregator(Int.MAX_VALUE, true))
                     addLast(ChunkedWriteHandler::class.java.name, ChunkedWriteHandler())
-                    addLast(this@HttpAgent.switchConnectionTypeHandler)
+                    addLast(this@HttpAgent.httpOrHttpsConnectionHandler)
                 }
             }
         }
@@ -96,7 +94,7 @@ internal class HttpAgent(private val agentConfiguration: AgentConfiguration) : A
 @Service
 internal class SocksAgent(private val agentConfiguration: AgentConfiguration) : Agent(agentConfiguration) {
     final override val channelInitializer: ChannelInitializer<SocketChannel>
-    private val socksConnectionHandler = SocksConnectionHandler(this.agentConfiguration)
+    private val switchSocksVersionConnectionHandler = SwitchSocksVersionConnectionHandler(this.agentConfiguration)
 
     init {
         this.channelInitializer = object : ChannelInitializer<SocketChannel>() {
@@ -106,8 +104,7 @@ internal class SocksAgent(private val agentConfiguration: AgentConfiguration) : 
                             agentConfiguration.staticAgentConfiguration.clientConnectionIdleSeconds))
                     addLast(HeartbeatHandler())
                     addLast(SocksPortUnificationServerHandler())
-                    addLast(LoggingHandler(LogLevel.INFO))
-                    addLast(this@SocksAgent.socksConnectionHandler)
+                    addLast(this@SocksAgent.switchSocksVersionConnectionHandler)
                 }
             }
         }

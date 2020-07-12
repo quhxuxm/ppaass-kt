@@ -16,7 +16,9 @@ class AgentMessageEncoder : MessageToByteEncoder<AgentMessage>() {
     override fun encode(ctx: ChannelHandlerContext, msg: AgentMessage, out: ByteBuf) {
         logger.debug("Begin to encode message:\n{}\n", msg)
         val encodeResult = MessageSerializer.encodeAgentMessage(msg)
-        logger.trace("Encode result:\n{}\n", ByteBufUtil.prettyHexDump(encodeResult))
+        if (logger.isTraceEnabled) {
+            logger.trace("Encode result:\n{}\n", ByteBufUtil.prettyHexDump(encodeResult))
+        }
         out.writeBytes(encodeResult)
     }
 }
