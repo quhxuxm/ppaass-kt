@@ -140,7 +140,7 @@ private class TransferDataFromProxyToAgentHandler(private val agentChannel: Chan
                                                   private val clientChannelId: String,
                                                   private val agentConfiguration: AgentConfiguration,
                                                   private val proxyChannelConnectedPromise: Promise<Channel>) :
-        SimpleChannelInboundHandler<ByteBuf>(false) {
+        ChannelInboundHandlerAdapter() {
     companion object {
         private val logger = LoggerFactory.getLogger(TransferDataFromProxyToAgentHandler::class.java)
     }
@@ -168,14 +168,14 @@ private class TransferDataFromProxyToAgentHandler(private val agentChannel: Chan
                 })
     }
 
-    override fun channelRead0(proxyChannelContext: ChannelHandlerContext, msg: ByteBuf) {
+    override fun channelRead(proxyChannelContext: ChannelHandlerContext, msg: Any) {
         logger.debug(
                 "Current client channel to receive the proxy response (reading), clientChannelId={}",
                 this.clientChannelId)
         this.agentChannel.writeAndFlush(msg)
     }
 
-    override fun channelReadComplete(proxyChannelContext: ChannelHandlerContext) {
+    override fun channelReadComplete(ctx: ChannelHandlerContext) {
         logger.debug(
                 "Current client channel to receive the proxy response (read complete), clientChannelId={}",
                 this.clientChannelId)
@@ -329,6 +329,7 @@ private class HttpDataRequestPromiseListener(private val message: Any,
         HttpProxyUtil.writeToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
                 channelCacheInfo.channel, channelCacheInfo.targetHost, channelCacheInfo.targetPort,
                 message, clientChannelId, MessageBodyEncryptionType.random())
+        ReferenceCountUtil.release(message)
     }
 }
 
@@ -408,7 +409,7 @@ class HttpOrHttpsConnectionHandler(private val agentConfiguration: AgentConfigur
             //A https request to send data
             logger.debug("Incoming request is https protocol to send data, clientChannelId={}", clientChannelId)
             this.sendRequestToProxy(clientChannelId, msg)
-            ReferenceCountUtil.release(msg)
+            agentChannelContext.fireChannelRead(msg)
             return
         }
         if (HttpMethod.CONNECT === msg.method()) {
@@ -426,7 +427,7 @@ class HttpOrHttpsConnectionHandler(private val agentConfiguration: AgentConfigur
                             channelCacheInfoMap))
             this.proxyBootstrap.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort)
                     .addListener(ChannelConnectResultListener(agentChannelContext, httpConnectionInfo))
-            ReferenceCountUtil.release(msg)
+            agentChannelContext.fireChannelRead(msg)
             return
         }
         // A http request
@@ -444,7 +445,7 @@ class HttpOrHttpsConnectionHandler(private val agentConfiguration: AgentConfigur
                         channelCacheInfoMap))
         this.proxyBootstrap.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort)
                 .addListener(ChannelConnectResultListener(agentChannelContext, httpConnectionInfo))
-        ReferenceCountUtil.release(msg)
+        agentChannelContext.fireChannelRead(msg)
     }
 
     override fun channelInactive(agentChannelContext: ChannelHandlerContext) {
@@ -457,10 +458,8 @@ class HttpOrHttpsConnectionHandler(private val agentConfiguration: AgentConfigur
     }
 
     override fun exceptionCaught(agentChannelContext: ChannelHandlerContext, cause: Throwable) {
-        val clientChannelId = agentChannelContext.channel().id().asLongText()
-        channelCacheInfoMap.remove(clientChannelId)
-        logger.error("Exception happen in current channel, clientChannelId={} because of exception.", clientChannelId,
-                cause)
+        channelCacheInfoMap.remove(
+                agentChannelContext.channel().id().asLongText())
         agentChannelContext.fireExceptionCaught(cause)
     }
 }
