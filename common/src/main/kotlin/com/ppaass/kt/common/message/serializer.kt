@@ -189,7 +189,7 @@ internal object MessageSerializer {
 
     fun encodeAgentMessage(message: AgentMessage): ByteBuf {
         val result = ByteBufAllocator.DEFAULT.buffer()
-        result.writeInt(message.secureToken.length ?: 0)
+        result.writeInt(message.secureToken.length)
         result.writeBytes(message.secureToken.toByteArray(Charsets.UTF_8))
         result.writeInt(message.messageBodyEncryptionType.mask.length)
         result.writeBytes(message.messageBodyEncryptionType.mask.toByteArray(Charsets.UTF_8))
