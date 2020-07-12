@@ -6,6 +6,7 @@ import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufUtil
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.MessageToByteEncoder
+import io.netty.util.ReferenceCountUtil
 import org.slf4j.LoggerFactory
 
 class AgentMessageEncoder : MessageToByteEncoder<AgentMessage>() {
@@ -20,5 +21,6 @@ class AgentMessageEncoder : MessageToByteEncoder<AgentMessage>() {
             logger.trace("Encode result:\n{}\n", ByteBufUtil.prettyHexDump(encodeResult))
         }
         out.writeBytes(encodeResult)
+        ReferenceCountUtil.release(encodeResult)
     }
 }
