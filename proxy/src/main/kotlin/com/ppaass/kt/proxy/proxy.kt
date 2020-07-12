@@ -87,7 +87,7 @@ private class Proxy(private val proxyConfiguration: ProxyConfiguration,
         this.masterThreadGroup = NioEventLoopGroup(this.proxyConfiguration.masterIoEventThreadNumber)
         this.workerThreadGroup = NioEventLoopGroup(this.proxyConfiguration.workerIoEventThreadNumber)
         this.serverBootstrap = ServerBootstrap()
-        this.serverBootstrap.apply {
+        with(this.serverBootstrap) {
             group(masterThreadGroup, workerThreadGroup)
             channel(NioServerSocketChannel::class.java)
             option(ChannelOption.SO_BACKLOG, proxyConfiguration.soBacklog)

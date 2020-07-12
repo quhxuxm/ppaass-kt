@@ -200,13 +200,11 @@ internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: P
         val targetPort = agentMessage.body.targetPort
         if (targetAddress == null) {
             logger.debug("Return because of targetAddress is null, message id=${agentMessage.body.id}")
-            ReferenceCountUtil.release(agentMessage)
             proxyContext.close()
             return
         }
         if (targetPort == null) {
             logger.debug("Return because of targetPort is null, message id=${agentMessage.body.id}")
-            ReferenceCountUtil.release(agentMessage)
             proxyContext.close()
             return
         }
@@ -219,7 +217,6 @@ internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: P
                         proxyContext = proxyContext,
                         businessEventExecutors = this.businessEventExecutors,
                         proxyAndTargetConnectionHandler = this))
-        ReferenceCountUtil.release(agentMessage)
     }
 
     override fun channelReadComplete(proxyContext: ChannelHandlerContext) {
