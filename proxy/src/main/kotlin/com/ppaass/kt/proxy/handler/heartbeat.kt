@@ -5,6 +5,7 @@ import com.ppaass.kt.common.message.ProxyMessage
 import com.ppaass.kt.common.message.ProxyMessageBodyType
 import com.ppaass.kt.common.message.proxyMessageBody
 import io.netty.channel.ChannelFutureListener
+import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
 import io.netty.handler.timeout.IdleState
@@ -14,6 +15,7 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
+@ChannelHandler.Sharable
 internal class HeartbeatHandler : ChannelInboundHandlerAdapter() {
     override fun userEventTriggered(proxyContext: ChannelHandlerContext, evt: Any) {
         if (evt !is IdleStateEvent) {

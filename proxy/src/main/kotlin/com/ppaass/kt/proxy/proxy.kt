@@ -47,10 +47,12 @@ internal interface IProxy {
 private class ProxyChannelInitializer(private val proxyConfiguration: ProxyConfiguration,
                                       private val proxyAndTargetConnectionHandler: ProxyAndTargetConnectionHandler) :
         ChannelInitializer<SocketChannel>() {
+    private val heartbeatHandler = HeartbeatHandler()
+
     override fun initChannel(proxyChannel: SocketChannel) {
-        proxyChannel.pipeline().apply {
+        with(proxyChannel.pipeline()) {
             addLast(IdleStateHandler(0, 0, proxyConfiguration.agentConnectionIdleSeconds))
-            addLast(HeartbeatHandler())
+            addLast(heartbeatHandler)
             //Inbound
             addLast(ChunkedWriteHandler())
             addLast(Lz4FrameDecoder())
