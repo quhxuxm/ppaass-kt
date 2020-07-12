@@ -9,6 +9,7 @@ import com.ppaass.kt.common.netty.codec.ProxyMessageDecoder
 import com.ppaass.kt.common.netty.handler.ResourceClearHandler
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.ByteBuf
+import io.netty.buffer.ByteBufAllocator
 import io.netty.buffer.ByteBufUtil
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.*
@@ -139,7 +140,7 @@ private class TransferDataFromProxyToAgentHandler(private val agentChannel: Chan
                                                   private val clientChannelId: String,
                                                   private val agentConfiguration: AgentConfiguration,
                                                   private val proxyChannelConnectedPromise: Promise<Channel>) :
-        ChannelInboundHandlerAdapter() {
+        SimpleChannelInboundHandler<ByteBuf>(false) {
     companion object {
         private val logger = LoggerFactory.getLogger(TransferDataFromProxyToAgentHandler::class.java)
     }
@@ -167,14 +168,14 @@ private class TransferDataFromProxyToAgentHandler(private val agentChannel: Chan
                 })
     }
 
-    override fun channelRead(proxyChannelContext: ChannelHandlerContext, msg: Any) {
+    override fun channelRead0(proxyChannelContext: ChannelHandlerContext, msg: ByteBuf) {
         logger.debug(
                 "Current client channel to receive the proxy response (reading), clientChannelId={}",
                 this.clientChannelId)
         this.agentChannel.writeAndFlush(msg)
     }
 
-    override fun channelReadComplete(ctx: ChannelHandlerContext) {
+    override fun channelReadComplete(proxyChannelContext: ChannelHandlerContext) {
         logger.debug(
                 "Current client channel to receive the proxy response (read complete), clientChannelId={}",
                 this.clientChannelId)
@@ -183,9 +184,9 @@ private class TransferDataFromProxyToAgentHandler(private val agentChannel: Chan
 }
 
 @ChannelHandler.Sharable
-private class ExtractProxyMessageOriginalDataDecoder : MessageToMessageDecoder<ProxyMessage>() {
+private object ExtractProxyMessageOriginalDataDecoder : MessageToMessageDecoder<ProxyMessage>() {
     override fun decode(ctx: ChannelHandlerContext, msg: ProxyMessage, out: MutableList<Any>) {
-        val proxyDataBuf = ctx.alloc().buffer()
+        val proxyDataBuf = ByteBufAllocator.DEFAULT.buffer()
         proxyDataBuf.writeBytes(msg.body.originalData)
         out.add(proxyDataBuf)
     }
@@ -214,7 +215,7 @@ private class HttpDataTransferChannelInitializer(private val agentChannel: Chann
                     4))
             addLast(ProxyMessageDecoder())
             addLast(DiscardProxyHeartbeatHandler(agentChannel))
-            addLast(ExtractProxyMessageOriginalDataDecoder())
+            addLast(ExtractProxyMessageOriginalDataDecoder)
             addLast(HttpResponseDecoder())
             addLast(HttpObjectAggregator(Int.MAX_VALUE, true))
             addLast(executorGroup,
@@ -253,7 +254,7 @@ private class HttpsDataTransferChannelInitializer(private val agentChannel: Chan
                     4))
             addLast(ProxyMessageDecoder())
             addLast(DiscardProxyHeartbeatHandler(agentChannel))
-            addLast(ExtractProxyMessageOriginalDataDecoder())
+            addLast(ExtractProxyMessageOriginalDataDecoder)
             addLast(executorGroup,
                     TransferDataFromProxyToAgentHandler(agentChannel,
                             httpConnectionInfo.host, httpConnectionInfo.port,
@@ -328,7 +329,6 @@ private class HttpDataRequestPromiseListener(private val message: Any,
         HttpProxyUtil.writeToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
                 channelCacheInfo.channel, channelCacheInfo.targetHost, channelCacheInfo.targetPort,
                 message, clientChannelId, MessageBodyEncryptionType.random())
-        ReferenceCountUtil.release(message)
     }
 }
 
@@ -408,7 +408,7 @@ class HttpOrHttpsConnectionHandler(private val agentConfiguration: AgentConfigur
             //A https request to send data
             logger.debug("Incoming request is https protocol to send data, clientChannelId={}", clientChannelId)
             this.sendRequestToProxy(clientChannelId, msg)
-            agentChannelContext.fireChannelRead(msg)
+            ReferenceCountUtil.release(msg)
             return
         }
         if (HttpMethod.CONNECT === msg.method()) {
@@ -426,7 +426,7 @@ class HttpOrHttpsConnectionHandler(private val agentConfiguration: AgentConfigur
                             channelCacheInfoMap))
             this.proxyBootstrap.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort)
                     .addListener(ChannelConnectResultListener(agentChannelContext, httpConnectionInfo))
-            agentChannelContext.fireChannelRead(msg)
+            ReferenceCountUtil.release(msg)
             return
         }
         // A http request
@@ -444,7 +444,7 @@ class HttpOrHttpsConnectionHandler(private val agentConfiguration: AgentConfigur
                         channelCacheInfoMap))
         this.proxyBootstrap.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort)
                 .addListener(ChannelConnectResultListener(agentChannelContext, httpConnectionInfo))
-        agentChannelContext.fireChannelRead(msg)
+        ReferenceCountUtil.release(msg)
     }
 
     override fun channelInactive(agentChannelContext: ChannelHandlerContext) {
@@ -457,8 +457,10 @@ class HttpOrHttpsConnectionHandler(private val agentConfiguration: AgentConfigur
     }
 
     override fun exceptionCaught(agentChannelContext: ChannelHandlerContext, cause: Throwable) {
-        channelCacheInfoMap.remove(
-                agentChannelContext.channel().id().asLongText())
+        val clientChannelId = agentChannelContext.channel().id().asLongText()
+        channelCacheInfoMap.remove(clientChannelId)
+        logger.error("Exception happen in current channel, clientChannelId={} because of exception.", clientChannelId,
+                cause)
         agentChannelContext.fireExceptionCaught(cause)
     }
 }
