@@ -425,7 +425,7 @@ class HttpOrHttpsConnectionHandler(private val agentConfiguration: AgentConfigur
                             httpConnectionInfo, clientChannelId, httpsConnectRequestPromise,
                             this.agentConfiguration,
                             channelCacheInfoMap))
-            this.proxyBootstrap.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort)
+            this.proxyBootstrap.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort).sync()
                     .addListener(ChannelConnectResultListener(agentChannelContext, httpConnectionInfo))
             agentChannelContext.fireChannelRead(msg)
             return
@@ -443,7 +443,7 @@ class HttpOrHttpsConnectionHandler(private val agentConfiguration: AgentConfigur
                         httpConnectionInfo, clientChannelId, httpDataRequestPromise,
                         this.agentConfiguration,
                         channelCacheInfoMap))
-        this.proxyBootstrap.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort)
+        this.proxyBootstrap.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort).sync()
                 .addListener(ChannelConnectResultListener(agentChannelContext, httpConnectionInfo))
         agentChannelContext.fireChannelRead(msg)
     }

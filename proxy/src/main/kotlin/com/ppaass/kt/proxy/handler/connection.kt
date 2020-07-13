@@ -1,5 +1,6 @@
 package com.ppaass.kt.proxy.handler
 
+import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.message.*
 import com.ppaass.kt.common.netty.handler.ResourceClearHandler
 import com.ppaass.kt.proxy.ProxyConfiguration
@@ -36,10 +37,12 @@ private class TransferDataFromTargetToProxyHandler(private val proxyChannel: Cha
                 })
         logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
         this.proxyChannel.writeAndFlush(proxyMessage).addListener(ChannelFutureListener {
-            if (it.isSuccess) {
-                if (!proxyConfiguration.autoRead) {
-                    targetChannel.read()
-                }
+            if (!it.isSuccess) {
+                logger.error("Fail to transfer data from target to proxy server.", it.cause())
+                throw PpaassException("Fail to transfer data from target to proxy server.")
+            }
+            if (!proxyConfiguration.autoRead) {
+                targetChannel.read()
             }
         })
         ReferenceCountUtil.release(proxyMessage)
@@ -67,10 +70,12 @@ private class TransferDataFromProxyToTargetHandler(private val targetChannel: Ch
         }
         val originalDataByteBuf = Unpooled.wrappedBuffer(agentMessage.body.originalData)
         targetChannel.writeAndFlush(originalDataByteBuf).addListener(ChannelFutureListener {
-            if (it.isSuccess) {
-                if (!proxyConfiguration.autoRead) {
-                    it.channel().read()
-                }
+            if (!it.isSuccess) {
+                logger.error("Fail to transfer data from proxy to target server.", it.cause())
+                throw PpaassException("Fail to transfer data from proxy to target server.")
+            }
+            if (!proxyConfiguration.autoRead) {
+                it.channel().read()
             }
         })
     }
@@ -208,7 +213,7 @@ internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: P
                         businessEventExecutors = this.businessEventExecutors,
                         proxyAndTargetConnectionHandler = this,
                         proxyConfiguration = proxyConfiguration
-                )).await(proxyConfiguration.targetConnectTimeout)
+                ))
     }
 
     override fun channelReadComplete(proxyContext: ChannelHandlerContext) {

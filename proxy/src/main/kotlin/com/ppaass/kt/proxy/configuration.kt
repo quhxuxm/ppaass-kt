@@ -13,7 +13,6 @@ class ProxyConfiguration {
     var soBacklog: Int = 0
     var port: Int = 0
     var targetConnectionTimeout: Int = 0
-    var targetConnectTimeout: Long = 0
     var agentConnectionIdleSeconds: Int = 0
     var targetReceiveDataAverageBufferMinSize: Int = 0
     var targetReceiveDataAverageBufferInitialSize: Int = 0
