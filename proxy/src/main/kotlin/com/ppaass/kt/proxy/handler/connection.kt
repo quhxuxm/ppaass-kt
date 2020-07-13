@@ -19,7 +19,8 @@ import org.springframework.stereotype.Service
 private class TransferDataFromTargetToProxyHandler(private val proxyChannel: Channel,
                                                    private val targetChannel: Channel,
                                                    private val secureToken: String, private val messageId: String,
-                                                   private val targetAddress: String, private val targetPort: Int) :
+                                                   private val targetAddress: String, private val targetPort: Int,
+                                                   private val proxyConfiguration: ProxyConfiguration) :
         SimpleChannelInboundHandler<ByteBuf>() {
     companion object {
         private val logger = LoggerFactory.getLogger(TransferDataFromTargetToProxyHandler::class.java)
@@ -35,7 +36,9 @@ private class TransferDataFromTargetToProxyHandler(private val proxyChannel: Cha
         logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
         this.proxyChannel.writeAndFlush(proxyMessage).addListener(ChannelFutureListener {
             if (it.isSuccess) {
-                targetChannel.read()
+                if (!proxyConfiguration.autoRead) {
+                    targetChannel.read()
+                }
             }
         })
         ReferenceCountUtil.release(proxyMessage)
@@ -46,7 +49,8 @@ private class TransferDataFromTargetToProxyHandler(private val proxyChannel: Cha
     }
 }
 
-private class TransferDataFromProxyToTargetHandler(private val targetChannel: Channel) :
+private class TransferDataFromProxyToTargetHandler(private val targetChannel: Channel,
+                                                   private val proxyConfiguration: ProxyConfiguration) :
         SimpleChannelInboundHandler<AgentMessage>() {
     companion object {
         private val logger = LoggerFactory.getLogger(TransferDataFromProxyToTargetHandler::class.java)
@@ -60,7 +64,9 @@ private class TransferDataFromProxyToTargetHandler(private val targetChannel: Ch
         val originalDataByteBuf = Unpooled.wrappedBuffer(agentMessage.body.originalData)
         targetChannel.writeAndFlush(originalDataByteBuf).addListener(ChannelFutureListener {
             if (it.isSuccess) {
-                it.channel().read()
+                if (!proxyConfiguration.autoRead) {
+                    it.channel().read()
+                }
             }
         })
     }
@@ -73,7 +79,8 @@ private class TransferDataFromProxyToTargetHandler(private val targetChannel: Ch
 private class TargetDataTransferChannelInitializer(private val proxyChannel: Channel,
                                                    private val secureToken: String, private val messageId: String,
                                                    private val targetAddress: String, private val targetPort: Int,
-                                                   private val businessEventExecutors: EventExecutorGroup) :
+                                                   private val businessEventExecutors: EventExecutorGroup,
+                                                   private val proxyConfiguration: ProxyConfiguration) :
         ChannelInitializer<SocketChannel>() {
     override fun initChannel(targetChannel: SocketChannel) {
         with(targetChannel.pipeline()) {
@@ -84,7 +91,8 @@ private class TargetDataTransferChannelInitializer(private val proxyChannel: Cha
                             messageId = messageId,
                             secureToken = secureToken,
                             targetAddress = targetAddress,
-                            targetPort = targetPort
+                            targetPort = targetPort,
+                            proxyConfiguration = proxyConfiguration
                     ))
         }
     }
@@ -95,7 +103,8 @@ private class TargetChannelConnectedListener(private val secureToken: String, pr
                                              private val targetPort: Int,
                                              private val proxyChannel: Channel,
                                              private val businessEventExecutors: EventExecutorGroup,
-                                             private val proxyAndTargetConnectionHandler: ProxyAndTargetConnectionHandler) :
+                                             private val proxyAndTargetConnectionHandler: ProxyAndTargetConnectionHandler,
+                                             private val proxyConfiguration: ProxyConfiguration) :
         ChannelFutureListener {
     companion object {
         private val logger = LoggerFactory.getLogger(TargetChannelConnectedListener::class.java)
@@ -116,10 +125,13 @@ private class TargetChannelConnectedListener(private val secureToken: String, pr
         with(proxyChannel.pipeline()) {
             addLast(businessEventExecutors,
                     TransferDataFromProxyToTargetHandler(
-                            targetChannel))
+                            targetChannel = targetChannel,
+                            proxyConfiguration = proxyConfiguration))
             remove(proxyAndTargetConnectionHandler)
         }
-        targetChannel.read()
+        if (!proxyConfiguration.autoRead) {
+            targetChannel.read()
+        }
     }
 }
 
@@ -144,7 +156,7 @@ internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: P
                     proxyConfiguration.targetConnectionTimeout)
             option(ChannelOption.SO_KEEPALIVE, true)
             option(ChannelOption.AUTO_CLOSE, true)
-            option(ChannelOption.AUTO_READ, false)
+            option(ChannelOption.AUTO_READ, proxyConfiguration.autoRead)
             option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
             option(ChannelOption.TCP_NODELAY, true)
             option(ChannelOption.SO_REUSEADDR, true)
@@ -164,7 +176,9 @@ internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: P
                         secureToken = agentMessage.secureToken,
                         targetAddress = agentMessage.body.targetAddress ?: "",
                         targetPort = agentMessage.body.targetPort ?: -1,
-                        businessEventExecutors = this.businessEventExecutors))
+                        businessEventExecutors = this.businessEventExecutors,
+                        proxyConfiguration = proxyConfiguration
+                ))
         val targetAddress = agentMessage.body.targetAddress
         val targetPort = agentMessage.body.targetPort
         if (targetAddress == null) {
@@ -186,7 +200,9 @@ internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: P
                         targetPort = targetPort,
                         proxyChannel = proxyContext.channel(),
                         businessEventExecutors = this.businessEventExecutors,
-                        proxyAndTargetConnectionHandler = this))
+                        proxyAndTargetConnectionHandler = this,
+                        proxyConfiguration = proxyConfiguration
+                ))
     }
 
     override fun channelReadComplete(proxyContext: ChannelHandlerContext) {

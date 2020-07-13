@@ -18,4 +18,5 @@ class ProxyConfiguration {
     var targetReceiveDataAverageBufferInitialSize: Int = 0
     var targetReceiveDataAverageBufferMaxSize: Int = 0
     var targetSoRcvbuf: Int = 0
+    val autoRead: Boolean = false
 }
