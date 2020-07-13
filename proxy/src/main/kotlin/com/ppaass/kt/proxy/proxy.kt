@@ -44,10 +44,10 @@ internal interface IProxy {
  * The channel initializer for proxy
  */
 @Service
-private class ProxyChannelInitializer(private val proxyConfiguration: ProxyConfiguration,
-                                      private val proxyAndTargetConnectionHandler: ProxyAndTargetConnectionHandler) :
+private class ProxyChannelInitializer(private val proxyConfiguration: ProxyConfiguration) :
         ChannelInitializer<SocketChannel>() {
     private val heartbeatHandler = HeartbeatHandler()
+    private val proxyAndTargetConnectionHandler = ProxyAndTargetConnectionHandler(proxyConfiguration)
 
     override fun initChannel(proxyChannel: SocketChannel) {
         with(proxyChannel.pipeline()) {

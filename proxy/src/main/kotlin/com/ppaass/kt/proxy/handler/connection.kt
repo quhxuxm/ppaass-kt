@@ -16,7 +16,6 @@ import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.util.ReferenceCountUtil
 import io.netty.util.concurrent.EventExecutorGroup
 import org.slf4j.LoggerFactory
-import org.springframework.stereotype.Service
 
 private class TransferDataFromTargetToProxyHandler(private val proxyChannel: Channel,
                                                    private val targetChannel: Channel,
@@ -110,7 +109,6 @@ private class TargetDataTransferChannelInitializer(private val proxyChannel: Cha
     }
 }
 
-@Service
 @ChannelHandler.Sharable
 internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: ProxyConfiguration) :
         SimpleChannelInboundHandler<AgentMessage>() {
