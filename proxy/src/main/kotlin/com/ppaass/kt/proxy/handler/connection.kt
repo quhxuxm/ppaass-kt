@@ -48,8 +48,9 @@ private class TransferDataFromTargetToProxyHandler(private val proxyChannel: Cha
         ReferenceCountUtil.release(proxyMessage)
     }
 
-    override fun channelReadComplete(ctx: ChannelHandlerContext) {
+    override fun channelReadComplete(targetChannelContext: ChannelHandlerContext) {
         this.proxyChannel.flush()
+        targetChannelContext.flush()
     }
 }
 
@@ -82,6 +83,7 @@ private class TransferDataFromProxyToTargetHandler(private val targetChannel: Ch
 
     override fun channelReadComplete(proxyContext: ChannelHandlerContext) {
         targetChannel.flush()
+        proxyContext.flush()
     }
 }
 
@@ -129,6 +131,7 @@ private class TargetChannelConnectedListener(private val secureToken: String, pr
                                 this.targetPort = this@TargetChannelConnectedListener.targetPort
                             })
             proxyChannel.writeAndFlush(failProxyMessage).addListener(ChannelFutureListener.CLOSE)
+            logger.error("Fail to connect to: {}:{}", targetAddress, targetPort)
             return
         }
         val targetChannel = future.channel()
