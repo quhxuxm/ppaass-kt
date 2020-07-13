@@ -6,6 +6,7 @@ import com.ppaass.kt.common.netty.handler.ResourceClearHandler
 import com.ppaass.kt.proxy.handler.HeartbeatHandler
 import com.ppaass.kt.proxy.handler.ProxyAndTargetConnectionHandler
 import io.netty.bootstrap.ServerBootstrap
+import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.ChannelOption
 import io.netty.channel.nio.NioEventLoopGroup
@@ -44,6 +45,7 @@ internal interface IProxy {
  * The channel initializer for proxy
  */
 @Service
+@ChannelHandler.Sharable
 private class ProxyChannelInitializer(private val proxyConfiguration: ProxyConfiguration) :
         ChannelInitializer<SocketChannel>() {
     private val heartbeatHandler = HeartbeatHandler()
