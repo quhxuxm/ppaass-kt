@@ -193,12 +193,12 @@ internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: P
         val targetAddress = agentMessage.body.targetAddress
         val targetPort = agentMessage.body.targetPort
         if (targetAddress == null) {
-            logger.debug("Return because of targetAddress is null, message id=${agentMessage.body.id}")
+            logger.error("Return because of targetAddress is null, message id=${agentMessage.body.id}")
             proxyContext.close()
             return
         }
         if (targetPort == null) {
-            logger.debug("Return because of targetPort is null, message id=${agentMessage.body.id}")
+            logger.error("Return because of targetPort is null, message id=${agentMessage.body.id}")
             proxyContext.close()
             return
         }

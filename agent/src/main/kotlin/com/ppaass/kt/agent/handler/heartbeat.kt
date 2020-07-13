@@ -49,6 +49,5 @@ class HeartbeatHandler : ChannelInboundHandlerAdapter() {
         agentContext.channel().writeAndFlush(
                 Unpooled.EMPTY_BUFFER)
                 .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
-        ReferenceCountUtil.release(evt)
     }
 }

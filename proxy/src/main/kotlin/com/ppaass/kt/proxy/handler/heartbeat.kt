@@ -36,6 +36,5 @@ internal class HeartbeatHandler : ChannelInboundHandlerAdapter() {
                         })
         proxyContext.channel().writeAndFlush(proxyMessage)
                 .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
-        ReferenceCountUtil.release(evt)
     }
 }
