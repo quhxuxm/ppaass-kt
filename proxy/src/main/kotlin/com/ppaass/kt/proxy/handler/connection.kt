@@ -59,6 +59,9 @@ private class TransferDataFromProxyToTargetHandler(private val targetChannel: Ch
     override fun channelRead0(proxyContext: ChannelHandlerContext, agentMessage: AgentMessage) {
         if (AgentMessageBodyType.CONNECT === agentMessage.body.bodyType) {
             logger.debug("Incoming request is a CONNECT message.")
+            if (!proxyConfiguration.autoRead) {
+                targetChannel.read()
+            }
             return
         }
         val originalDataByteBuf = Unpooled.wrappedBuffer(agentMessage.body.originalData)
