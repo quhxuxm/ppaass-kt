@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 private class TransferDataFromTargetToProxyHandler(private val proxyChannel: Channel,
+                                                   private val targetChannel: Channel,
                                                    private val secureToken: String, private val messageId: String,
                                                    private val targetAddress: String, private val targetPort: Int) :
         SimpleChannelInboundHandler<ByteBuf>() {
@@ -32,7 +33,11 @@ private class TransferDataFromTargetToProxyHandler(private val proxyChannel: Cha
                     originalData = ByteBufUtil.getBytes(targetMessage)
                 })
         logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
-        this.proxyChannel.writeAndFlush(proxyMessage)
+        this.proxyChannel.writeAndFlush(proxyMessage).addListener(ChannelFutureListener {
+            if (it.isSuccess) {
+                targetChannel.read()
+            }
+        })
         ReferenceCountUtil.release(proxyMessage)
     }
 
@@ -53,7 +58,11 @@ private class TransferDataFromProxyToTargetHandler(private val targetChannel: Ch
             return
         }
         val originalDataByteBuf = Unpooled.wrappedBuffer(agentMessage.body.originalData)
-        targetChannel.writeAndFlush(originalDataByteBuf)
+        targetChannel.writeAndFlush(originalDataByteBuf).addListener(ChannelFutureListener {
+            if (it.isSuccess) {
+                it.channel().read()
+            }
+        })
     }
 
     override fun channelReadComplete(proxyContext: ChannelHandlerContext) {
@@ -71,6 +80,7 @@ private class TargetDataTransferChannelInitializer(private val proxyChannel: Cha
             addLast(businessEventExecutors,
                     TransferDataFromTargetToProxyHandler(
                             proxyChannel = proxyChannel,
+                            targetChannel = targetChannel,
                             messageId = messageId,
                             secureToken = secureToken,
                             targetAddress = targetAddress,
@@ -109,6 +119,7 @@ private class TargetChannelConnectedListener(private val secureToken: String, pr
                             targetChannel))
             remove(proxyAndTargetConnectionHandler)
         }
+        targetChannel.read()
     }
 }
 
@@ -133,7 +144,7 @@ internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: P
                     proxyConfiguration.targetConnectionTimeout)
             option(ChannelOption.SO_KEEPALIVE, true)
             option(ChannelOption.AUTO_CLOSE, true)
-            option(ChannelOption.AUTO_READ, true)
+            option(ChannelOption.AUTO_READ, false)
             option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
             option(ChannelOption.TCP_NODELAY, true)
             option(ChannelOption.SO_REUSEADDR, true)
