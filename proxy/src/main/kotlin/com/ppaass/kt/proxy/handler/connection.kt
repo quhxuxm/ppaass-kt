@@ -1,6 +1,7 @@
 package com.ppaass.kt.proxy.handler
 
 import com.ppaass.kt.common.message.*
+import com.ppaass.kt.common.netty.handler.ResourceClearHandler
 import com.ppaass.kt.proxy.ProxyConfiguration
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.ByteBuf
@@ -97,6 +98,7 @@ private class TargetDataTransferChannelInitializer(private val proxyChannel: Cha
                             targetPort = targetPort,
                             proxyConfiguration = proxyConfiguration
                     ))
+            addLast(ResourceClearHandler(targetChannel, proxyChannel))
         }
     }
 }
@@ -130,6 +132,7 @@ private class TargetChannelConnectedListener(private val secureToken: String, pr
                     TransferDataFromProxyToTargetHandler(
                             targetChannel = targetChannel,
                             proxyConfiguration = proxyConfiguration))
+            addLast(ResourceClearHandler(targetChannel, proxyChannel))
             remove(proxyAndTargetConnectionHandler)
         }
         if (!proxyConfiguration.autoRead) {

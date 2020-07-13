@@ -27,9 +27,11 @@ internal class HeartbeatHandler : ChannelInboundHandlerAdapter() {
         }
         val utcDateTime = ZonedDateTime.now()
         val utcDataTimeString = utcDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+        val secureToken = UUID.randomUUID().toString().replace("-", "")
+        val messageId = UUID.randomUUID().toString().replace("-", "")
         val proxyMessage =
-                ProxyMessage(UUID.randomUUID().toString(), MessageBodyEncryptionType.random(),
-                        proxyMessageBody(ProxyMessageBodyType.HEARTBEAT, UUID.randomUUID().toString()) {
+                ProxyMessage(secureToken, MessageBodyEncryptionType.random(),
+                        proxyMessageBody(ProxyMessageBodyType.HEARTBEAT, messageId) {
                             originalData = utcDataTimeString.toByteArray()
                         })
         proxyContext.channel().writeAndFlush(proxyMessage)
