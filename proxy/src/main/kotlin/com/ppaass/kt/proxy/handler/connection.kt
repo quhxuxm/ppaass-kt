@@ -198,7 +198,7 @@ internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: P
             return
         }
         logger.debug("Begin to connect ${targetAddress}:${targetPort}, message id=${agentMessage.body.id}")
-        this.targetDataTransferBootstrap.connect(targetAddress, targetPort).syncUninterruptibly()
+        this.targetDataTransferBootstrap.connect(targetAddress, targetPort).sync()
                 .addListener(TargetChannelConnectedListener(
                         secureToken = agentMessage.secureToken,
                         messageId = agentMessage.body.id,
@@ -208,7 +208,7 @@ internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: P
                         businessEventExecutors = this.businessEventExecutors,
                         proxyAndTargetConnectionHandler = this,
                         proxyConfiguration = proxyConfiguration
-                ))
+                )).await(proxyConfiguration.targetConnectTimeout)
     }
 
     override fun channelReadComplete(proxyContext: ChannelHandlerContext) {
