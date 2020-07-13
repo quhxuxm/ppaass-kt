@@ -121,7 +121,7 @@ internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: P
         this.targetDataTransferBootstrap = Bootstrap()
         with(this.targetDataTransferBootstrap) {
             group(NioEventLoopGroup(proxyConfiguration.targetDataTransferIoEventThreadNumber))
-                    .channel(NioSocketChannel::class.java)
+            channel(NioSocketChannel::class.java)
             option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
                     proxyConfiguration.targetConnectionTimeout)
             option(ChannelOption.SO_KEEPALIVE, true)
