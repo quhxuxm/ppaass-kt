@@ -31,10 +31,10 @@ class DiscardProxyHeartbeatHandler(private val agentChannel: Channel) :
 }
 
 @ChannelHandler.Sharable
-class HeartbeatHandler : ChannelInboundHandlerAdapter() {
+class AgentClientHeartbeatHandler : ChannelInboundHandlerAdapter() {
     companion object {
         private val logger: Logger =
-                LoggerFactory.getLogger(HeartbeatHandler::class.java)
+                LoggerFactory.getLogger(AgentClientHeartbeatHandler::class.java)
     }
 
     override fun userEventTriggered(agentContext: ChannelHandlerContext, evt: Any) {
@@ -48,6 +48,12 @@ class HeartbeatHandler : ChannelInboundHandlerAdapter() {
         logger.debug("Heartbeat with agent client, current channel id: {}.", agentContext.channel().id().asLongText())
         agentContext.channel().writeAndFlush(
                 Unpooled.EMPTY_BUFFER)
-                .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
+                .addListener(ChannelFutureListener {
+                    if (!it.isSuccess) {
+                        val agentChannelId = it.channel().id().asLongText()
+                        it.channel().close()
+                        logger.error("Close agent client channel as heartbeat fail, agentChannelId={}.", agentChannelId)
+                    }
+                })
     }
 }

@@ -1,6 +1,6 @@
 package com.ppaass.kt.agent
 
-import com.ppaass.kt.agent.handler.HeartbeatHandler
+import com.ppaass.kt.agent.handler.AgentClientHeartbeatHandler
 import com.ppaass.kt.agent.handler.http.HttpOrHttpsConnectionHandler
 import com.ppaass.kt.agent.handler.socks.SwitchSocksVersionConnectionHandler
 import io.netty.bootstrap.ServerBootstrap
@@ -75,11 +75,11 @@ internal class HttpAgent(private val agentConfiguration: AgentConfiguration) : A
 
     init {
         this.channelInitializer = object : ChannelInitializer<SocketChannel>() {
-            override fun initChannel(socketChannel: SocketChannel) {
-                with(socketChannel.pipeline()) {
+            override fun initChannel(agentChannel: SocketChannel) {
+                with(agentChannel.pipeline()) {
                     addLast(IdleStateHandler(0, 0,
                             agentConfiguration.staticAgentConfiguration.clientConnectionIdleSeconds))
-                    addLast(HeartbeatHandler())
+                    addLast(AgentClientHeartbeatHandler())
                     addLast(HttpServerCodec::class.java.name, HttpServerCodec())
                     addLast(HttpObjectAggregator::class.java.name,
                             HttpObjectAggregator(Int.MAX_VALUE, true))
@@ -102,7 +102,7 @@ internal class SocksAgent(private val agentConfiguration: AgentConfiguration) : 
                 with(socketChannel.pipeline()) {
                     addLast(IdleStateHandler(0, 0,
                             agentConfiguration.staticAgentConfiguration.clientConnectionIdleSeconds))
-                    addLast(HeartbeatHandler())
+                    addLast(AgentClientHeartbeatHandler())
                     addLast(SocksPortUnificationServerHandler())
                     addLast(this@SocksAgent.switchSocksVersionConnectionHandler)
                 }

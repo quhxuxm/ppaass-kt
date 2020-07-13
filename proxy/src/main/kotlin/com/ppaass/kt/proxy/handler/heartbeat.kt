@@ -10,12 +10,17 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
 import io.netty.handler.timeout.IdleState
 import io.netty.handler.timeout.IdleStateEvent
+import org.slf4j.LoggerFactory
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
 @ChannelHandler.Sharable
 internal class HeartbeatHandler : ChannelInboundHandlerAdapter() {
+    companion object {
+        private val logger = LoggerFactory.getLogger(HeartbeatHandler::class.java)
+    }
+
     override fun userEventTriggered(proxyContext: ChannelHandlerContext, evt: Any) {
         if (evt !is IdleStateEvent) {
             super.userEventTriggered(proxyContext, evt)
@@ -34,6 +39,12 @@ internal class HeartbeatHandler : ChannelInboundHandlerAdapter() {
                             originalData = utcDataTimeString.toByteArray()
                         })
         proxyContext.channel().writeAndFlush(proxyMessage)
-                .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
+                .addListener(ChannelFutureListener {
+                    if (!it.isSuccess) {
+                        val proxyChannelId = it.channel().id().asLongText()
+                        it.channel().close()
+                        logger.error("Close proxy channel as agent heartbeat fail, proxyChannelId={}", proxyChannelId)
+                    }
+                })
     }
 }
