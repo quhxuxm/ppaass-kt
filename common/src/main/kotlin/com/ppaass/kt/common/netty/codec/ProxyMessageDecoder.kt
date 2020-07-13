@@ -18,7 +18,9 @@ class ProxyMessageDecoder : ByteToMessageDecoder() {
             logger.trace("Begin to decode incoming request to message, incoming bytes:\n{}\n",
                     ByteBufUtil.prettyHexDump(input))
         }
-        val message: ProxyMessage = MessageSerializer.decodeProxyMessage(input)
+        val inputByteArray = ByteArray(input.readableBytes())
+        input.readBytes(inputByteArray)
+        val message: ProxyMessage = MessageSerializer.decodeProxyMessage(inputByteArray)
         logger.debug("Decode result:\n{}\n", message)
         out.add(message)
     }
