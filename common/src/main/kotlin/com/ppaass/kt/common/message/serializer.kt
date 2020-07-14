@@ -140,11 +140,11 @@ private object MessageBodySerializer {
             tempOriginalData
         }
         ReferenceCountUtil.release(messageBodyByteBuf)
-        return agentMessageBody(bodyType, messageId) {
-            this.originalData = originalData
-            this.targetAddress = targetAddress
-            this.targetPort = targetPort
-        }
+        val agentMessageBody = AgentMessageBody(bodyType, messageId)
+        agentMessageBody.originalData = originalData
+        agentMessageBody.targetPort = targetPort
+        agentMessageBody.targetAddress = targetAddress
+        return agentMessageBody
     }
 
     fun decodeProxyMessageBody(messageBytes: ByteArray, messageBodyBodyEncryptionType: MessageBodyEncryptionType,
@@ -177,11 +177,11 @@ private object MessageBodySerializer {
             tempOriginalData
         }
         ReferenceCountUtil.release(messageBodyByteBuf)
-        return proxyMessageBody(bodyType, messageId) {
-            this.originalData = originalData
-            this.targetAddress = targetAddress
-            this.targetPort = targetPort
-        }
+        val proxyMessageBody = ProxyMessageBody(bodyType, messageId)
+        proxyMessageBody.originalData = originalData
+        proxyMessageBody.targetPort = targetPort
+        proxyMessageBody.targetAddress = targetAddress
+        return proxyMessageBody
     }
 }
 

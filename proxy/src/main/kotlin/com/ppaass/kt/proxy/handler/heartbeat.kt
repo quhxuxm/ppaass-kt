@@ -2,8 +2,8 @@ package com.ppaass.kt.proxy.handler
 
 import com.ppaass.kt.common.message.MessageBodyEncryptionType
 import com.ppaass.kt.common.message.ProxyMessage
+import com.ppaass.kt.common.message.ProxyMessageBody
 import com.ppaass.kt.common.message.ProxyMessageBodyType
-import com.ppaass.kt.common.message.proxyMessageBody
 import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
@@ -34,11 +34,10 @@ internal class HeartbeatHandler : ChannelInboundHandlerAdapter() {
         val utcDataTimeString = utcDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
         val secureToken = UUID.randomUUID().toString().replace("-", "")
         val messageId = UUID.randomUUID().toString().replace("-", "")
+        val proxyMessageBody = ProxyMessageBody(ProxyMessageBodyType.HEARTBEAT, messageId)
+        proxyMessageBody.originalData = utcDataTimeString.toByteArray()
         val proxyMessage =
-                ProxyMessage(secureToken, MessageBodyEncryptionType.random(),
-                        proxyMessageBody(ProxyMessageBodyType.HEARTBEAT, messageId) {
-                            originalData = utcDataTimeString.toByteArray()
-                        })
+                ProxyMessage(secureToken, MessageBodyEncryptionType.random(), proxyMessageBody)
         proxyContext.channel().writeAndFlush(proxyMessage)
                 .addListener(ChannelFutureListener {
                     if (!it.isSuccess) {

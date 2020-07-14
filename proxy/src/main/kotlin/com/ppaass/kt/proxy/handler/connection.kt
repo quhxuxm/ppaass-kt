@@ -28,12 +28,11 @@ private class TransferDataFromTargetToProxyHandler(private val proxyChannel: Cha
     override fun channelRead0(targetChannelContext: ChannelHandlerContext, targetMessage: ByteBuf) {
         val originalDataByteArray = ByteArray(targetMessage.readableBytes())
         targetMessage.readBytes(originalDataByteArray)
-        val proxyMessage = ProxyMessage(secureToken, MessageBodyEncryptionType.random(),
-                proxyMessageBody(ProxyMessageBodyType.OK, messageId) {
-                    targetAddress = this@TransferDataFromTargetToProxyHandler.targetAddress
-                    targetPort = this@TransferDataFromTargetToProxyHandler.targetPort
-                    originalData = originalDataByteArray
-                })
+        val proxyMessageBody = ProxyMessageBody(ProxyMessageBodyType.OK, messageId)
+        proxyMessageBody.targetAddress = this.targetAddress
+        proxyMessageBody.targetPort = this.targetPort
+        proxyMessageBody.originalData = originalDataByteArray
+        val proxyMessage = ProxyMessage(secureToken, MessageBodyEncryptionType.random(), proxyMessageBody)
         logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
         this.proxyChannel.writeAndFlush(proxyMessage).addListener(ChannelFutureListener {
             if (!it.isSuccess) {
@@ -164,12 +163,11 @@ internal class ProxyAndTargetConnectionHandler(private val proxyConfiguration: P
         logger.debug("Begin to connect ${targetAddress}:${targetPort}, message id=${agentMessage.body.id}")
         val targetChannelConnectFuture = this.targetDataTransferBootstrap.connect(targetAddress, targetPort).sync()
         if (!targetChannelConnectFuture.isSuccess) {
+            val proxyMessageBody = ProxyMessageBody(ProxyMessageBodyType.CONNECT_FAIL, agentMessage.body.id)
+            proxyMessageBody.targetAddress = agentMessage.body.targetAddress
+            proxyMessageBody.targetPort = agentMessage.body.targetPort
             val failProxyMessage =
-                    ProxyMessage(agentMessage.secureToken, MessageBodyEncryptionType.random(),
-                            proxyMessageBody(ProxyMessageBodyType.CONNECT_FAIL, agentMessage.body.id) {
-                                this.targetAddress = agentMessage.body.targetAddress
-                                this.targetPort = agentMessage.body.targetPort
-                            })
+                    ProxyMessage(agentMessage.secureToken, MessageBodyEncryptionType.random(), proxyMessageBody)
             proxyContext.channel().writeAndFlush(failProxyMessage).addListener(ChannelFutureListener.CLOSE)
             logger.error("Fail to connect to: {}:{}", targetAddress, targetPort)
             return

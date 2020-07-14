@@ -60,7 +60,7 @@
                     <compilerPlugins>
                         <plugin>spring</plugin>
                     </compilerPlugins>
-                    <jvmTarget>11</jvmTarget>
+                    <jvmTarget>13</jvmTarget>
                     <args>
                         <arg>-Xjsr305=strict</arg>
                     </args>

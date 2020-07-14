@@ -147,30 +147,5 @@ typealias ProxyMessage = Message<ProxyMessageBody>
  */
 typealias AgentMessage = Message<AgentMessageBody>
 
-/**
- * The factory method to create proxy message body
- *
- * @param bodyType The message body type.
- * @param id The message id.
- * @param block The DSL to initialize the body.
- */
-fun proxyMessageBody(bodyType: ProxyMessageBodyType, id: String, block: ProxyMessageBody.() -> Unit): ProxyMessageBody {
-    val messageBody = ProxyMessageBody(bodyType, id)
-    block(messageBody)
-    return messageBody
-}
-
-/**
- * The factory method to create agent message body.
- *
- * @param bodyType The message body type.
- * @param id The message id.
- * @param block The DSL to initialize the body.
- */
-fun agentMessageBody(bodyType: AgentMessageBodyType, id: String, block: AgentMessageBody.() -> Unit): AgentMessageBody {
-    val messageBody = AgentMessageBody(bodyType, id)
-    block(messageBody)
-    return messageBody
-}
 
 

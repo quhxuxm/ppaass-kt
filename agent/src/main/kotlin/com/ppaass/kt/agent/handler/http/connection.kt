@@ -70,12 +70,12 @@ private object HttpProxyUtil {
                 ByteBufUtil.getBytes(input as ByteBuf)
             }
         }
+        val agentMessageBody = AgentMessageBody(bodyType, clientChannelId)
+        agentMessageBody.originalData = data
+        agentMessageBody.targetAddress = host
+        agentMessageBody.targetPort = port
         val agentMessage =
-                AgentMessage(secureToken, messageBodyEncryptionType, agentMessageBody(bodyType, clientChannelId) {
-                    originalData = data
-                    targetAddress = host
-                    targetPort = port
-                })
+                AgentMessage(secureToken, messageBodyEncryptionType, agentMessageBody)
         if (data != null) {
             logger.debug("The agent message write from agent to proxy is:\n{}\n", agentMessage)
         }
