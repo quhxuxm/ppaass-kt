@@ -1,6 +1,5 @@
 package com.ppaass.kt.agent.handler.http
 
-import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.netty.handler.ResourceClearHandler
 import io.netty.channel.Channel
 import io.netty.channel.ChannelFutureListener
@@ -30,13 +29,6 @@ internal class HttpsConnectRequestPromiseListener(
         val okResponse = DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
         agentChannelContext.writeAndFlush(okResponse)
                 .addListener(ChannelFutureListener { okResponseFuture ->
-                    if (!okResponseFuture.isSuccess) {
-                        logger.error(
-                                "Fail to send ok response to agent client because of exception.",
-                                okResponseFuture.cause())
-                        throw PpaassException("Fail to send ok response to agent client because of exception",
-                                okResponseFuture.cause())
-                    }
                     with(okResponseFuture.channel().pipeline()) {
                         remove(HttpServerCodec::class.java.name)
                         remove(HttpObjectAggregator::class.java.name)
