@@ -1,7 +1,6 @@
 package com.ppaass.kt.agent
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
-import com.ppaass.kt.agent.handler.common.HeartbeatHandler
 import com.ppaass.kt.agent.handler.socks.SwitchSocksVersionConnectionHandler
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.socket.SocketChannel
@@ -20,7 +19,6 @@ internal class SocksAgent(private val agentConfiguration: AgentConfiguration) : 
                 with(socketChannel.pipeline()) {
                     addLast(IdleStateHandler(0, 0,
                             agentConfiguration.staticAgentConfiguration.clientConnectionIdleSeconds))
-                    addLast(HeartbeatHandler())
                     addLast(SocksPortUnificationServerHandler())
                     addLast(this@SocksAgent.switchSocksVersionConnectionHandler)
                 }

@@ -2,7 +2,6 @@ package com.ppaass.kt.agent.handler.http
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
 import com.ppaass.kt.agent.handler.common.DiscardProxyHeartbeatHandler
-import com.ppaass.kt.agent.handler.http.bo.ChannelCacheInfo
 import com.ppaass.kt.agent.handler.http.bo.HttpConnectionInfo
 import com.ppaass.kt.common.netty.codec.AgentMessageEncoder
 import com.ppaass.kt.common.netty.codec.ProxyMessageDecoder
@@ -26,16 +25,15 @@ internal class HttpDataTransferChannelInitializer(private val agentChannel: Chan
                                                   private val httpConnectionInfo: HttpConnectionInfo,
                                                   private val clientChannelId: String,
                                                   private val proxyChannelConnectedPromise: Promise<Channel>,
-                                                  private val agentConfiguration: AgentConfiguration,
-                                                  private val channelCacheInfoMap: HashMap<String, ChannelCacheInfo>) :
+                                                  private val agentConfiguration: AgentConfiguration) :
         ChannelInitializer<SocketChannel>() {
     companion object {
         private val logger = LoggerFactory.getLogger(HttpDataTransferChannelInitializer::class.java)
     }
 
     override fun initChannel(httpProxyChannel: SocketChannel) {
-        logger.debug("Initialize HTTP data transfer channel, clientChannelId={}, channelCacheInfoMap={}",
-                clientChannelId, channelCacheInfoMap)
+        logger.debug("Initialize HTTP data transfer channel, clientChannelId={}",
+                clientChannelId)
         with(httpProxyChannel.pipeline()) {
             addLast(ChunkedWriteHandler())
             addLast(Lz4FrameDecoder())
@@ -50,7 +48,7 @@ internal class HttpDataTransferChannelInitializer(private val agentChannel: Chan
             addLast(executorGroup,
                     TransferDataFromProxyToAgentHandler(agentChannel,
                             httpConnectionInfo.host, httpConnectionInfo.port,
-                            channelCacheInfoMap, clientChannelId,
+                            clientChannelId,
                             agentConfiguration, proxyChannelConnectedPromise))
             addLast(ResourceClearHandler(agentChannel))
             addLast(Lz4FrameEncoder())

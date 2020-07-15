@@ -2,7 +2,7 @@ package com.ppaass.kt.agent.handler.http.bo
 
 import io.netty.channel.Channel
 
-internal data class ChannelCacheInfo(
+internal data class ChannelInfo(
         val channel: Channel,
         val targetHost: String,
         val targetPort: Int

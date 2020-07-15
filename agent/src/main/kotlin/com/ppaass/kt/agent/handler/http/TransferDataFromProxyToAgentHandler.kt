@@ -1,7 +1,8 @@
 package com.ppaass.kt.agent.handler.http
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
-import com.ppaass.kt.agent.handler.http.bo.ChannelCacheInfo
+import com.ppaass.kt.agent.handler.http.bo.ChannelInfo
+import com.ppaass.kt.agent.handler.http.uitl.ChannelInfoCache
 import com.ppaass.kt.agent.handler.http.uitl.HttpProxyUtil
 import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.message.AgentMessageBodyType
@@ -11,8 +12,7 @@ import io.netty.util.concurrent.Promise
 import org.slf4j.LoggerFactory
 
 internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Channel, private val targetHost: String,
-                                                   private val port: Int,
-                                                   private val channelCacheInfoMap: MutableMap<String, ChannelCacheInfo>,
+                                                   private val targetPort: Int,
                                                    private val clientChannelId: String,
                                                    private val agentConfiguration: AgentConfiguration,
                                                    private val proxyChannelConnectedPromise: Promise<Channel>) :
@@ -23,9 +23,9 @@ internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Cha
 
     override fun channelActive(proxyChannelContext: ChannelHandlerContext) {
         val channelCacheInfo =
-                ChannelCacheInfo(proxyChannelContext.channel(),
-                        this.targetHost, this.port)
-        this.channelCacheInfoMap[clientChannelId] = channelCacheInfo
+                ChannelInfo(proxyChannelContext.channel(),
+                        this.targetHost, this.targetPort)
+        ChannelInfoCache.saveChannelInfo(clientChannelId, channelCacheInfo)
         HttpProxyUtil.writeToProxy(AgentMessageBodyType.CONNECT, agentConfiguration.userToken,
                 channelCacheInfo.channel, channelCacheInfo.targetHost,
                 channelCacheInfo.targetPort, null,

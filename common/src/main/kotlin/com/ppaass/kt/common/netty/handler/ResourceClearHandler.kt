@@ -13,8 +13,8 @@ class ResourceClearHandler(vararg channels: Channel) : ChannelInboundHandlerAdap
     private val relatedChannels = channels
 
     override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
-        logger.error("Exception happen in current channel: ${ctx.channel().id().asLongText()}", cause)
-
+        logger.error("Exception happen in current channel: ${ctx.channel().id()
+                .asLongText()}, remote address: ${ctx.channel().remoteAddress()}", cause)
         this.relatedChannels.forEach {
             if (it.isActive) {
                 logger.debug("Close related channel on exception happen, current channel: ${ctx.channel().id()

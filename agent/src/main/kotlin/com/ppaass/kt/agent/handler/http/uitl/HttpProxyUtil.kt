@@ -11,7 +11,6 @@ import io.netty.channel.ChannelFuture
 import io.netty.channel.embedded.EmbeddedChannel
 import io.netty.handler.codec.http.HttpRequest
 import io.netty.handler.codec.http.HttpRequestEncoder
-import io.netty.util.ReferenceCountUtil
 import org.slf4j.LoggerFactory
 
 internal object HttpProxyUtil {
@@ -23,7 +22,6 @@ internal object HttpProxyUtil {
         ch.writeOutbound(httpRequest)
         val httpRequestByteBuf = ch.readOutbound<ByteBuf>()
         val data = ByteBufUtil.getBytes(httpRequestByteBuf)
-        ReferenceCountUtil.release(httpRequestByteBuf)
         return data
     }
 
