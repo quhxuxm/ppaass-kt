@@ -12,18 +12,6 @@ class ResourceClearHandler(vararg channels: Channel) : ChannelInboundHandlerAdap
 
     private val relatedChannels = channels
 
-    override fun channelUnregistered(ctx: ChannelHandlerContext) {
-        this.relatedChannels.forEach {
-            if (it.isActive) {
-                logger.debug("Close related channel on current channel inactive, current channel: ${ctx.channel().id()
-                        .asLongText()}, related channel: ${it.id().asLongText()}")
-                it.pipeline().lastContext().close()
-            }
-        }
-        logger.debug("Close current channel on inactive, current channel: ${ctx.channel().id().asLongText()}")
-        ctx.close()
-    }
-
     override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
         logger.error("Exception happen in current channel: ${ctx.channel().id().asLongText()}", cause)
 
