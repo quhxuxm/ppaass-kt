@@ -14,7 +14,6 @@ import io.netty.channel.SimpleChannelInboundHandler
 import org.slf4j.LoggerFactory
 
 internal class TargetToProxyHandler(private val proxyChannel: Channel,
-                                    private val targetChannel: Channel,
                                     private val secureToken: String, private val messageId: String,
                                     private val targetAddress: String, private val targetPort: Int,
                                     private val proxyConfiguration: ProxyConfiguration) :
@@ -40,7 +39,7 @@ internal class TargetToProxyHandler(private val proxyChannel: Channel,
                 throw PpaassException("Fail to transfer data from target to proxy server.")
             }
             if (!proxyConfiguration.autoRead) {
-                targetChannel.read()
+                targetChannelContext.channel().read()
             }
         })
     }

@@ -23,7 +23,8 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
     private val targetBootstrap: Bootstrap
 
     init {
-        this.dataTransferExecutorGroup = DefaultEventLoopGroup(proxyConfiguration.dataTransferHandlerExecutorGroupThreadNumber)
+        this.dataTransferExecutorGroup =
+                DefaultEventLoopGroup(proxyConfiguration.dataTransferHandlerExecutorGroupThreadNumber)
         this.targetBootstrap = Bootstrap()
         with(this.targetBootstrap) {
             group(NioEventLoopGroup(proxyConfiguration.targetDataTransferIoEventThreadNumber))
@@ -46,7 +47,6 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
                     addLast(dataTransferExecutorGroup,
                             TargetToProxyHandler(
                                     proxyChannel = proxyContext.channel(),
-                                    targetChannel = targetChannel,
                                     messageId = agentMessage.body.id,
                                     secureToken = agentMessage.secureToken,
                                     targetAddress = agentMessage.body.targetAddress ?: "",
