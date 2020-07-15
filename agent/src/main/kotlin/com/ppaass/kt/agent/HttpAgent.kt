@@ -1,7 +1,7 @@
 package com.ppaass.kt.agent
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
-import com.ppaass.kt.agent.handler.common.AgentClientHeartbeatHandler
+import com.ppaass.kt.agent.handler.common.HeartbeatHandler
 import com.ppaass.kt.agent.handler.http.SetupProxyConnectionHandler
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.socket.SocketChannel
@@ -22,7 +22,7 @@ internal class HttpAgent(private val agentConfiguration: AgentConfiguration) : A
                 with(agentChannel.pipeline()) {
                     addLast(IdleStateHandler(0, 0,
                             agentConfiguration.staticAgentConfiguration.clientConnectionIdleSeconds))
-                    addLast(AgentClientHeartbeatHandler())
+                    addLast(HeartbeatHandler())
                     addLast(HttpServerCodec::class.java.name, HttpServerCodec())
                     addLast(HttpObjectAggregator::class.java.name,
                             HttpObjectAggregator(Int.MAX_VALUE, true))

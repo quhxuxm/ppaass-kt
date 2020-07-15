@@ -8,7 +8,7 @@ import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.util.ReferenceCountUtil
 import org.slf4j.LoggerFactory
 
-class DiscardProxyHeartbeatHandler(private val agentChannel: Channel) :
+internal class DiscardProxyHeartbeatHandler(private val agentChannel: Channel) :
         SimpleChannelInboundHandler<ProxyMessage>(false) {
     companion object {
         private val logger = LoggerFactory.getLogger(DiscardProxyHeartbeatHandler::class.java)

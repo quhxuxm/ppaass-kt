@@ -11,10 +11,10 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 @ChannelHandler.Sharable
-class AgentClientHeartbeatHandler : ChannelInboundHandlerAdapter() {
+internal class HeartbeatHandler : ChannelInboundHandlerAdapter() {
     companion object {
         private val logger: Logger =
-                LoggerFactory.getLogger(AgentClientHeartbeatHandler::class.java)
+                LoggerFactory.getLogger(HeartbeatHandler::class.java)
     }
 
     override fun userEventTriggered(agentContext: ChannelHandlerContext, evt: Any) {
