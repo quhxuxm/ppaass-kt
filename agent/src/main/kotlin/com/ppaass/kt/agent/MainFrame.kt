@@ -1,5 +1,6 @@
 package com.ppaass.kt.agent
 
+import com.ppaass.kt.agent.configuration.AgentConfiguration
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationContext
 import org.springframework.context.MessageSource

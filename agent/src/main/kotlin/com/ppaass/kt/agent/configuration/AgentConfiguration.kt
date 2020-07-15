@@ -1,51 +1,17 @@
-package com.ppaass.kt.agent
+package com.ppaass.kt.agent.configuration
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.ppaass.kt.common.message.MessageBodyEncryptionType
 import org.slf4j.LoggerFactory
-import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.stereotype.Service
 import java.io.File
 import java.io.IOException
 import java.nio.file.Path
 import java.util.*
 
-@ConfigurationProperties(prefix = "ppaass.agent")
 @Service
-class StaticAgentConfiguration {
-    var masterIoEventThreadNumber = 0
-    var workerIoEventThreadNumber = 0
-    var businessEventThreadNumber = 0
-    var proxyDataTransferIoEventThreadNumber = 0
-    var soBacklog = 0
-    var port = 0
-    var proxyServerAddress: String? = null
-    var proxyServerPort = 0
-    var proxyConnectionTimeout = 0
-    var defaultLocale: Locale? = Locale.getDefault()
-    var clientConnectionIdleSeconds = 0
-    var proxyServerReceiveDataAverageBufferMinSize = 0
-    var proxyServerReceiveDataAverageBufferInitialSize = 0
-    var proxyServerReceiveDataAverageBufferMaxSize = 0
-    var proxyServerSoRcvbuf = 0
-}
-
-data class StoredAgentConfiguration(
-        var userToken: String? = null,
-        var proxyAddress: String? = null,
-        var proxyPort: Int? = null,
-        var port: Int? = null
-)
-
-fun storedAgentConfiguration(block: StoredAgentConfiguration.() -> Unit): StoredAgentConfiguration {
-    val result = StoredAgentConfiguration()
-    block(result)
-    return result
-}
-
-@Service
-class AgentConfiguration(final val staticAgentConfiguration: StaticAgentConfiguration) {
+class AgentConfiguration(val staticAgentConfiguration: StaticAgentConfiguration) {
     final val objectMapper: ObjectMapper
 
     companion object {

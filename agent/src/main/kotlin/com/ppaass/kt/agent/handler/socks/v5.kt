@@ -1,6 +1,6 @@
 package com.ppaass.kt.agent.handler.socks
 
-import com.ppaass.kt.agent.AgentConfiguration
+import com.ppaass.kt.agent.configuration.AgentConfiguration
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
@@ -32,7 +32,7 @@ class SocksV5ConnectionHandler(private val agentConfiguration: AgentConfiguratio
                     when (socksRequest.type()) {
                         Socks5CommandType.CONNECT -> {
                             TODO("connection handler")
-                          //  addLast(this.socks5SetupAgentToProxyConnectionHandler)
+                            //  addLast(this.socks5SetupAgentToProxyConnectionHandler)
                             agentChannelContext.fireChannelRead(socksRequest)
                             return@channelRead
                         }

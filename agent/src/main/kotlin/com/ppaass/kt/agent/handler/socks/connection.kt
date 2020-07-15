@@ -1,6 +1,6 @@
 package com.ppaass.kt.agent.handler.socks
 
-import com.ppaass.kt.agent.AgentConfiguration
+import com.ppaass.kt.agent.configuration.AgentConfiguration
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
