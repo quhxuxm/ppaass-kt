@@ -7,11 +7,11 @@ import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandlerContext
 import org.slf4j.LoggerFactory
 
-internal class ChannelConnectResultListener(private val agentChannelContext: ChannelHandlerContext,
-                                            private val httpConnectionInfo: HttpConnectionInfo) :
+internal class ProxyChannelConnectedListener(private val agentChannelContext: ChannelHandlerContext,
+                                             private val httpConnectionInfo: HttpConnectionInfo) :
         ChannelFutureListener {
     companion object {
-        private val logger = LoggerFactory.getLogger(ChannelConnectResultListener::class.java)
+        private val logger = LoggerFactory.getLogger(ProxyChannelConnectedListener::class.java)
     }
 
     override fun operationComplete(future: ChannelFuture) {

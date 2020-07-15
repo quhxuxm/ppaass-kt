@@ -98,6 +98,18 @@ class AgentMessageBody(val bodyType: AgentMessageBodyType, override val id: Stri
     override var originalData: ByteArray? = null
     override var targetAddress: String? = null
     override var targetPort: Int? = null
+
+    constructor(bodyType: AgentMessageBodyType, id: String, targetAddress: String?, targetPort: Int?) : this(bodyType,
+            id) {
+        this.targetAddress = targetAddress
+        this.targetPort = targetPort
+    }
+
+    constructor(bodyType: AgentMessageBodyType, id: String, targetAddress: String?, targetPort: Int?,
+                originalData: ByteArray) : this(bodyType, id, targetAddress, targetPort) {
+        this.originalData = originalData
+    }
+
     override fun toString(): String {
         return "AgentMessageBody(id='$id', bodyType=$bodyType, targetAddress=$targetAddress, targetPort=$targetPort, originalData:\n\n${String(
                 originalData ?: kotlin.byteArrayOf(), Charsets.UTF_8)}\n\n)"
@@ -131,6 +143,18 @@ class ProxyMessageBody(val bodyType: ProxyMessageBodyType, override val id: Stri
     override var originalData: ByteArray? = null
     override var targetAddress: String? = null
     override var targetPort: Int? = null
+
+    constructor(bodyType: ProxyMessageBodyType, id: String, targetAddress: String?, targetPort: Int?) : this(bodyType,
+            id) {
+        this.targetAddress = targetAddress
+        this.targetPort = targetPort
+    }
+
+    constructor(bodyType: ProxyMessageBodyType, id: String, targetAddress: String?, targetPort: Int?,
+                originalData: ByteArray) : this(bodyType, id, targetAddress, targetPort) {
+        this.originalData = originalData
+    }
+
     override fun toString(): String {
         return "ProxyMessageBody(id='$id', bodyType=$bodyType,  targetAddress=$targetAddress, targetPort=$targetPort), originalData:\n\n${String(
                 originalData ?: byteArrayOf(), Charsets.UTF_8)}\n\n"

@@ -43,16 +43,6 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
             option(ChannelOption.AUTO_CLOSE, true)
             option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
             option(ChannelOption.TCP_NODELAY, true)
-            option(ChannelOption.RCVBUF_ALLOCATOR,
-                    AdaptiveRecvByteBufAllocator(
-                            agentConfiguration.staticAgentConfiguration
-                                    .proxyServerReceiveDataAverageBufferMinSize,
-                            agentConfiguration.staticAgentConfiguration
-                                    .proxyServerReceiveDataAverageBufferInitialSize,
-                            agentConfiguration.staticAgentConfiguration
-                                    .proxyServerReceiveDataAverageBufferMaxSize))
-            option(ChannelOption.SO_RCVBUF,
-                    agentConfiguration.staticAgentConfiguration.proxyServerSoRcvbuf)
         }
     }
 
@@ -75,31 +65,31 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
         if (HttpMethod.CONNECT === msg.method()) {
             //A https request to setup the connection
             logger.debug("Incoming request is https protocol to setup connection, clientChannelId={}", clientChannelId)
-            val httpsConnectRequestPromise =
+            val proxyChannelActivePromise =
                     DefaultPromise<Channel>(this.businessEventExecutorGroup.next())
-            httpsConnectRequestPromise.addListener(
+            proxyChannelActivePromise.addListener(
                     HttpsConnectRequestPromiseListener(agentChannelContext))
             val httpConnectionInfo = HttpConnectionInfoUtil.parseHttpConnectionInfo(msg.uri())
             this.proxyBootstrap.handler(
                     HttpsDataTransferChannelInitializer(agentChannelContext.channel(), this.businessEventExecutorGroup,
-                            httpConnectionInfo, clientChannelId, httpsConnectRequestPromise,
+                            httpConnectionInfo, clientChannelId, proxyChannelActivePromise,
                             this.agentConfiguration))
             this.proxyBootstrap.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort).sync()
-                    .addListener(ChannelConnectResultListener(agentChannelContext, httpConnectionInfo))
+                    .addListener(ProxyChannelConnectedListener(agentChannelContext, httpConnectionInfo))
             return
         }
         // A http request
         logger.debug("Incoming request is http protocol,  clientChannelId={}", clientChannelId)
-        val httpDataRequestPromise = DefaultPromise<Channel>(this.businessEventExecutorGroup.next())
-        httpDataRequestPromise.addListener(
-                HttpDataRequestPromiseListener(msg, agentChannelContext, clientChannelId, agentConfiguration))
+        val proxyChannelActivePromise = DefaultPromise<Channel>(this.businessEventExecutorGroup.next())
+        proxyChannelActivePromise.addListener(
+                ProxyChannelActiveListener(msg, agentChannelContext, clientChannelId, agentConfiguration))
         val httpConnectionInfo = HttpConnectionInfoUtil.parseHttpConnectionInfo(msg.uri())
         this.proxyBootstrap.handler(
                 HttpDataTransferChannelInitializer(agentChannelContext.channel(), this.businessEventExecutorGroup,
-                        httpConnectionInfo, clientChannelId, httpDataRequestPromise,
+                        httpConnectionInfo, clientChannelId, proxyChannelActivePromise,
                         this.agentConfiguration))
         this.proxyBootstrap.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort).sync()
-                .addListener(ChannelConnectResultListener(agentChannelContext, httpConnectionInfo))
+                .addListener(ProxyChannelConnectedListener(agentChannelContext, httpConnectionInfo))
     }
 
     override fun channelInactive(agentChannelContext: ChannelHandlerContext) {

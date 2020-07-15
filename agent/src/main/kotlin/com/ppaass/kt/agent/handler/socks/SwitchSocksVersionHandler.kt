@@ -1,6 +1,8 @@
 package com.ppaass.kt.agent.handler.socks
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
+import com.ppaass.kt.agent.handler.socks.v4.SocksV4Handler
+import com.ppaass.kt.agent.handler.socks.v5.SocksV5Handler
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
@@ -9,10 +11,10 @@ import io.netty.handler.codec.socksx.SocksVersion
 import org.slf4j.LoggerFactory
 
 @ChannelHandler.Sharable
-class SwitchSocksVersionConnectionHandler(private val agentConfiguration: AgentConfiguration) :
+internal class SwitchSocksVersionHandler(private val agentConfiguration: AgentConfiguration) :
         SimpleChannelInboundHandler<SocksMessage>() {
     companion object {
-        private val logger = LoggerFactory.getLogger(SwitchSocksVersionConnectionHandler::class.java)
+        private val logger = LoggerFactory.getLogger(SwitchSocksVersionHandler::class.java)
     }
 
     override fun channelRead0(agentChannelContext: ChannelHandlerContext, socksRequest: SocksMessage) {
@@ -23,18 +25,20 @@ class SwitchSocksVersionConnectionHandler(private val agentConfiguration: AgentC
             agentChannelContext.close()
             return
         }
-        val channelPipeline = agentChannelContext.pipeline();
+        val agentChannelPipeline = agentChannelContext.pipeline();
         if (SocksVersion.SOCKS4a == socksRequest.version()) {
             logger.debug("Incoming request socks4/4a, clientChannelId={}", clientChannelId)
-            with(channelPipeline) {
-                addLast(SocksV4ConnectionHandler::class.java.name, SocksV4ConnectionHandler(agentConfiguration))
+            with(agentChannelPipeline) {
+                addLast(SocksV4Handler::class.java.name,
+                        SocksV4Handler(agentConfiguration))
             }
             agentChannelContext.fireChannelRead(socksRequest)
             return
         }
-        with(channelPipeline) {
+        with(agentChannelPipeline) {
             logger.debug("Incoming request socks5, clientChannelId={}", clientChannelId)
-            addLast(SocksV5ConnectionHandler::class.java.name, SocksV5ConnectionHandler(agentConfiguration))
+            addLast(SocksV5Handler::class.java.name,
+                    SocksV5Handler(agentConfiguration))
         }
         agentChannelContext.fireChannelRead(socksRequest)
         return

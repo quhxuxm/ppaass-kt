@@ -22,7 +22,7 @@ internal class HttpsDataTransferChannelInitializer(private val agentChannel: Cha
                                                    private val executorGroup: EventExecutorGroup,
                                                    private val httpConnectionInfo: HttpConnectionInfo,
                                                    private val clientChannelId: String,
-                                                   private val proxyChannelConnectedPromise: Promise<Channel>,
+                                                   private val proxyChannelActivePromise: Promise<Channel>,
                                                    private val agentConfiguration: AgentConfiguration) :
         ChannelInitializer<SocketChannel>() {
     companion object {
@@ -45,7 +45,7 @@ internal class HttpsDataTransferChannelInitializer(private val agentChannel: Cha
                     TransferDataFromProxyToAgentHandler(agentChannel,
                             httpConnectionInfo.host, httpConnectionInfo.port,
                             clientChannelId,
-                            agentConfiguration, proxyChannelConnectedPromise))
+                            agentConfiguration, proxyChannelActivePromise))
             addLast(ResourceClearHandler(agentChannel))
             addLast(Lz4FrameEncoder())
             addLast(LengthFieldPrepender(4))

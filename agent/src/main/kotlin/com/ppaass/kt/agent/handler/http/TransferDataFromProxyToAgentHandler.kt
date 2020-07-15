@@ -15,7 +15,7 @@ internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Cha
                                                    private val targetPort: Int,
                                                    private val clientChannelId: String,
                                                    private val agentConfiguration: AgentConfiguration,
-                                                   private val proxyChannelConnectedPromise: Promise<Channel>) :
+                                                   private val proxyChannelActivePromise: Promise<Channel>) :
         ChannelInboundHandlerAdapter() {
     companion object {
         private val logger = LoggerFactory.getLogger(TransferDataFromProxyToAgentHandler::class.java)
@@ -32,7 +32,7 @@ internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Cha
                 clientChannelId, MessageBodyEncryptionType.random())
                 .addListener(ChannelFutureListener { connectCommandFuture: ChannelFuture ->
                     if (!connectCommandFuture.isSuccess) {
-                        proxyChannelConnectedPromise.setFailure(connectCommandFuture.cause())
+                        proxyChannelActivePromise.setFailure(connectCommandFuture.cause())
                         logger.error(
                                 "Fail to send connect message from agent to proxy, clientChannelId={}, targetHost={}, targetPort={}",
                                 clientChannelId, channelCacheInfo.targetHost, channelCacheInfo.targetPort)
@@ -42,7 +42,7 @@ internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Cha
                     }
                     logger.debug("Success connect to proxy, clientChannelId={}, targetHost={}, targetPort={}",
                             clientChannelId, channelCacheInfo.targetHost, channelCacheInfo.targetPort)
-                    proxyChannelConnectedPromise.setSuccess(connectCommandFuture.channel())
+                    proxyChannelActivePromise.setSuccess(connectCommandFuture.channel())
                 })
     }
 

@@ -13,13 +13,13 @@ import io.netty.util.concurrent.Future
 import io.netty.util.concurrent.GenericFutureListener
 import org.slf4j.LoggerFactory
 
-internal class HttpDataRequestPromiseListener(private val message: Any,
-                                              private val agentChannelContext: ChannelHandlerContext,
-                                              private val clientChannelId: String,
-                                              private val agentConfiguration: AgentConfiguration) :
+internal class ProxyChannelActiveListener(private val message: Any,
+                                          private val agentChannelContext: ChannelHandlerContext,
+                                          private val clientChannelId: String,
+                                          private val agentConfiguration: AgentConfiguration) :
         GenericFutureListener<Future<Channel>> {
     companion object {
-        private val logger = LoggerFactory.getLogger(HttpDataRequestPromiseListener::class.java)
+        private val logger = LoggerFactory.getLogger(ProxyChannelActiveListener::class.java)
     }
 
     override fun operationComplete(future: Future<Channel>) {
