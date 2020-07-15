@@ -14,7 +14,6 @@ class ProxyMessageEncoder : MessageToByteEncoder<ProxyMessage>() {
 
     override fun encode(ctx: ChannelHandlerContext, msg: ProxyMessage, out: ByteBuf) {
         logger.debug("Begin to encode message:\n{}\n", msg)
-        val encodeResult = MessageSerializer.encodeProxyMessage(msg)
-        out.writeBytes(encodeResult)
+        MessageSerializer.encodeProxyMessage(msg, out)
     }
 }
