@@ -6,7 +6,6 @@ import io.netty.buffer.Unpooled
 import io.netty.util.ReferenceCountUtil
 import org.apache.commons.codec.digest.DigestUtils
 import org.slf4j.LoggerFactory
-import java.security.Key
 import java.util.*
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
@@ -21,7 +20,7 @@ private object MessageBodyEncryptionUtil {
 
     fun encrypt(data: ByteArray, messageBodyBodyEncryptionType: MessageBodyEncryptionType,
                 secureToken: String): ByteArray {
-        val key: Key = SecretKeySpec(this.secureTokenToBytes(secureToken), "AES")
+        val key = SecretKeySpec(this.secureTokenToBytes(secureToken), "AES")
         val cipher = Cipher.getInstance("AES/ECB/PKCS5Padding")
         cipher.init(Cipher.ENCRYPT_MODE, key)
         val encryptedByteArray: ByteArray
@@ -38,7 +37,7 @@ private object MessageBodyEncryptionUtil {
 
     fun decrypt(encryptedData: ByteArray, messageBodyBodyEncryptionType: MessageBodyEncryptionType,
                 secureToken: String): ByteArray {
-        val key: Key = SecretKeySpec(this.secureTokenToBytes(secureToken), "AES")
+        val key = SecretKeySpec(this.secureTokenToBytes(secureToken), "AES")
         val cipher = Cipher.getInstance("AES/ECB/PKCS5Padding")
         cipher.init(Cipher.DECRYPT_MODE, key)
         val decryptedByteArray: ByteArray
