@@ -14,28 +14,13 @@ import org.springframework.context.ApplicationContext
 import org.springframework.stereotype.Service
 
 /**
- * Proxy interface
- */
-internal interface IProxy {
-    /**
-     * Start proxy
-     */
-    fun start();
-
-    /**
-     * Stop proxy
-     */
-    fun stop();
-}
-
-/**
  * The proxy implementation
  */
 @Service
-private class Proxy(private val proxyConfiguration: ProxyConfiguration) :
+internal class DefaultProxy(private val proxyConfiguration: ProxyConfiguration) :
         IProxy {
     companion object {
-        val logger: Logger = LoggerFactory.getLogger(Proxy::class.java);
+        val logger: Logger = LoggerFactory.getLogger(DefaultProxy::class.java);
     }
 
     private val proxyChannelInitializer = ProxyChannelInitializer(this.proxyConfiguration)
@@ -67,27 +52,5 @@ private class Proxy(private val proxyConfiguration: ProxyConfiguration) :
         logger.debug("Stop proxy ...")
         this.masterThreadGroup.shutdownGracefully()
         this.workerThreadGroup.shutdownGracefully()
-    }
-}
-
-/**
- * The proxy launcher
- */
-@SpringBootApplication
-@EnableConfigurationProperties
-class ProxyLauncher {
-    private val logger: Logger = LoggerFactory.getLogger(ProxyLauncher::class.java);
-
-    fun launch(vararg arguments: String) {
-        val context: ApplicationContext = SpringApplication.run(ProxyLauncher::class.java)
-        val proxy = context.getBean(IProxy::class.java);
-        try {
-            logger.debug("Begin to start proxy server.")
-            proxy.start();
-            logger.debug("Success to start proxy server.")
-        } catch (e: Exception) {
-            logger.error("Fail to stat proxy server because of exception", e)
-            proxy.stop();
-        }
     }
 }
