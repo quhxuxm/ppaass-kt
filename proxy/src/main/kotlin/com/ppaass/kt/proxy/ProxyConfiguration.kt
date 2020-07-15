@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service
 class ProxyConfiguration {
     var masterIoEventThreadNumber: Int = 0
     var workerIoEventThreadNumber: Int = 0
-    var businessEventThreadNumber: Int = 0
+    var dataTransferHandlerExecutorGroupThreadNumber: Int = 0
     var targetDataTransferIoEventThreadNumber: Int = 0
     var soBacklog: Int = 0
     var port: Int = 0
