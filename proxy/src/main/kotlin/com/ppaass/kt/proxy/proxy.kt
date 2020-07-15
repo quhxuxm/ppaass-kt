@@ -1,23 +1,10 @@
 package com.ppaass.kt.proxy
 
-import com.ppaass.kt.common.netty.codec.AgentMessageDecoder
-import com.ppaass.kt.common.netty.codec.ProxyMessageEncoder
-import com.ppaass.kt.common.netty.handler.ResourceClearHandler
-import com.ppaass.kt.proxy.handler.HeartbeatHandler
-import com.ppaass.kt.proxy.handler.ProxyAndTargetConnectionHandler
+import com.ppaass.kt.proxy.handler.ProxyChannelInitializer
 import io.netty.bootstrap.ServerBootstrap
-import io.netty.channel.ChannelHandler
-import io.netty.channel.ChannelInitializer
 import io.netty.channel.ChannelOption
 import io.netty.channel.nio.NioEventLoopGroup
-import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioServerSocketChannel
-import io.netty.handler.codec.LengthFieldBasedFrameDecoder
-import io.netty.handler.codec.LengthFieldPrepender
-import io.netty.handler.codec.compression.Lz4FrameDecoder
-import io.netty.handler.codec.compression.Lz4FrameEncoder
-import io.netty.handler.stream.ChunkedWriteHandler
-import io.netty.handler.timeout.IdleStateHandler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.boot.SpringApplication
@@ -42,45 +29,16 @@ internal interface IProxy {
 }
 
 /**
- * The channel initializer for proxy
- */
-@Service
-@ChannelHandler.Sharable
-private class ProxyChannelInitializer(private val proxyConfiguration: ProxyConfiguration) :
-        ChannelInitializer<SocketChannel>() {
-    private val heartbeatHandler = HeartbeatHandler()
-    private val proxyAndTargetConnectionHandler = ProxyAndTargetConnectionHandler(proxyConfiguration)
-
-    override fun initChannel(proxyChannel: SocketChannel) {
-        with(proxyChannel.pipeline()) {
-            addLast(IdleStateHandler(0, 0, proxyConfiguration.agentConnectionIdleSeconds))
-            addLast(heartbeatHandler)
-            //Inbound
-            addLast(ChunkedWriteHandler())
-            addLast(Lz4FrameDecoder())
-            addLast(LengthFieldBasedFrameDecoder(Int.MAX_VALUE, 0, 4, 0, 4))
-            addLast(AgentMessageDecoder())
-            addLast(proxyAndTargetConnectionHandler)
-            addLast(ResourceClearHandler(proxyChannel))
-            //Outbound
-            addLast(Lz4FrameEncoder())
-            addLast(LengthFieldPrepender(4))
-            addLast(ProxyMessageEncoder())
-        }
-    }
-}
-
-/**
  * The proxy implementation
  */
 @Service
-private class Proxy(private val proxyConfiguration: ProxyConfiguration,
-                    private val proxyChannelInitializer: ProxyChannelInitializer) :
+private class Proxy(private val proxyConfiguration: ProxyConfiguration) :
         IProxy {
     companion object {
         val logger: Logger = LoggerFactory.getLogger(Proxy::class.java);
     }
 
+    private val proxyChannelInitializer = ProxyChannelInitializer(this.proxyConfiguration)
     private val masterThreadGroup: NioEventLoopGroup
     private val workerThreadGroup: NioEventLoopGroup
     private val serverBootstrap: ServerBootstrap
