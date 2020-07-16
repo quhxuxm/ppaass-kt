@@ -1,7 +1,6 @@
 package com.ppaass.kt.agent.handler.socks
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
-import com.ppaass.kt.agent.handler.socks.v4.SocksV4Handler
 import com.ppaass.kt.agent.handler.socks.v5.SocksV5Handler
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
@@ -18,7 +17,6 @@ internal class SwitchSocksVersionHandler(private val agentConfiguration: AgentCo
     }
 
     private val socksV5Handler = SocksV5Handler(this.agentConfiguration)
-    private val socksV4Handler = SocksV4Handler(this.agentConfiguration)
 
     override fun channelRead0(agentChannelContext: ChannelHandlerContext, socksRequest: SocksMessage) {
         val clientChannelId = agentChannelContext.channel().id().asLongText();
@@ -30,16 +28,15 @@ internal class SwitchSocksVersionHandler(private val agentConfiguration: AgentCo
         }
         val agentChannelPipeline = agentChannelContext.pipeline();
         if (SocksVersion.SOCKS4a == socksRequest.version()) {
-            logger.debug("Incoming request socks4/4a, clientChannelId={}", clientChannelId)
-            with(agentChannelPipeline) {
-                addLast(SocksV4Handler::class.java.name, socksV4Handler)
-            }
-            agentChannelContext.fireChannelRead(socksRequest)
+            logger.error(
+                    "Socks4a not support, clientChannelId={}.", clientChannelId)
+            agentChannelContext.close()
             return
         }
         with(agentChannelPipeline) {
             logger.debug("Incoming request socks5, clientChannelId={}", clientChannelId)
             addLast(SocksV5Handler::class.java.name, socksV5Handler)
+            remove(this@SwitchSocksVersionHandler)
         }
         agentChannelContext.fireChannelRead(socksRequest)
         return
