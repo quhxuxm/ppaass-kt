@@ -35,7 +35,8 @@ class SocksV5Handler(private val agentConfiguration: AgentConfiguration) : Simpl
                             "Socks5 command request with {} command coming ...", socksRequest.type())
                     when (socksRequest.type()) {
                         Socks5CommandType.CONNECT -> {
-                            addLast(this@SocksV5Handler.socksV5ConnectHandler)
+                            addLast(SocksV5ConnectCommandHandler::class.java.name,
+                                    this@SocksV5Handler.socksV5ConnectHandler)
                             agentChannelContext.fireChannelRead(socksRequest)
                             return@channelRead0
                         }

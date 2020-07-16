@@ -46,7 +46,8 @@ internal class SocksV5ProxyToAgentHandler(private val agentChannel: Channel,
     }
 
     override fun channelRead0(proxyChannelContext: ChannelHandlerContext, msg: ProxyMessage) {
-        agentChannel.writeAndFlush(Unpooled.wrappedBuffer(msg.body.originalData))
+        val originalDataBuf = Unpooled.wrappedBuffer(msg.body.originalData)
+        agentChannel.writeAndFlush(originalDataBuf)
     }
 
     override fun channelReadComplete(proxyChannelContext: ChannelHandlerContext) {

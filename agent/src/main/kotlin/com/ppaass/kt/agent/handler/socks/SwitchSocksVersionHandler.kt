@@ -17,6 +17,9 @@ internal class SwitchSocksVersionHandler(private val agentConfiguration: AgentCo
         private val logger = LoggerFactory.getLogger(SwitchSocksVersionHandler::class.java)
     }
 
+    private val socksV5Handler = SocksV5Handler(this.agentConfiguration)
+    private val socksV4Handler = SocksV4Handler(this.agentConfiguration)
+
     override fun channelRead0(agentChannelContext: ChannelHandlerContext, socksRequest: SocksMessage) {
         val clientChannelId = agentChannelContext.channel().id().asLongText();
         if (SocksVersion.UNKNOWN == socksRequest.version()) {
@@ -29,16 +32,14 @@ internal class SwitchSocksVersionHandler(private val agentConfiguration: AgentCo
         if (SocksVersion.SOCKS4a == socksRequest.version()) {
             logger.debug("Incoming request socks4/4a, clientChannelId={}", clientChannelId)
             with(agentChannelPipeline) {
-                addLast(SocksV4Handler::class.java.name,
-                        SocksV4Handler(agentConfiguration))
+                addLast(SocksV4Handler::class.java.name, socksV4Handler)
             }
             agentChannelContext.fireChannelRead(socksRequest)
             return
         }
         with(agentChannelPipeline) {
             logger.debug("Incoming request socks5, clientChannelId={}", clientChannelId)
-            addLast(SocksV5Handler::class.java.name,
-                    SocksV5Handler(agentConfiguration))
+            addLast(SocksV5Handler::class.java.name, socksV5Handler)
         }
         agentChannelContext.fireChannelRead(socksRequest)
         return

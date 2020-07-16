@@ -35,7 +35,7 @@ internal class SocksV5ProxyChannelActiveListener(private val socks5CommandReques
                         SocksV5AgentToProxyHandler(proxyChannel,
                                 socks5CommandRequest, this.agentConfiguration))
         agentChannelContext.pipeline().addLast(ResourceClearHandler(proxyChannel))
-        agentChannelContext.pipeline().remove(SocksV5ConnectCommandHandler::class.java)
+        agentChannelContext.pipeline().remove(SocksV5ConnectCommandHandler::class.java.name)
         agentChannelContext.channel().writeAndFlush(DefaultSocks5CommandResponse(
                 Socks5CommandStatus.SUCCESS,
                 this.socks5CommandRequest.dstAddrType(),

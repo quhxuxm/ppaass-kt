@@ -6,7 +6,6 @@ import com.ppaass.kt.common.message.AgentMessageBody
 import com.ppaass.kt.common.message.AgentMessageBodyType
 import com.ppaass.kt.common.message.MessageBodyEncryptionType
 import io.netty.buffer.ByteBuf
-import io.netty.buffer.ByteBufUtil
 import io.netty.channel.Channel
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
@@ -17,7 +16,8 @@ internal class SocksV5AgentToProxyHandler(private val proxyChannel: Channel,
                                           private val agentConfiguration: AgentConfiguration) :
         SimpleChannelInboundHandler<ByteBuf>() {
     override fun channelRead0(agentChannelContext: ChannelHandlerContext, msg: ByteBuf) {
-        val data = ByteBufUtil.getBytes(msg)
+        val data = ByteArray(msg.readableBytes())
+        msg.readBytes(data)
         val agentMessageBody =
                 AgentMessageBody(AgentMessageBodyType.DATA, agentChannelContext.channel().id().asLongText())
         agentMessageBody.targetAddress = socks5CommandRequest.dstAddr()

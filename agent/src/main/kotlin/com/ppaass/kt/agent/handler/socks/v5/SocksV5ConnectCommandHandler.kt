@@ -23,6 +23,7 @@ import io.netty.util.concurrent.EventExecutorGroup
 import io.netty.util.concurrent.Promise
 import org.slf4j.LoggerFactory
 
+@ChannelHandler.Sharable
 internal class SocksV5ConnectCommandHandler(private val agentConfiguration: AgentConfiguration) :
         SimpleChannelInboundHandler<Socks5CommandRequest>() {
     companion object {
