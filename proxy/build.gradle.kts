@@ -1,3 +1,7 @@
+plugins {
+    id("org.springframework.boot")
+    application
+}
 dependencies {
     implementation(group = "org.springframework.boot", name = "spring-boot-starter-log4j2")
     implementation(group = "org.springframework.boot", name = "spring-boot-starter") {
@@ -12,5 +16,5 @@ dependencies {
 }
 
 springBoot {
-    mainClassName = "com.ppaass.kt.proxy.MainKt"
+    mainClassName = "com.ppaass.kt.proxy.ProxyLauncherKt"
 }

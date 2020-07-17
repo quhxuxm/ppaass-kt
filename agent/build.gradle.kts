@@ -1,3 +1,7 @@
+plugins {
+    id("org.springframework.boot")
+    application
+}
 dependencies {
     implementation(group = "org.springframework.boot", name = "spring-boot-starter-log4j2")
     implementation(group = "org.springframework.boot", name = "spring-boot-starter") {
@@ -14,5 +18,5 @@ dependencies {
     implementation(project(":common"))
 }
 springBoot {
-    mainClassName = "com.ppaass.kt.agent.MainKt"
+    mainClassName = "com.ppaass.kt.agent.AgentLauncherKt"
 }

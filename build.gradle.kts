@@ -1,5 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
 
+defaultTasks("build", "projectClean")
+
 buildscript {
     repositories {
         mavenLocal()
@@ -65,20 +67,10 @@ subprojects {
     }
 }
 
-project(":common") {
-    apply {
-        plugin("java-library")
+tasks.create("projectClean") {
+    doLast {
+        println("Clear the root project: Delete ${rootProject.buildDir}")
+        delete(rootProject.buildDir)
     }
 }
 
-project(":agent") {
-    apply {
-        plugin("org.springframework.boot")
-    }
-}
-
-project(":proxy") {
-    apply {
-        plugin("org.springframework.boot")
-    }
-}
