@@ -18,4 +18,3 @@ unzip proxy-boot.zip
 cd /home/build/proxy-boot/bin
 nohup ./proxy >run.log 2>&1 &
 ps -ef|grep java|grep proxy
-~
