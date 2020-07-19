@@ -10,7 +10,7 @@ git clone https://github.com/quhxuxm/ppaass-kt.git ppaass
 cd /home/sourcecode/ppaass
 git pull
 gradle
-ps -ef | grep gradle | grep -v grep | awk '{print $2}' | xargs kill -9
+# ps -ef | grep gradle | grep -v grep | awk '{print $2}' | xargs kill -9
 cp /home/sourcecode/ppaass/proxy/build/distributions/proxy-boot.zip /home/build
 cd /home/build
 chmod 777 proxy-boot.zip
