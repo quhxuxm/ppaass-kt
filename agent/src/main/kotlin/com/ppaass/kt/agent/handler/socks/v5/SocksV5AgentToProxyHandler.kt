@@ -11,11 +11,16 @@ import io.netty.channel.Channel
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest
+import org.slf4j.LoggerFactory
 
 internal class SocksV5AgentToProxyHandler(private val proxyChannel: Channel,
                                           private val socks5CommandRequest: Socks5CommandRequest,
                                           private val agentConfiguration: AgentConfiguration) :
         SimpleChannelInboundHandler<ByteBuf>() {
+    private companion object {
+        private val logger = LoggerFactory.getLogger(SocksV5AgentToProxyHandler::class.java)
+    }
+
     override fun channelRead0(agentChannelContext: ChannelHandlerContext, msg: ByteBuf) {
         val data = ByteArray(msg.readableBytes())
         msg.readBytes(data)
@@ -28,8 +33,8 @@ internal class SocksV5AgentToProxyHandler(private val proxyChannel: Channel,
                 secureToken = this.agentConfiguration.userToken,
                 messageBodyEncryptionType = MessageBodyEncryptionType.random(),
                 body = agentMessageBody)
-        if(!proxyChannel.isActive){
-            SocksV5ProxyToAgentHandler.logger.error(
+        if (!proxyChannel.isActive) {
+            logger.error(
                     "Fail to send connect message from agent to proxy because of proxy channel not active.")
             throw PpaassException(
                     "Fail to send connect message from agent to proxy because of proxy channel not active.")
