@@ -17,5 +17,5 @@ chmod 777 ppaass-1.0-SNAPSHOT.zip
 unzip ppaass-1.0-SNAPSHOT.zip
 cd /home/build/proxy
 chmod 777 *.sh
-nohup ./start >run.log 2>&1 &
-ps -ef|grep java|grep proxy-1.0-SNAPSHOT.jar
+nohup ./start.sh >run.log 2>&1 &
+ps -ef|grep java|grep proxy-1.0-SNAPSHOT.jarps ps -ef|grep java
