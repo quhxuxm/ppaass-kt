@@ -79,7 +79,7 @@ internal class SocksV5ConnectCommandHandler(private val agentConfiguration: Agen
                                     agentConfiguration = agentConfiguration,
                                     socks5CommandRequest = socks5CommandRequest,
                                     proxyChannelActivePromise = proxyChannelActivePromise))
-                    addLast(ResourceClearHandler(agentChannelContext.channel()))
+                    addLast(ResourceClearHandler())
                     addLast(Lz4FrameEncoder())
                     addLast(LengthFieldPrepender(4))
                     addLast(AgentMessageEncoder())

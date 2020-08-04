@@ -53,7 +53,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
                                     targetPort = agentMessage.body.targetPort ?: -1,
                                     proxyConfiguration = proxyConfiguration
                             ))
-                    addLast(ResourceClearHandler(targetChannel, proxyContext.channel()))
+                    addLast(ResourceClearHandler())
                 }
             }
         })
@@ -88,7 +88,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
                     ProxyToTargetHandler(
                             targetChannel = targetChannel,
                             proxyConfiguration = proxyConfiguration))
-            addLast(ResourceClearHandler(targetChannel, proxyContext.channel()))
+            addLast(ResourceClearHandler())
         }
         proxyContext.fireChannelRead(agentMessage)
         if (!proxyConfiguration.autoRead) {

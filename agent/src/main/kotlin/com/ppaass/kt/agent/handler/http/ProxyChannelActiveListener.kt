@@ -27,7 +27,7 @@ internal class ProxyChannelActiveListener(private val message: Any,
             return
         }
         with(agentChannelContext.pipeline()) {
-            addLast(ResourceClearHandler(future.now))
+            addLast(ResourceClearHandler())
         }
         val channelCacheInfo = ChannelInfoCache.getChannelInfo(clientChannelId)
         if (channelCacheInfo == null) {

@@ -50,7 +50,7 @@ internal class HttpDataTransferChannelInitializer(private val agentChannel: Chan
                             httpConnectionInfo.host, httpConnectionInfo.port,
                             clientChannelId,
                             agentConfiguration, proxyChannelConnectedPromise))
-            addLast(ResourceClearHandler(agentChannel))
+            addLast(ResourceClearHandler())
             addLast(Lz4FrameEncoder())
             addLast(LengthFieldPrepender(4))
             addLast(AgentMessageEncoder())

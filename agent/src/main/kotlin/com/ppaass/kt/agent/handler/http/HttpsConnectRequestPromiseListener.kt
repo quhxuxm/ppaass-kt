@@ -24,7 +24,7 @@ internal class HttpsConnectRequestPromiseListener(
         }
         val promiseChannel = promiseFuture.now as Channel
         with(this.agentChannelContext.pipeline()) {
-            addLast(ResourceClearHandler(promiseChannel))
+            addLast(ResourceClearHandler())
         }
         val okResponse = DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
         agentChannelContext.writeAndFlush(okResponse)
