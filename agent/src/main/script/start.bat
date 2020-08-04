@@ -1,1 +1,1 @@
-javaw -jar agent-1.0-SNAPSHOT.jar
+start javaw -jar agent-1.0-SNAPSHOT.jar > run.log 2>&1 &
