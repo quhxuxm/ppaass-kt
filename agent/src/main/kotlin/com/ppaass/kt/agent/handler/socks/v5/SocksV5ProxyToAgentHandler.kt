@@ -30,6 +30,12 @@ internal class SocksV5ProxyToAgentHandler(private val agentChannel: Channel,
                 secureToken = agentConfiguration.userToken,
                 messageBodyEncryptionType = MessageBodyEncryptionType.random(),
                 body = agentMessageBody)
+        if (!proxyChannelContext.channel().isActive) {
+            logger.error(
+                    "Fail to send connect message from agent to proxy because of proxy channel not active.")
+            throw PpaassException(
+                    "Fail to send connect message from agent to proxy because of proxy channel not active.")
+        }
         proxyChannelContext.channel().writeAndFlush(agentMessage).addListener(
                 GenericFutureListener { future: Future<in Void?> ->
                     if (!future.isSuccess) {
@@ -47,6 +53,12 @@ internal class SocksV5ProxyToAgentHandler(private val agentChannel: Channel,
 
     override fun channelRead0(proxyChannelContext: ChannelHandlerContext, msg: ProxyMessage) {
         val originalDataBuf = Unpooled.wrappedBuffer(msg.body.originalData)
+        if (!agentChannel.isActive) {
+            logger.error(
+                    "Fail to send connect message from proxy to agent because of agent channel not active.")
+            throw PpaassException(
+                    "Fail to send connect message from proxy to agent because of agent channel not active.")
+        }
         agentChannel.writeAndFlush(originalDataBuf)
     }
 

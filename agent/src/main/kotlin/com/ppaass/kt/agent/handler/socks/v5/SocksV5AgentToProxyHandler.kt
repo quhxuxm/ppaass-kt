@@ -1,6 +1,7 @@
 package com.ppaass.kt.agent.handler.socks.v5
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
+import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.message.AgentMessage
 import com.ppaass.kt.common.message.AgentMessageBody
 import com.ppaass.kt.common.message.AgentMessageBodyType
@@ -27,6 +28,12 @@ internal class SocksV5AgentToProxyHandler(private val proxyChannel: Channel,
                 secureToken = this.agentConfiguration.userToken,
                 messageBodyEncryptionType = MessageBodyEncryptionType.random(),
                 body = agentMessageBody)
+        if(!proxyChannel.isActive){
+            SocksV5ProxyToAgentHandler.logger.error(
+                    "Fail to send connect message from agent to proxy because of proxy channel not active.")
+            throw PpaassException(
+                    "Fail to send connect message from agent to proxy because of proxy channel not active.")
+        }
         proxyChannel.writeAndFlush(agentMessage)
     }
 
