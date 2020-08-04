@@ -33,6 +33,11 @@ internal class TargetToProxyHandler(private val proxyChannel: Channel,
         }
         val proxyMessage = ProxyMessage(secureToken, MessageBodyEncryptionType.random(), proxyMessageBody)
         logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
+        if (!this.proxyChannel.isActive) {
+            logger.error("Fail to transfer data from target to proxy server because of proxy channel is not active.")
+            throw PpaassException(
+                    "Fail to transfer data from target to proxy server because of proxy channel is not active.")
+        }
         this.proxyChannel.writeAndFlush(proxyMessage).addListener(ChannelFutureListener {
             if (!it.isSuccess) {
                 logger.error("Fail to transfer data from target to proxy server.", it.cause())
