@@ -38,6 +38,11 @@ internal class HeartbeatHandler : ChannelInboundHandlerAdapter() {
         proxyMessageBody.originalData = utcDataTimeString.toByteArray()
         val proxyMessage =
                 ProxyMessage(secureToken, MessageBodyEncryptionType.random(), proxyMessageBody)
+        if (!proxyContext.channel().isActive) {
+            logger.error("Close proxy channel as it is not active on heartbeat time, proxyChannelId={}",
+                    proxyContext.channel().id().asLongText())
+            proxyContext.close()
+        }
         proxyContext.channel().writeAndFlush(proxyMessage)
                 .addListener(ChannelFutureListener {
                     if (!it.isSuccess) {
