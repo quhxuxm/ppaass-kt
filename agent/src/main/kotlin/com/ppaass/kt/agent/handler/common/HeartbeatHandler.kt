@@ -22,7 +22,9 @@ internal class HeartbeatHandler : ChannelInboundHandlerAdapter() {
         if (IdleState.ALL_IDLE !== evt.state()) {
             return
         }
-        agentContext.close()
+        if (!agentContext.channel().isActive) {
+            agentContext.close()
+        }
         ReferenceCountUtil.release(evt)
     }
 }
