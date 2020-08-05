@@ -1,11 +1,12 @@
 package com.ppaass.kt.common.netty.handler
 
-import io.netty.channel.Channel
+import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
 import org.slf4j.LoggerFactory
 
-class ResourceClearHandler() : ChannelInboundHandlerAdapter() {
+@ChannelHandler.Sharable
+class ResourceClearHandler : ChannelInboundHandlerAdapter() {
     companion object {
         private val logger = LoggerFactory.getLogger(ResourceClearHandler::class.java)
     }

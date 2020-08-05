@@ -10,7 +10,6 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder
 import io.netty.handler.codec.LengthFieldPrepender
 import io.netty.handler.codec.compression.Lz4FrameDecoder
 import io.netty.handler.codec.compression.Lz4FrameEncoder
-import io.netty.handler.stream.ChunkedWriteHandler
 import io.netty.handler.timeout.IdleStateHandler
 import org.springframework.stereotype.Service
 
@@ -24,19 +23,22 @@ class ProxyChannelInitializer(private val proxyConfiguration: ProxyConfiguration
     private val heartbeatHandler = HeartbeatHandler()
     private val setupTargetConnectionHandler = SetupTargetConnectionHandler(proxyConfiguration)
 
+    private companion object {
+        private val lengthFieldPrepender = LengthFieldPrepender(4)
+    }
+
     override fun initChannel(proxyChannel: SocketChannel) {
         with(proxyChannel.pipeline()) {
             addLast(IdleStateHandler(0, 0, proxyConfiguration.agentConnectionIdleSeconds))
             addLast(heartbeatHandler)
             //Inbound
-            addLast(ChunkedWriteHandler())
             addLast(Lz4FrameDecoder())
             addLast(LengthFieldBasedFrameDecoder(Int.MAX_VALUE, 0, 4, 0, 4))
             addLast(AgentMessageDecoder())
             addLast(setupTargetConnectionHandler)
             //Outbound
             addLast(Lz4FrameEncoder())
-            addLast(LengthFieldPrepender(4))
+            addLast(lengthFieldPrepender)
             addLast(ProxyMessageEncoder())
         }
     }

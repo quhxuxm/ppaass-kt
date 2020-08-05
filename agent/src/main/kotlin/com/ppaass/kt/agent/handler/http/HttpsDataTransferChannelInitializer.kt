@@ -13,7 +13,6 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder
 import io.netty.handler.codec.LengthFieldPrepender
 import io.netty.handler.codec.compression.Lz4FrameDecoder
 import io.netty.handler.codec.compression.Lz4FrameEncoder
-import io.netty.handler.stream.ChunkedWriteHandler
 import io.netty.util.concurrent.EventExecutorGroup
 import io.netty.util.concurrent.Promise
 import org.slf4j.LoggerFactory
@@ -27,28 +26,30 @@ internal class HttpsDataTransferChannelInitializer(private val agentChannel: Cha
         ChannelInitializer<SocketChannel>() {
     companion object {
         private val logger = LoggerFactory.getLogger(HttpsDataTransferChannelInitializer::class.java)
+        private val lengthFieldPrepender = LengthFieldPrepender(4)
+        private val discardProxyHeartbeatHandler = DiscardProxyHeartbeatHandler()
+        private val resourceClearHandler = ResourceClearHandler()
     }
 
     override fun initChannel(httpsProxyChannel: SocketChannel) {
         logger.debug("Initialize HTTPS data transfer channel, clientChannelId={}",
                 clientChannelId)
         with(httpsProxyChannel.pipeline()) {
-            addLast(ChunkedWriteHandler())
             addLast(Lz4FrameDecoder())
             addLast(LengthFieldBasedFrameDecoder(Integer.MAX_VALUE,
                     0, 4, 0,
                     4))
             addLast(ProxyMessageDecoder())
-            addLast(DiscardProxyHeartbeatHandler(agentChannel))
+            addLast(discardProxyHeartbeatHandler)
             addLast(ExtractProxyMessageOriginalDataDecoder())
             addLast(executorGroup,
                     TransferDataFromProxyToAgentHandler(agentChannel,
                             httpConnectionInfo.host, httpConnectionInfo.port,
                             clientChannelId,
                             agentConfiguration, proxyChannelActivePromise))
-            addLast(ResourceClearHandler())
+            addLast(resourceClearHandler)
             addLast(Lz4FrameEncoder())
-            addLast(LengthFieldPrepender(4))
+            addLast(lengthFieldPrepender)
             addLast(AgentMessageEncoder())
         }
     }

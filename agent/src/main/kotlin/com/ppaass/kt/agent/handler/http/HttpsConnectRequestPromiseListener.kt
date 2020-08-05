@@ -16,15 +16,15 @@ internal class HttpsConnectRequestPromiseListener(
     companion object {
         private val logger =
                 LoggerFactory.getLogger(HttpsConnectRequestPromiseListener::class.java)
+        private val resourceClearHandler = ResourceClearHandler()
     }
 
     override fun operationComplete(promiseFuture: Future<Channel>) {
         if (!promiseFuture.isSuccess) {
             return
         }
-        val promiseChannel = promiseFuture.now as Channel
         with(this.agentChannelContext.pipeline()) {
-            addLast(ResourceClearHandler())
+            addLast(resourceClearHandler)
         }
         val okResponse = DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
         agentChannelContext.writeAndFlush(okResponse)

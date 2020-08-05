@@ -17,6 +17,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
         SimpleChannelInboundHandler<AgentMessage>() {
     companion object {
         private val logger = LoggerFactory.getLogger(SetupTargetConnectionHandler::class.java)
+        private val resourceClearHandler = ResourceClearHandler()
     }
 
     private val dataTransferExecutorGroup: EventExecutorGroup
@@ -53,7 +54,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
                                     targetPort = agentMessage.body.targetPort ?: -1,
                                     proxyConfiguration = proxyConfiguration
                             ))
-                    addLast(ResourceClearHandler())
+                    addLast(resourceClearHandler)
                 }
             }
         })
@@ -88,7 +89,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
                     ProxyToTargetHandler(
                             targetChannel = targetChannel,
                             proxyConfiguration = proxyConfiguration))
-            addLast(ResourceClearHandler())
+            addLast(resourceClearHandler)
         }
         proxyContext.fireChannelRead(agentMessage)
         if (!proxyConfiguration.autoRead) {

@@ -20,6 +20,7 @@ internal class ProxyChannelActiveListener(private val message: Any,
         GenericFutureListener<Future<Channel>> {
     companion object {
         private val logger = LoggerFactory.getLogger(ProxyChannelActiveListener::class.java)
+        private val resourceClearHandler = ResourceClearHandler()
     }
 
     override fun operationComplete(future: Future<Channel>) {
@@ -27,7 +28,7 @@ internal class ProxyChannelActiveListener(private val message: Any,
             return
         }
         with(agentChannelContext.pipeline()) {
-            addLast(ResourceClearHandler())
+            addLast(resourceClearHandler)
         }
         val channelCacheInfo = ChannelInfoCache.getChannelInfo(clientChannelId)
         if (channelCacheInfo == null) {

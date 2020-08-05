@@ -20,6 +20,7 @@ internal class SocksV5ProxyChannelActiveListener(private val socks5CommandReques
     companion object {
         private val logger = LoggerFactory.getLogger(
                 SocksV5ProxyChannelActiveListener::class.java)
+        private val resourceClearHandler = ResourceClearHandler()
     }
 
     override fun operationComplete(future: Future<Channel>) {
@@ -34,7 +35,7 @@ internal class SocksV5ProxyChannelActiveListener(private val socks5CommandReques
                 .addLast(businessEventExecutorGroup,
                         SocksV5AgentToProxyHandler(proxyChannel,
                                 socks5CommandRequest, this.agentConfiguration))
-        agentChannelContext.pipeline().addLast(ResourceClearHandler())
+        agentChannelContext.pipeline().addLast(resourceClearHandler)
         agentChannelContext.pipeline().remove(SocksV5ConnectCommandHandler::class.java.name)
         agentChannelContext.channel().writeAndFlush(DefaultSocks5CommandResponse(
                 Socks5CommandStatus.SUCCESS,

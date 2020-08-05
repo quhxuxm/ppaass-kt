@@ -15,7 +15,6 @@ import io.netty.handler.codec.compression.Lz4FrameDecoder
 import io.netty.handler.codec.compression.Lz4FrameEncoder
 import io.netty.handler.codec.http.HttpObjectAggregator
 import io.netty.handler.codec.http.HttpResponseDecoder
-import io.netty.handler.stream.ChunkedWriteHandler
 import io.netty.util.concurrent.EventExecutorGroup
 import io.netty.util.concurrent.Promise
 import org.slf4j.LoggerFactory
@@ -29,19 +28,21 @@ internal class HttpDataTransferChannelInitializer(private val agentChannel: Chan
         ChannelInitializer<SocketChannel>() {
     companion object {
         private val logger = LoggerFactory.getLogger(HttpDataTransferChannelInitializer::class.java)
+        private val discardProxyHeartbeatHandler = DiscardProxyHeartbeatHandler()
+        private val lengthFieldPrepender = LengthFieldPrepender(4)
+        private val resourceClearHandler = ResourceClearHandler()
     }
 
     override fun initChannel(httpProxyChannel: SocketChannel) {
         logger.debug("Initialize HTTP data transfer channel, clientChannelId={}",
                 clientChannelId)
         with(httpProxyChannel.pipeline()) {
-            addLast(ChunkedWriteHandler())
             addLast(Lz4FrameDecoder())
             addLast(LengthFieldBasedFrameDecoder(Integer.MAX_VALUE,
                     0, 4, 0,
                     4))
             addLast(ProxyMessageDecoder())
-            addLast(DiscardProxyHeartbeatHandler(agentChannel))
+            addLast(discardProxyHeartbeatHandler)
             addLast(ExtractProxyMessageOriginalDataDecoder())
             addLast(HttpResponseDecoder())
             addLast(HttpObjectAggregator(Int.MAX_VALUE, true))
@@ -50,9 +51,9 @@ internal class HttpDataTransferChannelInitializer(private val agentChannel: Chan
                             httpConnectionInfo.host, httpConnectionInfo.port,
                             clientChannelId,
                             agentConfiguration, proxyChannelConnectedPromise))
-            addLast(ResourceClearHandler())
+            addLast(resourceClearHandler)
             addLast(Lz4FrameEncoder())
-            addLast(LengthFieldPrepender(4))
+            addLast(lengthFieldPrepender)
             addLast(AgentMessageEncoder())
         }
     }

@@ -28,6 +28,9 @@ internal class SocksV5ConnectCommandHandler(private val agentConfiguration: Agen
         SimpleChannelInboundHandler<Socks5CommandRequest>() {
     companion object {
         private val logger = LoggerFactory.getLogger(SocksV5ConnectCommandHandler::class.java)
+        private val discardProxyHeartbeatHandler=DiscardProxyHeartbeatHandler()
+        private val lengthFieldPrepender = LengthFieldPrepender(4)
+        private val resourceClearHandler = ResourceClearHandler()
     }
 
     private val businessEventExecutorGroup: EventExecutorGroup
@@ -66,22 +69,21 @@ internal class SocksV5ConnectCommandHandler(private val agentConfiguration: Agen
         proxyBootstrap.handler(object : ChannelInitializer<Channel>() {
             override fun initChannel(proxyChannel: Channel) {
                 with(proxyChannel.pipeline()) {
-                    addLast(ChunkedWriteHandler())
                     addLast(Lz4FrameDecoder())
                     addLast(LengthFieldBasedFrameDecoder(Int.MAX_VALUE,
                             0, 4, 0,
                             4))
                     addLast(ProxyMessageDecoder())
-                    addLast(DiscardProxyHeartbeatHandler(agentChannelContext.channel()))
+                    addLast(discardProxyHeartbeatHandler)
                     addLast(businessEventExecutorGroup,
                             SocksV5ProxyToAgentHandler(
                                     agentChannel = agentChannelContext.channel(),
                                     agentConfiguration = agentConfiguration,
                                     socks5CommandRequest = socks5CommandRequest,
                                     proxyChannelActivePromise = proxyChannelActivePromise))
-                    addLast(ResourceClearHandler())
+                    addLast(resourceClearHandler)
                     addLast(Lz4FrameEncoder())
-                    addLast(LengthFieldPrepender(4))
+                    addLast(lengthFieldPrepender)
                     addLast(AgentMessageEncoder())
                 }
             }
