@@ -20,7 +20,7 @@ import javax.crypto.spec.SecretKeySpec
  */
 private object MessageBodyEncryptionUtil {
     private fun convertSecureTokenToBytes(secureToken: String): ByteArray {
-        return DigestUtils.sha1(DigestUtils.md5(secureToken))
+        return DigestUtils.md5(DigestUtils.sha1(secureToken))
     }
 
     private fun base64Encode(data: ByteArray): ByteArray {
