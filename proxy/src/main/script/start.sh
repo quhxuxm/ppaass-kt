@@ -1,1 +1,1 @@
-java -jar proxy-1.0-SNAPSHOT.jar
+java -jar proxy-1.0-SNAPSHOT.jar --spring.config.location=classpath:application.properties,file:./application.properties
