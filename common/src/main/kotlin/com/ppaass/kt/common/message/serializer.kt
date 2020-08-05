@@ -74,7 +74,7 @@ private object MessageBodyEncryptionUtil {
     }
 
     private fun pbeEncrypt(secureToken: String, data: ByteArray, shaMethod: ShaMethod): ByteArray {
-        val salt: ByteArray = this.convertSecureTokenToBytes(secureToken, shaMethod).copyOfRange(0, 7)
+        val salt: ByteArray = this.convertSecureTokenToBytes(secureToken, shaMethod).copyOfRange(0, 8)
         val pbeKeySpec = PBEKeySpec(secureToken.toCharArray())
         val factory = SecretKeyFactory.getInstance("PBEWITHMD5andDES")
         val key: Key = factory.generateSecret(pbeKeySpec)
@@ -85,7 +85,7 @@ private object MessageBodyEncryptionUtil {
     }
 
     private fun pbeDecrypt(secureToken: String, aesData: ByteArray, shaMethod: ShaMethod): ByteArray {
-        val salt: ByteArray = this.convertSecureTokenToBytes(secureToken, shaMethod).copyOfRange(0, 7)
+        val salt: ByteArray = this.convertSecureTokenToBytes(secureToken, shaMethod).copyOfRange(0, 8)
         val pbeKeySpec = PBEKeySpec(secureToken.toCharArray())
         val factory = SecretKeyFactory.getInstance("PBEWITHMD5andDES")
         val key: Key = factory.generateSecret(pbeKeySpec)
