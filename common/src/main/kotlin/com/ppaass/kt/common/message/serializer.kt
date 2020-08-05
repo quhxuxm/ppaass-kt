@@ -7,30 +7,81 @@ import io.netty.buffer.Unpooled
 import io.netty.util.ReferenceCountUtil
 import org.apache.commons.codec.digest.DigestUtils
 import org.slf4j.LoggerFactory
+import java.security.Key
 import java.util.*
 import javax.crypto.Cipher
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.PBEKeySpec
+import javax.crypto.spec.PBEParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 /**
  * The encryption util to encrypt the message
  */
 private object MessageBodyEncryptionUtil {
-    private fun secureTokenToBytes(secureToken: String): ByteArray? {
-        return DigestUtils.md5(secureToken)
+    private fun convertSecureTokenToBytes(secureToken: String): ByteArray {
+        return DigestUtils.sha1(DigestUtils.md5(secureToken))
+    }
+
+    private fun base64Encode(data: ByteArray): ByteArray {
+        return Base64.getEncoder().encode(data)
+    }
+
+    private fun base64Decode(data: ByteArray): ByteArray {
+        return Base64.getDecoder().decode(data)
+    }
+
+    private fun aesEncrypt(secureToken: String, data: ByteArray): ByteArray {
+        val key = SecretKeySpec(this.convertSecureTokenToBytes(secureToken), "AES")
+        val cipher = Cipher.getInstance("AES/ECB/PKCS5Padding")
+        cipher.init(Cipher.ENCRYPT_MODE, key)
+        return cipher.doFinal(data)
+    }
+
+    private fun aesDecrypt(secureToken: String, aesData: ByteArray): ByteArray {
+        val key = SecretKeySpec(this.convertSecureTokenToBytes(secureToken), "AES")
+        val cipher = Cipher.getInstance("AES/ECB/PKCS5Padding")
+        cipher.init(Cipher.DECRYPT_MODE, key)
+        return cipher.doFinal(aesData)
+    }
+
+    private fun pbeEncrypt(secureToken: String, data: ByteArray): ByteArray {
+        val salt: ByteArray = this.convertSecureTokenToBytes(secureToken)
+        val pbeKeySpec = PBEKeySpec(secureToken.toCharArray())
+        val factory = SecretKeyFactory.getInstance("PBEWITHMD5andDES")
+        val key: Key = factory.generateSecret(pbeKeySpec)
+        val pbeParameterSpac = PBEParameterSpec(salt, 100)
+        val cipher = Cipher.getInstance("PBEWITHMD5andDES")
+        cipher.init(Cipher.ENCRYPT_MODE, key, pbeParameterSpac)
+        return cipher.doFinal(data)
+    }
+
+    private fun pbeDecrypt(secureToken: String, aesData: ByteArray): ByteArray {
+        val salt: ByteArray = this.convertSecureTokenToBytes(secureToken)
+        val pbeKeySpec = PBEKeySpec(secureToken.toCharArray())
+        val factory = SecretKeyFactory.getInstance("PBEWITHMD5andDES")
+        val key: Key = factory.generateSecret(pbeKeySpec)
+        val pbeParameterSpac = PBEParameterSpec(salt, 100)
+        val cipher = Cipher.getInstance("PBEWITHMD5andDES")
+        cipher.init(Cipher.DECRYPT_MODE, key, pbeParameterSpac)
+        return cipher.doFinal(aesData)
     }
 
     fun encrypt(data: ByteArray, messageBodyBodyEncryptionType: MessageBodyEncryptionType,
                 secureToken: String): ByteArray {
-        val key = SecretKeySpec(this.secureTokenToBytes(secureToken), "AES")
-        val cipher = Cipher.getInstance("AES/ECB/PKCS5Padding")
-        cipher.init(Cipher.ENCRYPT_MODE, key)
         val encryptedByteArray: ByteArray
         when (messageBodyBodyEncryptionType) {
             MessageBodyEncryptionType.AES_BASE64 -> {
-                encryptedByteArray = Base64.getEncoder().encode(cipher.doFinal(data))
+                encryptedByteArray = base64Encode(aesEncrypt(secureToken, data))
             }
             MessageBodyEncryptionType.BASE64_AES -> {
-                encryptedByteArray = cipher.doFinal(Base64.getEncoder().encode(data))
+                encryptedByteArray = aesEncrypt(secureToken, base64Encode(data))
+            }
+            MessageBodyEncryptionType.PBE_BASE64 -> {
+                encryptedByteArray = base64Encode(pbeEncrypt(secureToken, data))
+            }
+            MessageBodyEncryptionType.BASE64_PBE -> {
+                encryptedByteArray = pbeEncrypt(secureToken, base64Encode(data))
             }
         }
         return encryptedByteArray
@@ -38,18 +89,19 @@ private object MessageBodyEncryptionUtil {
 
     fun decrypt(encryptedData: ByteArray, messageBodyBodyEncryptionType: MessageBodyEncryptionType,
                 secureToken: String): ByteArray {
-        val key = SecretKeySpec(this.secureTokenToBytes(secureToken), "AES")
-        val cipher = Cipher.getInstance("AES/ECB/PKCS5Padding")
-        cipher.init(Cipher.DECRYPT_MODE, key)
         val decryptedByteArray: ByteArray
         when (messageBodyBodyEncryptionType) {
             MessageBodyEncryptionType.AES_BASE64 -> {
-                val aesData = Base64.getDecoder().decode(encryptedData)
-                decryptedByteArray = cipher.doFinal(aesData)
+                decryptedByteArray = aesDecrypt(secureToken, base64Decode(encryptedData))
             }
             MessageBodyEncryptionType.BASE64_AES -> {
-                val bas64Data = cipher.doFinal(encryptedData)
-                decryptedByteArray = Base64.getDecoder().decode(bas64Data)
+                decryptedByteArray = base64Decode(aesDecrypt(secureToken, encryptedData))
+            }
+            MessageBodyEncryptionType.PBE_BASE64 -> {
+                decryptedByteArray = pbeDecrypt(secureToken, base64Decode(encryptedData))
+            }
+            MessageBodyEncryptionType.BASE64_PBE -> {
+                decryptedByteArray = base64Decode(pbeDecrypt(secureToken, encryptedData))
             }
         }
         return decryptedByteArray

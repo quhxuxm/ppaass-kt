@@ -6,7 +6,10 @@ import java.util.*
  * The message body encryption type
  */
 enum class MessageBodyEncryptionType(val mask: String) {
-    BASE64_AES("T1"), AES_BASE64("T2");
+    BASE64_AES("T1"),
+    AES_BASE64("T2"),
+    BASE64_PBE("T3"),
+    PBE_BASE64("T4");
 
     companion object {
         private val random = Random()
