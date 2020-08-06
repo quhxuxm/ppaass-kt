@@ -11,6 +11,7 @@ import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.util.concurrent.EventExecutorGroup
 import org.slf4j.LoggerFactory
+import java.util.*
 
 @ChannelHandler.Sharable
 internal class SetupTargetConnectionHandler(private val proxyConfiguration: ProxyConfiguration) :
@@ -49,7 +50,6 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
                             TargetToProxyHandler(
                                     proxyChannel = proxyContext.channel(),
                                     messageId = agentMessage.body.id,
-                                    secureToken = agentMessage.secureToken,
                                     targetAddress = agentMessage.body.targetAddress ?: "",
                                     targetPort = agentMessage.body.targetPort ?: -1,
                                     proxyConfiguration = proxyConfiguration
@@ -77,7 +77,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
             proxyMessageBody.targetAddress = agentMessage.body.targetAddress
             proxyMessageBody.targetPort = agentMessage.body.targetPort
             val failProxyMessage =
-                    ProxyMessage(agentMessage.secureToken, MessageBodyEncryptionType.random(), proxyMessageBody)
+                    ProxyMessage(UUID.randomUUID().toString(), MessageBodyEncryptionType.random(), proxyMessageBody)
             proxyContext.channel().writeAndFlush(failProxyMessage).addListener(ChannelFutureListener.CLOSE)
             logger.error("Fail to connect to: {}:{}", targetAddress, targetPort)
             return

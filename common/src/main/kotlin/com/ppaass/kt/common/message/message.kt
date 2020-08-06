@@ -97,10 +97,11 @@ sealed class MessageBody {
 /**
  * The message object.
  */
-data class Message<T : MessageBody>(val secureToken: String, val messageBodyEncryptionType: MessageBodyEncryptionType,
+data class Message<T : MessageBody>(val encryptionToken: String,
+                                    val messageBodyEncryptionType: MessageBodyEncryptionType,
                                     val body: T) {
     override fun toString(): String {
-        return "Message(secureToken='$secureToken', messageBodyEncryptionType=$messageBodyEncryptionType, body=$body)"
+        return "Message(encryptionToken='$encryptionToken', messageBodyEncryptionType=$messageBodyEncryptionType, body=$body)"
     }
 }
 
@@ -122,24 +123,27 @@ enum class AgentMessageBodyType {
 /**
  * The agent message body
  */
-class AgentMessageBody(val bodyType: AgentMessageBodyType, override val id: String) : MessageBody() {
+class AgentMessageBody(val bodyType: AgentMessageBodyType, override val id: String,
+                       val securityToken: String) : MessageBody() {
     override var originalData: ByteArray? = null
     override var targetAddress: String? = null
     override var targetPort: Int? = null
 
-    constructor(bodyType: AgentMessageBodyType, id: String, targetAddress: String?, targetPort: Int?) : this(bodyType,
-            id) {
+    constructor(bodyType: AgentMessageBodyType, id: String, securityToken: String, targetAddress: String?,
+                targetPort: Int?) : this(bodyType,
+            id, securityToken) {
         this.targetAddress = targetAddress
         this.targetPort = targetPort
     }
 
-    constructor(bodyType: AgentMessageBodyType, id: String, targetAddress: String?, targetPort: Int?,
-                originalData: ByteArray) : this(bodyType, id, targetAddress, targetPort) {
+    constructor(bodyType: AgentMessageBodyType, id: String, securityToken: String, targetAddress: String?,
+                targetPort: Int?,
+                originalData: ByteArray) : this(bodyType, id, securityToken, targetAddress, targetPort) {
         this.originalData = originalData
     }
 
     override fun toString(): String {
-        return "AgentMessageBody(id='$id', bodyType=$bodyType, targetAddress=$targetAddress, targetPort=$targetPort, originalData:\n\n${String(
+        return "AgentMessageBody(id='$id', securityToken='$securityToken' bodyType=$bodyType, targetAddress=$targetAddress, targetPort=$targetPort, originalData:\n\n${String(
                 originalData ?: kotlin.byteArrayOf(), Charsets.UTF_8)}\n\n)"
     }
 }
@@ -172,13 +176,14 @@ class ProxyMessageBody(val bodyType: ProxyMessageBodyType, override val id: Stri
     override var targetAddress: String? = null
     override var targetPort: Int? = null
 
-    constructor(bodyType: ProxyMessageBodyType, id: String, targetAddress: String?, targetPort: Int?) : this(bodyType,
-            id) {
+    constructor(bodyType: ProxyMessageBodyType, id: String, targetAddress: String?,
+                targetPort: Int?) : this(bodyType, id) {
         this.targetAddress = targetAddress
         this.targetPort = targetPort
     }
 
-    constructor(bodyType: ProxyMessageBodyType, id: String, targetAddress: String?, targetPort: Int?,
+    constructor(bodyType: ProxyMessageBodyType, id: String, targetAddress: String?,
+                targetPort: Int?,
                 originalData: ByteArray) : this(bodyType, id, targetAddress, targetPort) {
         this.originalData = originalData
     }

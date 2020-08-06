@@ -12,9 +12,9 @@ import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
 import org.slf4j.LoggerFactory
+import java.util.*
 
-internal class TargetToProxyHandler(private val proxyChannel: Channel,
-                                    private val secureToken: String, private val messageId: String,
+internal class TargetToProxyHandler(private val proxyChannel: Channel, private val messageId: String,
                                     private val targetAddress: String, private val targetPort: Int,
                                     private val proxyConfiguration: ProxyConfiguration) :
         SimpleChannelInboundHandler<ByteBuf>() {
@@ -31,7 +31,8 @@ internal class TargetToProxyHandler(private val proxyChannel: Channel,
             targetPort = this@TargetToProxyHandler.targetPort
             originalData = originalDataByteArray
         }
-        val proxyMessage = ProxyMessage(secureToken, MessageBodyEncryptionType.random(), proxyMessageBody)
+        val proxyMessage =
+                ProxyMessage(UUID.randomUUID().toString(), MessageBodyEncryptionType.random(), proxyMessageBody)
         logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
         if (!this.proxyChannel.isActive) {
             logger.error("Fail to transfer data from target to proxy server because of proxy channel is not active.")

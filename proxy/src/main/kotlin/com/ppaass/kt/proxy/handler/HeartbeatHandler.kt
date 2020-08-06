@@ -32,12 +32,11 @@ internal class HeartbeatHandler : ChannelInboundHandlerAdapter() {
         }
         val utcDateTime = ZonedDateTime.now()
         val utcDataTimeString = utcDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-        val secureToken = UUID.randomUUID().toString().replace("-", "")
         val messageId = UUID.randomUUID().toString().replace("-", "")
         val proxyMessageBody = ProxyMessageBody(ProxyMessageBodyType.HEARTBEAT, messageId)
         proxyMessageBody.originalData = utcDataTimeString.toByteArray()
         val proxyMessage =
-                ProxyMessage(secureToken, MessageBodyEncryptionType.random(), proxyMessageBody)
+                ProxyMessage(UUID.randomUUID().toString(), MessageBodyEncryptionType.random(), proxyMessageBody)
         if (!proxyContext.channel().isActive) {
             logger.error("Close proxy channel as it is not active on heartbeat time, proxyChannelId={}",
                     proxyContext.channel().id().asLongText())

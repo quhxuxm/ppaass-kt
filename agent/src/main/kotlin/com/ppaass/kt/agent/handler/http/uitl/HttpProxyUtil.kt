@@ -12,6 +12,7 @@ import io.netty.channel.embedded.EmbeddedChannel
 import io.netty.handler.codec.http.HttpRequest
 import io.netty.handler.codec.http.HttpRequestEncoder
 import org.slf4j.LoggerFactory
+import java.util.*
 
 internal object HttpProxyUtil {
     private val logger = LoggerFactory.getLogger(
@@ -37,12 +38,12 @@ internal object HttpProxyUtil {
                 ByteBufUtil.getBytes(input as ByteBuf)
             }
         }
-        val agentMessageBody = AgentMessageBody(bodyType, clientChannelId)
+        val agentMessageBody = AgentMessageBody(bodyType, clientChannelId, secureToken)
         agentMessageBody.originalData = data
         agentMessageBody.targetAddress = host
         agentMessageBody.targetPort = port
         val agentMessage =
-                AgentMessage(secureToken, messageBodyEncryptionType, agentMessageBody)
+                AgentMessage(UUID.randomUUID().toString(), messageBodyEncryptionType, agentMessageBody)
         if (data != null) {
             logger.debug("The agent message write from agent to proxy is:\n{}\n", agentMessage)
         }

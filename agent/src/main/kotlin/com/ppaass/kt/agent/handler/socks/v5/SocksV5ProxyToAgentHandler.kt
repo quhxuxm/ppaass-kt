@@ -12,6 +12,7 @@ import io.netty.util.concurrent.Future
 import io.netty.util.concurrent.GenericFutureListener
 import io.netty.util.concurrent.Promise
 import org.slf4j.LoggerFactory
+import java.util.*
 
 internal class SocksV5ProxyToAgentHandler(private val agentChannel: Channel,
                                           private val socks5CommandRequest: Socks5CommandRequest,
@@ -25,9 +26,10 @@ internal class SocksV5ProxyToAgentHandler(private val agentChannel: Channel,
     override fun channelActive(proxyChannelContext: ChannelHandlerContext) {
         val agentChannelId = agentChannel.id().asLongText()
         val agentMessageBody = AgentMessageBody(bodyType = AgentMessageBodyType.CONNECT, id = agentChannelId,
+                securityToken = agentConfiguration.userToken,
                 targetAddress = socks5CommandRequest.dstAddr(), targetPort = socks5CommandRequest.dstPort())
         val agentMessage = AgentMessage(
-                secureToken = agentConfiguration.userToken,
+                encryptionToken = UUID.randomUUID().toString(),
                 messageBodyEncryptionType = MessageBodyEncryptionType.random(),
                 body = agentMessageBody)
         if (!proxyChannelContext.channel().isActive) {

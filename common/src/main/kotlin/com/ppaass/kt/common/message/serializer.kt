@@ -21,7 +21,7 @@ private typealias ShaMethod = (String) -> ByteArray
  * The encryption util to encrypt the message
  */
 private object MessageBodyEncryptionUtil {
-    fun encryptSecureToken(secureToken: String, encryptionType: MessageBodyEncryptionType): String {
+    fun generateEncryptionToken(encryptionType: MessageBodyEncryptionType): String {
         val shaMethod: ShaMethod = when (encryptionType) {
             MessageBodyEncryptionType.BASE64_AES_SHA1, MessageBodyEncryptionType.AES_BASE64_SHA1,
             MessageBodyEncryptionType.BASE64_PBE_SHA1, MessageBodyEncryptionType.PBE_BASE64_SHA1 -> {
@@ -44,10 +44,10 @@ private object MessageBodyEncryptionUtil {
                 DigestUtils::sha512
             }
         }
-        return DigestUtils.md5Hex(shaMethod(secureToken))
+        return DigestUtils.md5Hex(shaMethod(UUID.randomUUID().toString()))
     }
 
-    private fun convertSecureTokenToBytes(secureToken: String, shaMethod: ShaMethod): ByteArray {
+    private fun convertEncryptionTokenToBytes(secureToken: String, shaMethod: ShaMethod): ByteArray {
         return DigestUtils.md5(shaMethod(secureToken))
     }
 
@@ -59,23 +59,23 @@ private object MessageBodyEncryptionUtil {
         return Base64.getDecoder().decode(data)
     }
 
-    private fun aesEncrypt(secureToken: String, data: ByteArray, shaMethod: ShaMethod): ByteArray {
-        val key = SecretKeySpec(this.convertSecureTokenToBytes(secureToken, shaMethod), "AES")
+    private fun aesEncrypt(encryptionToken: String, data: ByteArray, shaMethod: ShaMethod): ByteArray {
+        val key = SecretKeySpec(this.convertEncryptionTokenToBytes(encryptionToken, shaMethod), "AES")
         val cipher = Cipher.getInstance("AES/ECB/PKCS5Padding")
         cipher.init(Cipher.ENCRYPT_MODE, key)
         return cipher.doFinal(data)
     }
 
-    private fun aesDecrypt(secureToken: String, aesData: ByteArray, shaMethod: ShaMethod): ByteArray {
-        val key = SecretKeySpec(this.convertSecureTokenToBytes(secureToken, shaMethod), "AES")
+    private fun aesDecrypt(encryptionToken: String, aesData: ByteArray, shaMethod: ShaMethod): ByteArray {
+        val key = SecretKeySpec(this.convertEncryptionTokenToBytes(encryptionToken, shaMethod), "AES")
         val cipher = Cipher.getInstance("AES/ECB/PKCS5Padding")
         cipher.init(Cipher.DECRYPT_MODE, key)
         return cipher.doFinal(aesData)
     }
 
-    private fun pbeEncrypt(secureToken: String, data: ByteArray, shaMethod: ShaMethod): ByteArray {
-        val salt: ByteArray = this.convertSecureTokenToBytes(secureToken, shaMethod).copyOfRange(0, 8)
-        val pbeKeySpec = PBEKeySpec(secureToken.toCharArray())
+    private fun pbeEncrypt(encryptionToken: String, data: ByteArray, shaMethod: ShaMethod): ByteArray {
+        val salt: ByteArray = this.convertEncryptionTokenToBytes(encryptionToken, shaMethod).copyOfRange(0, 8)
+        val pbeKeySpec = PBEKeySpec(encryptionToken.toCharArray())
         val factory = SecretKeyFactory.getInstance("PBEWITHMD5andDES")
         val key: Key = factory.generateSecret(pbeKeySpec)
         val pbeParameterSpac = PBEParameterSpec(salt, 100)
@@ -84,9 +84,9 @@ private object MessageBodyEncryptionUtil {
         return cipher.doFinal(data)
     }
 
-    private fun pbeDecrypt(secureToken: String, aesData: ByteArray, shaMethod: ShaMethod): ByteArray {
-        val salt: ByteArray = this.convertSecureTokenToBytes(secureToken, shaMethod).copyOfRange(0, 8)
-        val pbeKeySpec = PBEKeySpec(secureToken.toCharArray())
+    private fun pbeDecrypt(encryptionToken: String, aesData: ByteArray, shaMethod: ShaMethod): ByteArray {
+        val salt: ByteArray = this.convertEncryptionTokenToBytes(encryptionToken, shaMethod).copyOfRange(0, 8)
+        val pbeKeySpec = PBEKeySpec(encryptionToken.toCharArray())
         val factory = SecretKeyFactory.getInstance("PBEWITHMD5andDES")
         val key: Key = factory.generateSecret(pbeKeySpec)
         val pbeParameterSpac = PBEParameterSpec(salt, 100)
@@ -96,68 +96,68 @@ private object MessageBodyEncryptionUtil {
     }
 
     fun encrypt(data: ByteArray, messageBodyBodyEncryptionType: MessageBodyEncryptionType,
-                secureToken: String): ByteArray {
+                encryptionToken: String): ByteArray {
         val encryptedByteArray: ByteArray
         when (messageBodyBodyEncryptionType) {
             MessageBodyEncryptionType.AES_BASE64_SHA1 -> {
-                encryptedByteArray = base64Encode(aesEncrypt(secureToken, data, DigestUtils::sha1))
+                encryptedByteArray = base64Encode(aesEncrypt(encryptionToken, data, DigestUtils::sha1))
             }
             MessageBodyEncryptionType.BASE64_AES_SHA1 -> {
-                encryptedByteArray = aesEncrypt(secureToken, base64Encode(data), DigestUtils::sha1)
+                encryptedByteArray = aesEncrypt(encryptionToken, base64Encode(data), DigestUtils::sha1)
             }
             MessageBodyEncryptionType.AES_BASE64_SHA224 -> {
-                encryptedByteArray = base64Encode(aesEncrypt(secureToken, data, DigestUtils::sha3_224))
+                encryptedByteArray = base64Encode(aesEncrypt(encryptionToken, data, DigestUtils::sha3_224))
             }
             MessageBodyEncryptionType.BASE64_AES_SHA224 -> {
-                encryptedByteArray = aesEncrypt(secureToken, base64Encode(data), DigestUtils::sha3_224)
+                encryptedByteArray = aesEncrypt(encryptionToken, base64Encode(data), DigestUtils::sha3_224)
             }
             MessageBodyEncryptionType.AES_BASE64_SHA256 -> {
-                encryptedByteArray = base64Encode(aesEncrypt(secureToken, data, DigestUtils::sha256))
+                encryptedByteArray = base64Encode(aesEncrypt(encryptionToken, data, DigestUtils::sha256))
             }
             MessageBodyEncryptionType.BASE64_AES_SHA256 -> {
-                encryptedByteArray = aesEncrypt(secureToken, base64Encode(data), DigestUtils::sha256)
+                encryptedByteArray = aesEncrypt(encryptionToken, base64Encode(data), DigestUtils::sha256)
             }
             MessageBodyEncryptionType.AES_BASE64_SHA384 -> {
-                encryptedByteArray = base64Encode(aesEncrypt(secureToken, data, DigestUtils::sha384))
+                encryptedByteArray = base64Encode(aesEncrypt(encryptionToken, data, DigestUtils::sha384))
             }
             MessageBodyEncryptionType.BASE64_AES_SHA384 -> {
-                encryptedByteArray = aesEncrypt(secureToken, base64Encode(data), DigestUtils::sha384)
+                encryptedByteArray = aesEncrypt(encryptionToken, base64Encode(data), DigestUtils::sha384)
             }
             MessageBodyEncryptionType.AES_BASE64_SHA512 -> {
-                encryptedByteArray = base64Encode(aesEncrypt(secureToken, data, DigestUtils::sha512))
+                encryptedByteArray = base64Encode(aesEncrypt(encryptionToken, data, DigestUtils::sha512))
             }
             MessageBodyEncryptionType.BASE64_AES_SHA512 -> {
-                encryptedByteArray = aesEncrypt(secureToken, base64Encode(data), DigestUtils::sha512)
+                encryptedByteArray = aesEncrypt(encryptionToken, base64Encode(data), DigestUtils::sha512)
             }
             MessageBodyEncryptionType.PBE_BASE64_SHA1 -> {
-                encryptedByteArray = base64Encode(pbeEncrypt(secureToken, data, DigestUtils::sha1))
+                encryptedByteArray = base64Encode(pbeEncrypt(encryptionToken, data, DigestUtils::sha1))
             }
             MessageBodyEncryptionType.BASE64_PBE_SHA1 -> {
-                encryptedByteArray = pbeEncrypt(secureToken, base64Encode(data), DigestUtils::sha1)
+                encryptedByteArray = pbeEncrypt(encryptionToken, base64Encode(data), DigestUtils::sha1)
             }
             MessageBodyEncryptionType.PBE_BASE64_SHA224 -> {
-                encryptedByteArray = base64Encode(pbeEncrypt(secureToken, data, DigestUtils::sha3_224))
+                encryptedByteArray = base64Encode(pbeEncrypt(encryptionToken, data, DigestUtils::sha3_224))
             }
             MessageBodyEncryptionType.BASE64_PBE_SHA224 -> {
-                encryptedByteArray = pbeEncrypt(secureToken, base64Encode(data), DigestUtils::sha3_224)
+                encryptedByteArray = pbeEncrypt(encryptionToken, base64Encode(data), DigestUtils::sha3_224)
             }
             MessageBodyEncryptionType.PBE_BASE64_SHA256 -> {
-                encryptedByteArray = base64Encode(pbeEncrypt(secureToken, data, DigestUtils::sha256))
+                encryptedByteArray = base64Encode(pbeEncrypt(encryptionToken, data, DigestUtils::sha256))
             }
             MessageBodyEncryptionType.BASE64_PBE_SHA256 -> {
-                encryptedByteArray = pbeEncrypt(secureToken, base64Encode(data), DigestUtils::sha256)
+                encryptedByteArray = pbeEncrypt(encryptionToken, base64Encode(data), DigestUtils::sha256)
             }
             MessageBodyEncryptionType.PBE_BASE64_SHA384 -> {
-                encryptedByteArray = base64Encode(pbeEncrypt(secureToken, data, DigestUtils::sha384))
+                encryptedByteArray = base64Encode(pbeEncrypt(encryptionToken, data, DigestUtils::sha384))
             }
             MessageBodyEncryptionType.BASE64_PBE_SHA384 -> {
-                encryptedByteArray = pbeEncrypt(secureToken, base64Encode(data), DigestUtils::sha384)
+                encryptedByteArray = pbeEncrypt(encryptionToken, base64Encode(data), DigestUtils::sha384)
             }
             MessageBodyEncryptionType.PBE_BASE64_SHA512 -> {
-                encryptedByteArray = base64Encode(pbeEncrypt(secureToken, data, DigestUtils::sha512))
+                encryptedByteArray = base64Encode(pbeEncrypt(encryptionToken, data, DigestUtils::sha512))
             }
             MessageBodyEncryptionType.BASE64_PBE_SHA512 -> {
-                encryptedByteArray = pbeEncrypt(secureToken, base64Encode(data), DigestUtils::sha512)
+                encryptedByteArray = pbeEncrypt(encryptionToken, base64Encode(data), DigestUtils::sha512)
             }
         }
         return encryptedByteArray
@@ -274,6 +274,9 @@ private object MessageBodySerializer {
         val messageIdByteArray = message?.id?.toByteArray(Charsets.UTF_8) ?: byteArrayOf();
         result.writeInt(messageIdByteArray.size)
         result.writeBytes(messageIdByteArray)
+        val securityTokenArray = message?.securityToken?.toByteArray(Charsets.UTF_8) ?: byteArrayOf();
+        result.writeInt(securityTokenArray.size)
+        result.writeBytes(securityTokenArray)
         val targetAddressByteArray = message?.targetAddress?.toByteArray() ?: byteArrayOf()
         result.writeInt(targetAddressByteArray.size)
         result.writeBytes(targetAddressByteArray)
@@ -300,6 +303,8 @@ private object MessageBodySerializer {
         val bodyType = AgentMessageBodyType.valueOf(bodyTypeName)
         val messageIdLength = messageBodyByteBuf.readInt()
         val messageId = messageBodyByteBuf.readCharSequence(messageIdLength, Charsets.UTF_8).toString()
+        val securityTokenLength = messageBodyByteBuf.readInt()
+        val securityToken = messageBodyByteBuf.readCharSequence(securityTokenLength, Charsets.UTF_8).toString()
         val targetAddressLength = messageBodyByteBuf.readInt()
         val targetAddress = if (targetAddressLength == 0) {
             null
@@ -316,7 +321,7 @@ private object MessageBodySerializer {
             tempOriginalData
         }
         ReferenceCountUtil.release(messageBodyByteBuf)
-        val agentMessageBody = AgentMessageBody(bodyType, messageId)
+        val agentMessageBody = AgentMessageBody(bodyType, messageId, securityToken)
         agentMessageBody.originalData = originalData
         agentMessageBody.targetPort = targetPort
         agentMessageBody.targetAddress = targetAddress
@@ -368,54 +373,56 @@ internal object MessageSerializer {
     val logger = LoggerFactory.getLogger(MessageSerializer::class.java);
 
     fun encodeAgentMessage(message: AgentMessage, output: ByteBuf) {
-        val convertedSecureToken =
-                MessageBodyEncryptionUtil.encryptSecureToken(message.secureToken, message.messageBodyEncryptionType);
-        output.writeInt(convertedSecureToken.length)
-        output.writeBytes(convertedSecureToken.toByteArray(Charsets.UTF_8))
+        val encryptionToken =
+                MessageBodyEncryptionUtil.generateEncryptionToken(
+                        message.messageBodyEncryptionType);
+        output.writeInt(encryptionToken.length)
+        output.writeBytes(encryptionToken.toByteArray(Charsets.UTF_8))
         output.writeInt(message.messageBodyEncryptionType.mask.length)
         output.writeBytes(message.messageBodyEncryptionType.mask.toByteArray(Charsets.UTF_8))
         val bodyByteArray = MessageBodySerializer.encodeAgentMessageBody(message.body,
                 message.messageBodyEncryptionType,
-                convertedSecureToken)
+                encryptionToken)
         output.writeBytes(bodyByteArray);
     }
 
     fun encodeProxyMessage(message: ProxyMessage, output: ByteBuf) {
-        val convertedSecureToken =
-                MessageBodyEncryptionUtil.encryptSecureToken(message.secureToken, message.messageBodyEncryptionType);
-        output.writeInt(convertedSecureToken.length)
-        output.writeBytes(convertedSecureToken.toByteArray(Charsets.UTF_8))
+        val encryptionToken =
+                MessageBodyEncryptionUtil.generateEncryptionToken(
+                        message.messageBodyEncryptionType);
+        output.writeInt(encryptionToken.length)
+        output.writeBytes(encryptionToken.toByteArray(Charsets.UTF_8))
         output.writeInt(message.messageBodyEncryptionType.mask.length)
         output.writeBytes(message.messageBodyEncryptionType.mask.toByteArray(Charsets.UTF_8))
         val bodyByteArray = MessageBodySerializer.encodeProxyMessageBody(message.body,
                 message.messageBodyEncryptionType,
-                convertedSecureToken)
+                encryptionToken)
         output.writeBytes(bodyByteArray);
     }
 
     fun decodeAgentMessage(input: ByteBuf): AgentMessage {
-        val secureTokenLength = input.readInt()
-        val secureToken = input.readCharSequence(secureTokenLength, Charsets.UTF_8).toString()
+        val encryptionTokenLength = input.readInt()
+        val encryptionToken = input.readCharSequence(encryptionTokenLength, Charsets.UTF_8).toString()
         val encryptionTypeMaskLength = input.readInt()
         val encryptionTypeMask = input.readCharSequence(encryptionTypeMaskLength, Charsets.UTF_8).toString()
         val encryptionType = MessageBodyEncryptionType.fromMask(encryptionTypeMask) ?: throw PpaassException()
         val messageBodyByteArray = ByteArray(input.readableBytes())
         input.readBytes(messageBodyByteArray)
-        val agentMessage = AgentMessage(secureToken, encryptionType,
-                MessageBodySerializer.decodeAgentMessageBody(messageBodyByteArray, encryptionType, secureToken))
+        val agentMessage = AgentMessage(encryptionToken, encryptionType,
+                MessageBodySerializer.decodeAgentMessageBody(messageBodyByteArray, encryptionType, encryptionToken))
         return agentMessage
     }
 
     fun decodeProxyMessage(input: ByteBuf): ProxyMessage {
-        val secureTokenLength = input.readInt()
-        val secureToken = input.readCharSequence(secureTokenLength, Charsets.UTF_8).toString()
+        val encryptionTokenLength = input.readInt()
+        val encryptionToken = input.readCharSequence(encryptionTokenLength, Charsets.UTF_8).toString()
         val encryptionTypeMaskLength = input.readInt()
         val encryptionTypeMask = input.readCharSequence(encryptionTypeMaskLength, Charsets.UTF_8).toString()
         val encryptionType = MessageBodyEncryptionType.fromMask(encryptionTypeMask) ?: throw PpaassException()
         val messageBodyByteArray = ByteArray(input.readableBytes())
         input.readBytes(messageBodyByteArray)
-        val proxyMessage = ProxyMessage(secureToken, encryptionType,
-                MessageBodySerializer.decodeProxyMessageBody(messageBodyByteArray, encryptionType, secureToken))
+        val proxyMessage = ProxyMessage(encryptionToken, encryptionType,
+                MessageBodySerializer.decodeProxyMessageBody(messageBodyByteArray, encryptionType, encryptionToken))
         return proxyMessage
     }
 }
