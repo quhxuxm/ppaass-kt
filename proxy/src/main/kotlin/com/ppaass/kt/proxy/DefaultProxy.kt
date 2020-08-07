@@ -7,26 +7,24 @@ import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.boot.SpringApplication
-import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.context.properties.EnableConfigurationProperties
-import org.springframework.context.ApplicationContext
+import org.springframework.context.annotation.Scope
 import org.springframework.stereotype.Service
 
 /**
  * The proxy implementation
  */
 @Service
+@Scope("singleton")
 internal class DefaultProxy(private val proxyConfiguration: ProxyConfiguration) :
         IProxy {
-    companion object {
-        val logger: Logger = LoggerFactory.getLogger(DefaultProxy::class.java);
+    private companion object {
+        private val logger: Logger = LoggerFactory.getLogger(DefaultProxy::class.java);
     }
 
-    private val proxyChannelInitializer = ProxyChannelInitializer(this.proxyConfiguration)
     private val masterThreadGroup: NioEventLoopGroup
     private val workerThreadGroup: NioEventLoopGroup
     private val serverBootstrap: ServerBootstrap
+    private val proxyChannelInitializer = ProxyChannelInitializer(proxyConfiguration)
 
     init {
         this.masterThreadGroup = NioEventLoopGroup(this.proxyConfiguration.masterIoEventThreadNumber)
