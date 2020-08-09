@@ -37,7 +37,6 @@ internal class HttpDataTransferChannelInitializer(private val agentChannel: Chan
         logger.debug("Initialize HTTP data transfer channel, clientChannelId={}",
                 clientChannelId)
         with(httpProxyChannel.pipeline()) {
-            addLast(Lz4FrameDecoder())
             addLast(LengthFieldBasedFrameDecoder(Integer.MAX_VALUE,
                     0, 4, 0,
                     4))
@@ -52,7 +51,6 @@ internal class HttpDataTransferChannelInitializer(private val agentChannel: Chan
                             clientChannelId,
                             agentConfiguration, proxyChannelConnectedPromise))
             addLast(resourceClearHandler)
-            addLast(Lz4FrameEncoder())
             addLast(lengthFieldPrepender)
             addLast(AgentMessageEncoder())
         }
