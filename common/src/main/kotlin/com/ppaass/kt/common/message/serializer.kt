@@ -44,7 +44,8 @@ private object MessageBodyEncryptionUtil {
                 DigestUtils::sha512
             }
         }
-        return DigestUtils.md5Hex(shaMethod(UUID.randomUUID().toString()))
+        val encryptionToken = UUID.randomUUID().toString()
+        return DigestUtils.md5Hex(shaMethod(encryptionToken))
     }
 
     private fun convertEncryptionTokenToBytes(secureToken: String, shaMethod: ShaMethod): ByteArray {
@@ -239,7 +240,7 @@ private object MessageBodySerializer {
     val logger = LoggerFactory.getLogger(MessageBodySerializer::class.java);
 
     fun encodeProxyMessageBody(message: ProxyMessageBody?, messageBodyBodyEncryptionType: MessageBodyEncryptionType,
-                               secureToken: String): ByteArray {
+                               encryptionToken: String): ByteArray {
         logger.debug("Encode proxy message body.")
         val result = ByteBufAllocator.DEFAULT.buffer()
         val bodyTypeByteArray = message?.bodyType?.name?.toByteArray(Charsets.UTF_8) ?: byteArrayOf()
@@ -260,7 +261,7 @@ private object MessageBodySerializer {
         result.readBytes(resultByteArray)
         ReferenceCountUtil.release(result)
         val encryptedResult =
-                MessageBodyEncryptionUtil.encrypt(resultByteArray, messageBodyBodyEncryptionType, secureToken)
+                MessageBodyEncryptionUtil.encrypt(resultByteArray, messageBodyBodyEncryptionType, encryptionToken)
         return encryptedResult
     }
 
