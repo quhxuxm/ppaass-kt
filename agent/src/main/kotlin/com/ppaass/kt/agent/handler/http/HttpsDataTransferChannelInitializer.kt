@@ -11,6 +11,8 @@ import io.netty.channel.ChannelInitializer
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder
 import io.netty.handler.codec.LengthFieldPrepender
+import io.netty.handler.codec.compression.Lz4FrameDecoder
+import io.netty.handler.codec.compression.Lz4FrameEncoder
 import io.netty.util.concurrent.EventExecutorGroup
 import io.netty.util.concurrent.Promise
 import org.slf4j.LoggerFactory
@@ -33,6 +35,7 @@ internal class HttpsDataTransferChannelInitializer(private val agentChannel: Cha
         logger.debug("Initialize HTTPS data transfer channel, clientChannelId={}",
                 clientChannelId)
         with(httpsProxyChannel.pipeline()) {
+            addLast(Lz4FrameDecoder())
             addLast(LengthFieldBasedFrameDecoder(Integer.MAX_VALUE,
                     0, 4, 0,
                     4))
@@ -45,6 +48,7 @@ internal class HttpsDataTransferChannelInitializer(private val agentChannel: Cha
                             clientChannelId,
                             agentConfiguration, proxyChannelActivePromise))
             addLast(resourceClearHandler)
+            addLast(Lz4FrameEncoder())
             addLast(lengthFieldPrepender)
             addLast(AgentMessageEncoder())
         }

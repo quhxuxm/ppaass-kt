@@ -69,6 +69,7 @@ internal class SocksV5ConnectCommandHandler(private val agentConfiguration: Agen
         proxyBootstrap.handler(object : ChannelInitializer<Channel>() {
             override fun initChannel(proxyChannel: Channel) {
                 with(proxyChannel.pipeline()) {
+                    addLast(Lz4FrameDecoder())
                     addLast(LengthFieldBasedFrameDecoder(Int.MAX_VALUE,
                             0, 4, 0,
                             4))
@@ -81,6 +82,7 @@ internal class SocksV5ConnectCommandHandler(private val agentConfiguration: Agen
                                     socks5CommandRequest = socks5CommandRequest,
                                     proxyChannelActivePromise = proxyChannelActivePromise))
                     addLast(resourceClearHandler)
+                    addLast(Lz4FrameEncoder())
                     addLast(lengthFieldPrepender)
                     addLast(AgentMessageEncoder())
                 }

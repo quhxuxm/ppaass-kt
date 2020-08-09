@@ -32,10 +32,12 @@ class ProxyChannelInitializer(private val proxyConfiguration: ProxyConfiguration
             addLast(IdleStateHandler(0, 0, proxyConfiguration.agentConnectionIdleSeconds))
             addLast(heartbeatHandler)
             //Inbound
+            addLast(Lz4FrameDecoder())
             addLast(LengthFieldBasedFrameDecoder(Int.MAX_VALUE, 0, 4, 0, 4))
             addLast(AgentMessageDecoder())
             addLast(setupTargetConnectionHandler)
             //Outbound
+            addLast(Lz4FrameEncoder())
             addLast(lengthFieldPrepender)
             addLast(ProxyMessageEncoder())
         }
