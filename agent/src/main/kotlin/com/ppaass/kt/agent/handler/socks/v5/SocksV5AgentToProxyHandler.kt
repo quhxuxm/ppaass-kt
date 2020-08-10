@@ -2,10 +2,10 @@ package com.ppaass.kt.agent.handler.socks.v5
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
 import com.ppaass.kt.common.exception.PpaassException
-import com.ppaass.kt.common.message.AgentMessage
-import com.ppaass.kt.common.message.AgentMessageBody
-import com.ppaass.kt.common.message.AgentMessageBodyType
-import com.ppaass.kt.common.message.MessageBodyEncryptionType
+import com.ppaass.kt.common.protocol.AgentMessage
+import com.ppaass.kt.common.protocol.AgentMessageBody
+import com.ppaass.kt.common.protocol.AgentMessageBodyType
+import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import io.netty.buffer.ByteBuf
 import io.netty.channel.Channel
 import io.netty.channel.ChannelHandlerContext

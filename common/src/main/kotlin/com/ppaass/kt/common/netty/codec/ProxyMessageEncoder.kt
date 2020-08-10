@@ -1,7 +1,7 @@
 package com.ppaass.kt.common.netty.codec
 
-import com.ppaass.kt.common.message.MessageSerializer
-import com.ppaass.kt.common.message.ProxyMessage
+import com.ppaass.kt.common.protocol.ProxyMessage
+import com.ppaass.kt.common.protocol.encodeProxyMessage
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.MessageToByteEncoder
@@ -14,6 +14,6 @@ class ProxyMessageEncoder : MessageToByteEncoder<ProxyMessage>() {
 
     override fun encode(ctx: ChannelHandlerContext, msg: ProxyMessage, out: ByteBuf) {
         logger.debug("Begin to encode message:\n{}\n", msg)
-        MessageSerializer.encodeProxyMessage(msg, out)
+        encodeProxyMessage(msg, out)
     }
 }

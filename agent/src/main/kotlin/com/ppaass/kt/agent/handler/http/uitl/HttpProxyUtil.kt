@@ -1,9 +1,9 @@
 package com.ppaass.kt.agent.handler.http.uitl
 
-import com.ppaass.kt.common.message.AgentMessage
-import com.ppaass.kt.common.message.AgentMessageBody
-import com.ppaass.kt.common.message.AgentMessageBodyType
-import com.ppaass.kt.common.message.MessageBodyEncryptionType
+import com.ppaass.kt.common.protocol.AgentMessage
+import com.ppaass.kt.common.protocol.AgentMessageBody
+import com.ppaass.kt.common.protocol.AgentMessageBodyType
+import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufUtil
 import io.netty.channel.Channel

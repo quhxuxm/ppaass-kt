@@ -1,9 +1,9 @@
 package com.ppaass.kt.proxy.handler
 
-import com.ppaass.kt.common.message.MessageBodyEncryptionType
-import com.ppaass.kt.common.message.ProxyMessage
-import com.ppaass.kt.common.message.ProxyMessageBody
-import com.ppaass.kt.common.message.ProxyMessageBodyType
+import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
+import com.ppaass.kt.common.protocol.ProxyMessage
+import com.ppaass.kt.common.protocol.ProxyMessageBody
+import com.ppaass.kt.common.protocol.ProxyMessageBodyType
 import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext

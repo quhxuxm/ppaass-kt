@@ -1,4 +1,4 @@
-package com.ppaass.kt.common.message
+package com.ppaass.kt.common.protocol
 
 import java.util.*
 

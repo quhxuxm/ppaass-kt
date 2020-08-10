@@ -1,7 +1,7 @@
 package com.ppaass.kt.agent.handler.common
 
-import com.ppaass.kt.common.message.ProxyMessage
-import com.ppaass.kt.common.message.ProxyMessageBodyType
+import com.ppaass.kt.common.protocol.ProxyMessage
+import com.ppaass.kt.common.protocol.ProxyMessageBodyType
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler

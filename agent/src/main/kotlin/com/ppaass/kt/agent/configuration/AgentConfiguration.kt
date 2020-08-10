@@ -2,7 +2,7 @@ package com.ppaass.kt.agent.configuration
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.ppaass.kt.common.message.MessageBodyEncryptionType
+import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.io.File

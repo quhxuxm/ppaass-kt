@@ -1,10 +1,10 @@
 package com.ppaass.kt.proxy.handler
 
 import com.ppaass.kt.common.exception.PpaassException
-import com.ppaass.kt.common.message.MessageBodyEncryptionType
-import com.ppaass.kt.common.message.ProxyMessage
-import com.ppaass.kt.common.message.ProxyMessageBody
-import com.ppaass.kt.common.message.ProxyMessageBodyType
+import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
+import com.ppaass.kt.common.protocol.ProxyMessage
+import com.ppaass.kt.common.protocol.ProxyMessageBody
+import com.ppaass.kt.common.protocol.ProxyMessageBodyType
 import com.ppaass.kt.proxy.ProxyConfiguration
 import io.netty.buffer.ByteBuf
 import io.netty.channel.Channel

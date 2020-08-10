@@ -1,6 +1,6 @@
 package com.ppaass.kt.proxy.handler
 
-import com.ppaass.kt.common.message.*
+import com.ppaass.kt.common.protocol.*
 import com.ppaass.kt.common.netty.handler.ResourceClearHandler
 import com.ppaass.kt.proxy.ProxyConfiguration
 import io.netty.bootstrap.Bootstrap

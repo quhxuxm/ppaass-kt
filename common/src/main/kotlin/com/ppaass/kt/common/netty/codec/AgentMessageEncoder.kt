@@ -1,7 +1,7 @@
 package com.ppaass.kt.common.netty.codec
 
-import com.ppaass.kt.common.message.AgentMessage
-import com.ppaass.kt.common.message.MessageSerializer
+import com.ppaass.kt.common.protocol.AgentMessage
+import com.ppaass.kt.common.protocol.encodeAgentMessage
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.MessageToByteEncoder
@@ -14,6 +14,6 @@ class AgentMessageEncoder : MessageToByteEncoder<AgentMessage>() {
 
     override fun encode(ctx: ChannelHandlerContext, msg: AgentMessage, out: ByteBuf) {
         logger.debug("Begin to encode message:\n{}\n", msg)
-        MessageSerializer.encodeAgentMessage(msg, out)
+        encodeAgentMessage(msg, out)
     }
 }

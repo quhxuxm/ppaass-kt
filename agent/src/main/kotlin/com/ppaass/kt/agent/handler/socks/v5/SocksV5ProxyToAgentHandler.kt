@@ -2,7 +2,7 @@ package com.ppaass.kt.agent.handler.socks.v5
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
 import com.ppaass.kt.common.exception.PpaassException
-import com.ppaass.kt.common.message.*
+import com.ppaass.kt.common.protocol.*
 import io.netty.buffer.Unpooled
 import io.netty.channel.Channel
 import io.netty.channel.ChannelHandlerContext

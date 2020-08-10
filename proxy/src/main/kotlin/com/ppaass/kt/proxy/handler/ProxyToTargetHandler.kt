@@ -1,8 +1,8 @@
 package com.ppaass.kt.proxy.handler
 
 import com.ppaass.kt.common.exception.PpaassException
-import com.ppaass.kt.common.message.AgentMessage
-import com.ppaass.kt.common.message.AgentMessageBodyType
+import com.ppaass.kt.common.protocol.AgentMessage
+import com.ppaass.kt.common.protocol.AgentMessageBodyType
 import com.ppaass.kt.proxy.ProxyConfiguration
 import io.netty.buffer.Unpooled
 import io.netty.channel.Channel

@@ -4,8 +4,8 @@ import com.ppaass.kt.agent.configuration.AgentConfiguration
 import com.ppaass.kt.agent.handler.http.uitl.ChannelInfoCache
 import com.ppaass.kt.agent.handler.http.uitl.HttpProxyUtil
 import com.ppaass.kt.common.exception.PpaassException
-import com.ppaass.kt.common.message.AgentMessageBodyType
-import com.ppaass.kt.common.message.MessageBodyEncryptionType
+import com.ppaass.kt.common.protocol.AgentMessageBodyType
+import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import com.ppaass.kt.common.netty.handler.ResourceClearHandler
 import io.netty.channel.Channel
 import io.netty.channel.ChannelHandlerContext
