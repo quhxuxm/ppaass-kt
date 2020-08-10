@@ -5,13 +5,13 @@ import com.ppaass.kt.common.exception.PpaassException
 import io.netty.channel.ChannelFuture
 import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandlerContext
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 internal class ProxyChannelConnectedListener(private val agentChannelContext: ChannelHandlerContext,
                                              private val httpConnectionInfo: HttpConnectionInfo) :
         ChannelFutureListener {
-    companion object {
-        private val logger = LoggerFactory.getLogger(ProxyChannelConnectedListener::class.java)
+    private companion object {
+        private val logger = KotlinLogging.logger {}
     }
 
     override fun operationComplete(future: ChannelFuture) {

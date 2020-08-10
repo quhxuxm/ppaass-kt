@@ -11,7 +11,7 @@ import io.netty.handler.codec.socksx.v5.Socks5CommandRequest
 import io.netty.util.concurrent.Future
 import io.netty.util.concurrent.GenericFutureListener
 import io.netty.util.concurrent.Promise
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 import java.util.*
 
 internal class SocksV5ProxyToAgentHandler(private val agentChannel: Channel,
@@ -19,8 +19,8 @@ internal class SocksV5ProxyToAgentHandler(private val agentChannel: Channel,
                                           private val agentConfiguration: AgentConfiguration,
                                           private val proxyChannelActivePromise: Promise<Channel>) :
         SimpleChannelInboundHandler<ProxyMessage>() {
-    companion object {
-        private val logger = LoggerFactory.getLogger(SocksV5ProxyToAgentHandler::class.java)
+    private companion object {
+        private val logger = KotlinLogging.logger {}
     }
 
     override fun channelActive(proxyChannelContext: ChannelHandlerContext) {

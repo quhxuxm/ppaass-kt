@@ -15,7 +15,7 @@ import io.netty.handler.codec.compression.Lz4FrameDecoder
 import io.netty.handler.codec.compression.Lz4FrameEncoder
 import io.netty.util.concurrent.EventExecutorGroup
 import io.netty.util.concurrent.Promise
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 internal class HttpsDataTransferChannelInitializer(private val agentChannel: Channel,
                                                    private val executorGroup: EventExecutorGroup,
@@ -25,7 +25,7 @@ internal class HttpsDataTransferChannelInitializer(private val agentChannel: Cha
                                                    private val agentConfiguration: AgentConfiguration) :
         ChannelInitializer<SocketChannel>() {
     companion object {
-        private val logger = LoggerFactory.getLogger(HttpsDataTransferChannelInitializer::class.java)
+        private val logger = KotlinLogging.logger {}
         private val lengthFieldPrepender = LengthFieldPrepender(4)
         private val discardProxyHeartbeatHandler = DiscardProxyHeartbeatHandler()
         private val resourceClearHandler = ResourceClearHandler()

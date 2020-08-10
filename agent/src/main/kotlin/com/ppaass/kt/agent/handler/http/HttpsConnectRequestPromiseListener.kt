@@ -8,14 +8,13 @@ import io.netty.handler.codec.http.*
 import io.netty.handler.stream.ChunkedWriteHandler
 import io.netty.util.concurrent.Future
 import io.netty.util.concurrent.GenericFutureListener
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 internal class HttpsConnectRequestPromiseListener(
         private val agentChannelContext: ChannelHandlerContext) :
         GenericFutureListener<Future<Channel>> {
-    companion object {
-        private val logger =
-                LoggerFactory.getLogger(HttpsConnectRequestPromiseListener::class.java)
+    private companion object {
+        private val logger = KotlinLogging.logger {}
         private val resourceClearHandler = ResourceClearHandler()
     }
 

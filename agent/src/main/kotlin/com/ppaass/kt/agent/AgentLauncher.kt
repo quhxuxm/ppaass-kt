@@ -1,6 +1,6 @@
 package com.ppaass.kt.agent;
 
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.builder.SpringApplicationBuilder
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -12,7 +12,9 @@ import java.awt.EventQueue
 @SpringBootApplication
 @EnableConfigurationProperties
 class AgentLauncher {
-    private val logger = LoggerFactory.getLogger(AgentLauncher::class.java);
+    private companion object {
+        private val logger = KotlinLogging.logger {}
+    }
 
     fun launch(vararg arguments: String) {
         logger.info("Begin to launch agent.")

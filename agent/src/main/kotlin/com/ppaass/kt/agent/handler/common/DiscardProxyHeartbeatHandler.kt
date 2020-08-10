@@ -6,13 +6,13 @@ import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.util.ReferenceCountUtil
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 @ChannelHandler.Sharable
 internal class DiscardProxyHeartbeatHandler() :
         SimpleChannelInboundHandler<ProxyMessage>(false) {
-    companion object {
-        private val logger = LoggerFactory.getLogger(DiscardProxyHeartbeatHandler::class.java)
+    private companion object {
+        private val logger = KotlinLogging.logger {}
     }
 
     override fun channelRead0(proxyChannelContext: ChannelHandlerContext, proxyMessage: ProxyMessage) {

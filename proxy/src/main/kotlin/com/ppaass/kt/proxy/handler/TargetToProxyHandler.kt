@@ -11,15 +11,15 @@ import io.netty.channel.Channel
 import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 import java.util.*
 
 internal class TargetToProxyHandler(private val proxyChannel: Channel, private val messageId: String,
                                     private val targetAddress: String, private val targetPort: Int,
                                     private val proxyConfiguration: ProxyConfiguration) :
         SimpleChannelInboundHandler<ByteBuf>() {
-    companion object {
-        private val logger = LoggerFactory.getLogger(TargetToProxyHandler::class.java)
+    private companion object {
+        private val logger = KotlinLogging.logger {}
     }
 
     override fun channelRead0(targetChannelContext: ChannelHandlerContext, targetMessage: ByteBuf) {

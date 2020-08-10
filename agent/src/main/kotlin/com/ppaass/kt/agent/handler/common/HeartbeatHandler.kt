@@ -6,12 +6,12 @@ import io.netty.channel.ChannelInboundHandlerAdapter
 import io.netty.handler.timeout.IdleState
 import io.netty.handler.timeout.IdleStateEvent
 import io.netty.util.ReferenceCountUtil
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 @ChannelHandler.Sharable
 internal class HeartbeatHandler : ChannelInboundHandlerAdapter() {
-    companion object {
-        private val logger = LoggerFactory.getLogger(HeartbeatHandler::class.java)
+    private companion object {
+        private val logger = KotlinLogging.logger {}
     }
 
     override fun userEventTriggered(agentContext: ChannelHandlerContext, evt: Any) {

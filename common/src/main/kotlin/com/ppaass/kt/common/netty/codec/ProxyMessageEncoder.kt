@@ -5,11 +5,11 @@ import com.ppaass.kt.common.protocol.encodeProxyMessage
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.MessageToByteEncoder
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 class ProxyMessageEncoder : MessageToByteEncoder<ProxyMessage>() {
-    companion object {
-        private val logger = LoggerFactory.getLogger(ProxyMessageEncoder::class.java)
+    private companion object {
+        private val logger = KotlinLogging.logger {}
     }
 
     override fun encode(ctx: ChannelHandlerContext, msg: ProxyMessage, out: ByteBuf) {

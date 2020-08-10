@@ -11,6 +11,7 @@ import io.netty.handler.codec.LengthFieldPrepender
 import io.netty.handler.codec.compression.Lz4FrameDecoder
 import io.netty.handler.codec.compression.Lz4FrameEncoder
 import io.netty.handler.timeout.IdleStateHandler
+import mu.KotlinLogging
 import org.springframework.stereotype.Service
 
 /**
@@ -18,17 +19,19 @@ import org.springframework.stereotype.Service
  */
 @Service
 @ChannelHandler.Sharable
-class ProxyChannelInitializer(private val proxyConfiguration: ProxyConfiguration) :
+internal class ProxyChannelInitializer(private val proxyConfiguration: ProxyConfiguration) :
         ChannelInitializer<SocketChannel>() {
     private val heartbeatHandler = HeartbeatHandler()
     private val setupTargetConnectionHandler = SetupTargetConnectionHandler(proxyConfiguration)
 
     private companion object {
+        private val logger = KotlinLogging.logger {}
         private val lengthFieldPrepender = LengthFieldPrepender(4)
     }
 
     override fun initChannel(proxyChannel: SocketChannel) {
-        with(proxyChannel.pipeline()) {
+        proxyChannel.pipeline().apply {
+            logger.debug { "Begin to initialize proxy channel ${proxyChannel.id().asLongText()}" }
             addLast(IdleStateHandler(0, 0, proxyConfiguration.agentConnectionIdleSeconds))
             addLast(heartbeatHandler)
             //Inbound

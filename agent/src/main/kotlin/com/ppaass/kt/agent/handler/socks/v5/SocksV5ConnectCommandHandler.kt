@@ -17,18 +17,17 @@ import io.netty.handler.codec.compression.Lz4FrameEncoder
 import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandResponse
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest
 import io.netty.handler.codec.socksx.v5.Socks5CommandStatus
-import io.netty.handler.stream.ChunkedWriteHandler
 import io.netty.util.concurrent.DefaultPromise
 import io.netty.util.concurrent.EventExecutorGroup
 import io.netty.util.concurrent.Promise
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 @ChannelHandler.Sharable
 internal class SocksV5ConnectCommandHandler(private val agentConfiguration: AgentConfiguration) :
         SimpleChannelInboundHandler<Socks5CommandRequest>() {
     companion object {
-        private val logger = LoggerFactory.getLogger(SocksV5ConnectCommandHandler::class.java)
-        private val discardProxyHeartbeatHandler=DiscardProxyHeartbeatHandler()
+        private val logger = KotlinLogging.logger {}
+        private val discardProxyHeartbeatHandler = DiscardProxyHeartbeatHandler()
         private val lengthFieldPrepender = LengthFieldPrepender(4)
         private val resourceClearHandler = ResourceClearHandler()
     }

@@ -5,8 +5,8 @@ import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufAllocator
 import io.netty.buffer.Unpooled
 import io.netty.util.ReferenceCountUtil
+import mu.KotlinLogging
 import org.apache.commons.codec.digest.DigestUtils
-import org.slf4j.LoggerFactory
 import java.security.Key
 import java.util.*
 import javax.crypto.Cipher
@@ -15,11 +15,11 @@ import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.PBEParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-private val logger = LoggerFactory.getLogger("com.ppaass.kt.common.protocol.serializer")
+private val logger = KotlinLogging.logger {}
 
 private typealias ShaMethod = (String) -> ByteArray
 
-private fun generateEncryptionToken(encryptionType: MessageBodyEncryptionType): String {
+private fun generateMessageBodyEncryptionToken(encryptionType: MessageBodyEncryptionType): String {
     val shaMethod: ShaMethod = when (encryptionType) {
         MessageBodyEncryptionType.BASE64_AES_SHA1, MessageBodyEncryptionType.AES_BASE64_SHA1,
         MessageBodyEncryptionType.BASE64_PBE_SHA1, MessageBodyEncryptionType.PBE_BASE64_SHA1 -> {
@@ -359,7 +359,7 @@ private fun decodeProxyMessageBody(messageBytes: ByteArray, messageBodyBodyEncry
 
 internal fun encodeAgentMessage(message: AgentMessage, output: ByteBuf) {
     val encryptionToken =
-            generateEncryptionToken(
+            generateMessageBodyEncryptionToken(
                     message.messageBodyEncryptionType);
     output.writeInt(encryptionToken.length)
     output.writeBytes(encryptionToken.toByteArray(Charsets.UTF_8))
@@ -373,7 +373,7 @@ internal fun encodeAgentMessage(message: AgentMessage, output: ByteBuf) {
 
 internal fun encodeProxyMessage(message: ProxyMessage, output: ByteBuf) {
     val encryptionToken =
-            generateEncryptionToken(
+            generateMessageBodyEncryptionToken(
                     message.messageBodyEncryptionType);
     output.writeInt(encryptionToken.length)
     output.writeBytes(encryptionToken.toByteArray(Charsets.UTF_8))

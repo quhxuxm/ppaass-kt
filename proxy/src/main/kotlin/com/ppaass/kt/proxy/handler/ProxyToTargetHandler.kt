@@ -9,13 +9,13 @@ import io.netty.channel.Channel
 import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 internal class ProxyToTargetHandler(private val targetChannel: Channel,
                                     private val proxyConfiguration: ProxyConfiguration) :
         SimpleChannelInboundHandler<AgentMessage>() {
-    companion object {
-        private val logger = LoggerFactory.getLogger(ProxyToTargetHandler::class.java)
+    private companion object {
+        private val logger = KotlinLogging.logger {}
     }
 
     override fun channelRead0(proxyContext: ChannelHandlerContext, agentMessage: AgentMessage) {
@@ -26,7 +26,7 @@ internal class ProxyToTargetHandler(private val targetChannel: Channel,
             }
             return
         }
-        if(!targetChannel.isActive){
+        if (!targetChannel.isActive) {
             logger.error("Fail to transfer data from proxy to target server because of target channel is not active.")
             throw PpaassException("Fail to transfer data from proxy to target server because of target channel is not active.")
         }

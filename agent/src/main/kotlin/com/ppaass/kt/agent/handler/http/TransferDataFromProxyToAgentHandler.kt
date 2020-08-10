@@ -2,14 +2,12 @@ package com.ppaass.kt.agent.handler.http
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
 import com.ppaass.kt.agent.handler.http.bo.ChannelInfo
-import com.ppaass.kt.agent.handler.http.uitl.ChannelInfoCache
-import com.ppaass.kt.agent.handler.http.uitl.HttpProxyUtil
 import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.protocol.AgentMessageBodyType
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import io.netty.channel.*
 import io.netty.util.concurrent.Promise
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Channel, private val targetHost: String,
                                                    private val targetPort: Int,
@@ -17,8 +15,8 @@ internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Cha
                                                    private val agentConfiguration: AgentConfiguration,
                                                    private val proxyChannelActivePromise: Promise<Channel>) :
         ChannelInboundHandlerAdapter() {
-    companion object {
-        private val logger = LoggerFactory.getLogger(TransferDataFromProxyToAgentHandler::class.java)
+    private companion object {
+        private val logger = KotlinLogging.logger {}
     }
 
     override fun channelActive(proxyChannelContext: ChannelHandlerContext) {
@@ -26,7 +24,7 @@ internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Cha
                 ChannelInfo(proxyChannelContext.channel(),
                         this.targetHost, this.targetPort)
         ChannelInfoCache.saveChannelInfo(clientChannelId, channelCacheInfo)
-        HttpProxyUtil.writeToProxy(AgentMessageBodyType.CONNECT, agentConfiguration.userToken,
+        writeAgentMessageToProxy(AgentMessageBodyType.CONNECT, agentConfiguration.userToken,
                 channelCacheInfo.channel, channelCacheInfo.targetHost,
                 channelCacheInfo.targetPort, null,
                 clientChannelId, MessageBodyEncryptionType.random())

@@ -3,12 +3,12 @@ package com.ppaass.kt.common.netty.handler
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 @ChannelHandler.Sharable
 class ResourceClearHandler : ChannelInboundHandlerAdapter() {
-    companion object {
-        private val logger = LoggerFactory.getLogger(ResourceClearHandler::class.java)
+    private companion object {
+        private val logger = KotlinLogging.logger {}
     }
 
     override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {

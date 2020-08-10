@@ -1,6 +1,6 @@
 package com.ppaass.kt.proxy;
 
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -11,7 +11,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 @SpringBootApplication
 @EnableConfigurationProperties
 class ProxyLauncher {
-    private val logger = LoggerFactory.getLogger(ProxyLauncher::class.java);
+    private companion object {
+        private val logger = KotlinLogging.logger {}
+    }
 
     fun launch(vararg arguments: String) {
         val context = SpringApplication.run(ProxyLauncher::class.java)
@@ -28,6 +30,9 @@ class ProxyLauncher {
 }
 
 fun main(args: Array<String>) {
+    val logger = KotlinLogging.logger {}
+    logger.info { "Initializing proxy launcher ..." }
     val launcher = ProxyLauncher();
+    logger.info { "Launcher is ready ..." }
     launcher.launch(*args);
 }

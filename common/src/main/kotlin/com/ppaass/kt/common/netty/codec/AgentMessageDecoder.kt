@@ -5,11 +5,11 @@ import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufUtil
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.ByteToMessageDecoder
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 class AgentMessageDecoder : ByteToMessageDecoder() {
-    companion object {
-        private val logger = LoggerFactory.getLogger(AgentMessageDecoder::class.java)
+    private companion object {
+        private val logger = KotlinLogging.logger {}
     }
 
     override fun decode(ctx: ChannelHandlerContext, input: ByteBuf, out: MutableList<Any>) {

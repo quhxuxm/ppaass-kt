@@ -1,7 +1,7 @@
 package com.ppaass.kt.proxy.handler
 
-import com.ppaass.kt.common.protocol.*
 import com.ppaass.kt.common.netty.handler.ResourceClearHandler
+import com.ppaass.kt.common.protocol.*
 import com.ppaass.kt.proxy.ProxyConfiguration
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.PooledByteBufAllocator
@@ -10,14 +10,14 @@ import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.util.concurrent.EventExecutorGroup
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 import java.util.*
 
 @ChannelHandler.Sharable
 internal class SetupTargetConnectionHandler(private val proxyConfiguration: ProxyConfiguration) :
         SimpleChannelInboundHandler<AgentMessage>() {
-    companion object {
-        private val logger = LoggerFactory.getLogger(SetupTargetConnectionHandler::class.java)
+    private companion object {
+        private val logger = KotlinLogging.logger {}
         private val resourceClearHandler = ResourceClearHandler()
     }
 

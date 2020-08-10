@@ -6,13 +6,12 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.handler.codec.socksx.SocksMessage
 import io.netty.handler.codec.socksx.v5.*
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 @ChannelHandler.Sharable
 class SocksV5Handler(private val agentConfiguration: AgentConfiguration) : SimpleChannelInboundHandler<SocksMessage>() {
     companion object {
-        private val logger = LoggerFactory.getLogger(
-                SocksV5Handler::class.java)
+        private val logger = KotlinLogging.logger {}
     }
 
     private val socksV5ConnectHandler = SocksV5ConnectCommandHandler(this.agentConfiguration)

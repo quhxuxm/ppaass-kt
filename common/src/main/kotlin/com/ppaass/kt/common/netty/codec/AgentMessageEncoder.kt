@@ -5,11 +5,11 @@ import com.ppaass.kt.common.protocol.encodeAgentMessage
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.MessageToByteEncoder
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 class AgentMessageEncoder : MessageToByteEncoder<AgentMessage>() {
-    companion object {
-        private val logger = LoggerFactory.getLogger(AgentMessageEncoder::class.java)
+    private companion object {
+        private val logger = KotlinLogging.logger {}
     }
 
     override fun encode(ctx: ChannelHandlerContext, msg: AgentMessage, out: ByteBuf) {

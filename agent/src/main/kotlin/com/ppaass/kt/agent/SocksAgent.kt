@@ -7,6 +7,7 @@ import io.netty.channel.ChannelInitializer
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler
 import io.netty.handler.timeout.IdleStateHandler
+import mu.KotlinLogging
 import org.springframework.stereotype.Service
 
 @Service
@@ -14,6 +15,10 @@ internal class SocksAgent(private val agentConfiguration: AgentConfiguration) : 
     final override val channelInitializer: ChannelInitializer<SocketChannel>
     private val switchSocksVersionHandler = SwitchSocksVersionHandler(this.agentConfiguration)
     private val heartbeatHandler = HeartbeatHandler()
+
+    private companion object {
+        private val logger = KotlinLogging.logger {}
+    }
 
     init {
         this.channelInitializer = object : ChannelInitializer<SocketChannel>() {

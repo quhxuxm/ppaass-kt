@@ -5,8 +5,7 @@ import io.netty.bootstrap.ServerBootstrap
 import io.netty.channel.ChannelOption
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 import org.springframework.context.annotation.Scope
 import org.springframework.stereotype.Service
 
@@ -18,7 +17,7 @@ import org.springframework.stereotype.Service
 internal class DefaultProxy(private val proxyConfiguration: ProxyConfiguration) :
         IProxy {
     private companion object {
-        private val logger: Logger = LoggerFactory.getLogger(DefaultProxy::class.java);
+        private val logger = KotlinLogging.logger {}
     }
 
     private val masterThreadGroup: NioEventLoopGroup

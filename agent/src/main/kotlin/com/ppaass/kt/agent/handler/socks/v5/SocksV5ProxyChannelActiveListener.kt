@@ -10,7 +10,7 @@ import io.netty.handler.codec.socksx.v5.Socks5CommandStatus
 import io.netty.util.concurrent.EventExecutorGroup
 import io.netty.util.concurrent.Future
 import io.netty.util.concurrent.GenericFutureListener
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 internal class SocksV5ProxyChannelActiveListener(private val socks5CommandRequest: Socks5CommandRequest,
                                                  private val agentChannelContext: ChannelHandlerContext,
@@ -18,8 +18,7 @@ internal class SocksV5ProxyChannelActiveListener(private val socks5CommandReques
                                                  private val agentConfiguration: AgentConfiguration) :
         GenericFutureListener<Future<Channel>> {
     companion object {
-        private val logger = LoggerFactory.getLogger(
-                SocksV5ProxyChannelActiveListener::class.java)
+        private val logger = KotlinLogging.logger {}
         private val resourceClearHandler = ResourceClearHandler()
     }
 
