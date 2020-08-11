@@ -6,10 +6,8 @@ import java.util.*
  * The message body encryption type
  */
 enum class MessageBodyEncryptionType(val mask: String) {
-    BASE64_AES("T1"),
-    AES_BASE64("T2"),
-    BASE64_PBE("T3"),
-    PBE_BASE64("T4");
+    AES("T1"),
+    BLOWFISH("T2");
 
     companion object {
         private val random = Random()
@@ -33,8 +31,9 @@ enum class MessageBodyEncryptionType(val mask: String) {
          * Randomly give a MessageBodyEncryptionType object
          */
         fun random(): MessageBodyEncryptionType {
-            val encryptionIndex: Int = this.random.nextInt(values().size)
-            return values().get(encryptionIndex)
+            // val encryptionIndex: Int = this.random.nextInt(values().size)
+            // return values().get(encryptionIndex)
+            return BLOWFISH
         }
     }
 }

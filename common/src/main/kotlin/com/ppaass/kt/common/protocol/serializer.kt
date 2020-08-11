@@ -8,24 +8,20 @@ import io.netty.util.ReferenceCountUtil
 import mu.KotlinLogging
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.codec.digest.DigestUtils
-import java.security.Key
 import java.security.KeyFactory
 import java.security.KeyPairGenerator
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 import java.util.*
 import javax.crypto.Cipher
-import javax.crypto.SecretKeyFactory
-import javax.crypto.spec.PBEKeySpec
-import javax.crypto.spec.PBEParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 private val logger = KotlinLogging.logger {}
 private const val ALGORITHM_RSA = "RSA"
 private const val ALGORITHM_AES = "AES"
-private const val ALGORITHM_PBE = "PBEWITHMD5andDES"
+private const val ALGORITHM_BLOWFISH = "Blowfish"
 private const val AES_CIPHER = "AES/ECB/PKCS5Padding"
-private const val PBE_CIPHER = "PBEWITHMD5andDES"
+private const val BLOWFISH_CIPHER = "Blowfish/ECB/PKCS5Padding"
 
 private fun encryptMessageBodyEncryptionToken(messageBodyEncryptionToken: String, publicKeyString: String): String {
     val publicKeySpec = X509EncodedKeySpec(Base64.decodeBase64(publicKeyString))
@@ -62,25 +58,17 @@ private fun aesDecrypt(messageBodyEncryptionToken: String, aesData: ByteArray): 
     return cipher.doFinal(aesData)
 }
 
-private fun pbeEncrypt(messageBodyEncryptionToken: String, data: ByteArray): ByteArray {
-    val salt: ByteArray = messageBodyEncryptionToken.toByteArray(Charsets.UTF_8).copyOfRange(0, 8)
-    val pbeKeySpec = PBEKeySpec(messageBodyEncryptionToken.toCharArray())
-    val factory = SecretKeyFactory.getInstance(ALGORITHM_PBE)
-    val key: Key = factory.generateSecret(pbeKeySpec)
-    val pbeParameterSpac = PBEParameterSpec(salt, 100)
-    val cipher = Cipher.getInstance(PBE_CIPHER)
-    cipher.init(Cipher.ENCRYPT_MODE, key, pbeParameterSpac)
+private fun blowfishEncrypt(messageBodyEncryptionToken: String, data: ByteArray): ByteArray {
+    val key = SecretKeySpec(messageBodyEncryptionToken.toByteArray(Charsets.UTF_8), ALGORITHM_BLOWFISH)
+    val cipher = Cipher.getInstance(BLOWFISH_CIPHER)
+    cipher.init(Cipher.ENCRYPT_MODE, key)
     return cipher.doFinal(data)
 }
 
-private fun pbeDecrypt(messageBodyEncryptionToken: String, aesData: ByteArray): ByteArray {
-    val salt: ByteArray = messageBodyEncryptionToken.toByteArray(Charsets.UTF_8).copyOfRange(0, 8)
-    val pbeKeySpec = PBEKeySpec(messageBodyEncryptionToken.toCharArray())
-    val factory = SecretKeyFactory.getInstance(ALGORITHM_PBE)
-    val key: Key = factory.generateSecret(pbeKeySpec)
-    val pbeParameterSpac = PBEParameterSpec(salt, 100)
-    val cipher = Cipher.getInstance(PBE_CIPHER)
-    cipher.init(Cipher.DECRYPT_MODE, key, pbeParameterSpac)
+private fun blowfishDecrypt(messageBodyEncryptionToken: String, aesData: ByteArray): ByteArray {
+    val key = SecretKeySpec(messageBodyEncryptionToken.toByteArray(Charsets.UTF_8), ALGORITHM_BLOWFISH)
+    val cipher = Cipher.getInstance(BLOWFISH_CIPHER)
+    cipher.init(Cipher.DECRYPT_MODE, key)
     return cipher.doFinal(aesData)
 }
 
@@ -88,17 +76,11 @@ private fun encryptMessageBody(data: ByteArray, messageBodyBodyEncryptionType: M
                                messageBodyEncryptionToken: String): ByteArray {
     val encryptedByteArray: ByteArray
     when (messageBodyBodyEncryptionType) {
-        MessageBodyEncryptionType.AES_BASE64 -> {
-            encryptedByteArray = Base64.encodeBase64(aesEncrypt(messageBodyEncryptionToken, data))
+        MessageBodyEncryptionType.AES -> {
+            encryptedByteArray = aesEncrypt(messageBodyEncryptionToken, data)
         }
-        MessageBodyEncryptionType.BASE64_AES -> {
-            encryptedByteArray = aesEncrypt(messageBodyEncryptionToken, Base64.encodeBase64(data))
-        }
-        MessageBodyEncryptionType.PBE_BASE64 -> {
-            encryptedByteArray = Base64.encodeBase64(pbeEncrypt(messageBodyEncryptionToken, data))
-        }
-        MessageBodyEncryptionType.BASE64_PBE -> {
-            encryptedByteArray = pbeEncrypt(messageBodyEncryptionToken, Base64.encodeBase64(data))
+        MessageBodyEncryptionType.BLOWFISH -> {
+            encryptedByteArray = blowfishEncrypt(messageBodyEncryptionToken, data)
         }
     }
     return encryptedByteArray
@@ -109,21 +91,13 @@ private fun decryptMessageBody(encryptedData: ByteArray,
                                messageBodyEncryptionToken: String): ByteArray {
     val decryptedByteArray: ByteArray
     when (messageBodyBodyEncryptionType) {
-        MessageBodyEncryptionType.AES_BASE64 -> {
+        MessageBodyEncryptionType.AES -> {
             decryptedByteArray =
-                    aesDecrypt(messageBodyEncryptionToken, Base64.decodeBase64(encryptedData))
+                    aesDecrypt(messageBodyEncryptionToken, encryptedData)
         }
-        MessageBodyEncryptionType.BASE64_AES -> {
+        MessageBodyEncryptionType.BLOWFISH -> {
             decryptedByteArray =
-                    Base64.decodeBase64(aesDecrypt(messageBodyEncryptionToken, encryptedData))
-        }
-        MessageBodyEncryptionType.PBE_BASE64 -> {
-            decryptedByteArray =
-                    pbeDecrypt(messageBodyEncryptionToken, Base64.decodeBase64(encryptedData))
-        }
-        MessageBodyEncryptionType.BASE64_PBE -> {
-            decryptedByteArray =
-                    Base64.decodeBase64(pbeDecrypt(messageBodyEncryptionToken, encryptedData))
+                    blowfishDecrypt(messageBodyEncryptionToken, encryptedData)
         }
     }
     return decryptedByteArray
