@@ -19,8 +19,8 @@ private val logger = KotlinLogging.logger {}
 
 private typealias ShaMethod = (String) -> ByteArray
 
-private fun generateMessageBodyEncryptionToken(encryptionType: MessageBodyEncryptionType): String {
-    val shaMethod: ShaMethod = when (encryptionType) {
+private fun generateMessageBodyEncryptionToken(messageBodyEncryptionType: MessageBodyEncryptionType): String {
+    val shaMethod: ShaMethod = when (messageBodyEncryptionType) {
         MessageBodyEncryptionType.BASE64_AES_SHA1, MessageBodyEncryptionType.AES_BASE64_SHA1,
         MessageBodyEncryptionType.BASE64_PBE_SHA1, MessageBodyEncryptionType.PBE_BASE64_SHA1 -> {
             DigestUtils::sha1
@@ -404,26 +404,30 @@ internal fun encodeProxyMessage(message: ProxyMessage, output: ByteBuf) {
 internal fun decodeAgentMessage(input: ByteBuf): AgentMessage {
     val messageBodyEncryptionTokenLength = input.readInt()
     val messageBodyEncryptionToken = input.readCharSequence(messageBodyEncryptionTokenLength, Charsets.UTF_8).toString()
-    val encryptionTypeMaskLength = input.readInt()
-    val encryptionTypeMask = input.readCharSequence(encryptionTypeMaskLength, Charsets.UTF_8).toString()
-    val encryptionType = MessageBodyEncryptionType.fromMask(encryptionTypeMask) ?: throw PpaassException()
+    val messageBodyEncryptionTypeMaskLength = input.readInt()
+    val messageBodyEncryptionTypeMask =
+            input.readCharSequence(messageBodyEncryptionTypeMaskLength, Charsets.UTF_8).toString()
+    val messageBodyEncryptionType =
+            MessageBodyEncryptionType.fromMask(messageBodyEncryptionTypeMask) ?: throw PpaassException()
     val messageBodyByteArray = ByteArray(input.readableBytes())
     input.readBytes(messageBodyByteArray)
-    val agentMessage = AgentMessage(messageBodyEncryptionToken, encryptionType,
-            decodeAgentMessageBody(messageBodyByteArray, encryptionType, messageBodyEncryptionToken))
+    val agentMessage = AgentMessage(messageBodyEncryptionToken, messageBodyEncryptionType,
+            decodeAgentMessageBody(messageBodyByteArray, messageBodyEncryptionType, messageBodyEncryptionToken))
     return agentMessage
 }
 
 internal fun decodeProxyMessage(input: ByteBuf): ProxyMessage {
     val messageBodyEncryptionTokenLength = input.readInt()
     val messageBodyEncryptionToken = input.readCharSequence(messageBodyEncryptionTokenLength, Charsets.UTF_8).toString()
-    val encryptionTypeMaskLength = input.readInt()
-    val encryptionTypeMask = input.readCharSequence(encryptionTypeMaskLength, Charsets.UTF_8).toString()
-    val encryptionType = MessageBodyEncryptionType.fromMask(encryptionTypeMask) ?: throw PpaassException()
+    val messageBodyEncryptionTypeMaskLength = input.readInt()
+    val messageBodyEncryptionTypeMask =
+            input.readCharSequence(messageBodyEncryptionTypeMaskLength, Charsets.UTF_8).toString()
+    val messageBodyEncryptionType =
+            MessageBodyEncryptionType.fromMask(messageBodyEncryptionTypeMask) ?: throw PpaassException()
     val messageBodyByteArray = ByteArray(input.readableBytes())
     input.readBytes(messageBodyByteArray)
-    val proxyMessage = ProxyMessage(messageBodyEncryptionToken, encryptionType,
-            decodeProxyMessageBody(messageBodyByteArray, encryptionType, messageBodyEncryptionToken))
+    val proxyMessage = ProxyMessage(messageBodyEncryptionToken, messageBodyEncryptionType,
+            decodeProxyMessageBody(messageBodyByteArray, messageBodyEncryptionType, messageBodyEncryptionToken))
     return proxyMessage
 }
 
