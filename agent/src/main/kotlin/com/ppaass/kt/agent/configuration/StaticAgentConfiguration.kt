@@ -1,5 +1,6 @@
 package com.ppaass.kt.agent.configuration
 
+import org.apache.commons.io.IOUtils
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.stereotype.Service
 import java.util.*
@@ -22,8 +23,20 @@ class StaticAgentConfiguration {
     var proxyServerReceiveDataAverageBufferInitialSize = 0
     var proxyServerReceiveDataAverageBufferMaxSize = 0
     var proxyServerSoRcvbuf = 0
-    var proxyPublicKey: String? = null
-    var agentPrivateKey: String? = null
+    val proxyPublicKey: String by lazy {
+        val lines = IOUtils.readLines(
+                StaticAgentConfiguration::class.java.classLoader.getResourceAsStream("security/proxyPublicKey.txt"),
+                Charsets.UTF_8)
+        val result = lines.joinToString("")
+        result
+    }
+    val agentPrivateKey: String by lazy {
+        val lines = IOUtils.readLines(
+                StaticAgentConfiguration::class.java.classLoader.getResourceAsStream("security/agentPrivateKey.txt"),
+                Charsets.UTF_8)
+        val result = lines.joinToString("")
+        result
+    }
 }
 
 
