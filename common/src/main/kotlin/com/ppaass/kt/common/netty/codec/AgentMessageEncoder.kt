@@ -7,13 +7,16 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.MessageToByteEncoder
 import mu.KotlinLogging
 
-class AgentMessageEncoder : MessageToByteEncoder<AgentMessage>() {
+class AgentMessageEncoder(private val proxyPublicKeyString: String) : MessageToByteEncoder<AgentMessage>() {
     private companion object {
         private val logger = KotlinLogging.logger {}
     }
 
     override fun encode(ctx: ChannelHandlerContext, msg: AgentMessage, out: ByteBuf) {
         logger.debug("Begin to encode message:\n{}\n", msg)
-        encodeAgentMessage(msg, out)
+        encodeAgentMessage(
+                message = msg,
+                proxyPublicKeyString = proxyPublicKeyString,
+                output = out)
     }
 }

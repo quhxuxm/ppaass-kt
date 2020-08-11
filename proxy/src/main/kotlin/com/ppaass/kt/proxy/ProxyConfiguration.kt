@@ -19,4 +19,6 @@ class ProxyConfiguration {
     var targetReceiveDataAverageBufferMaxSize: Int = 0
     var targetSoRcvbuf: Int = 0
     var autoRead: Boolean = false
+    var agentPublicKey: String? = null
+    var proxyPrivateKey: String? = null
 }

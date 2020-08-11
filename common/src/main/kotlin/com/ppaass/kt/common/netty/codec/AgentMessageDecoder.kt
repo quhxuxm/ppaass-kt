@@ -7,7 +7,7 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.ByteToMessageDecoder
 import mu.KotlinLogging
 
-class AgentMessageDecoder : ByteToMessageDecoder() {
+class AgentMessageDecoder(private val proxyPrivateKeyString: String) : ByteToMessageDecoder() {
     private companion object {
         private val logger = KotlinLogging.logger {}
     }
@@ -17,7 +17,10 @@ class AgentMessageDecoder : ByteToMessageDecoder() {
             logger.trace("Begin to decode incoming request to message, incoming bytes:\n{}\n",
                     ByteBufUtil.prettyHexDump(input))
         }
-        val message = decodeAgentMessage(input)
+        val message = decodeAgentMessage(
+                input = input,
+                proxyPrivateKeyString = proxyPrivateKeyString
+        )
         logger.debug("Decode result:\n{}\n", message)
         out.add(message)
     }

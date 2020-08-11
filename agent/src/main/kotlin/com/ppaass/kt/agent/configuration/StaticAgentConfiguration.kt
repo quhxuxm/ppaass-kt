@@ -22,6 +22,8 @@ class StaticAgentConfiguration {
     var proxyServerReceiveDataAverageBufferInitialSize = 0
     var proxyServerReceiveDataAverageBufferMaxSize = 0
     var proxyServerSoRcvbuf = 0
+    var proxyPublicKey: String? = null
+    var agentPrivateKey: String? = null
 }
 
 
