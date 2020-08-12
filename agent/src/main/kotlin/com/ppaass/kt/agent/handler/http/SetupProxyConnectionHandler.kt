@@ -11,7 +11,6 @@ import io.netty.channel.*
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.handler.codec.http.*
-import io.netty.handler.stream.ChunkedWriteHandler
 import io.netty.util.ReferenceCountUtil
 import io.netty.util.concurrent.DefaultPromise
 import io.netty.util.concurrent.EventExecutorGroup
@@ -80,7 +79,6 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
                             with(okResponseFuture.channel().pipeline()) {
                                 remove(HttpServerCodec::class.java.name)
                                 remove(HttpObjectAggregator::class.java.name)
-                                remove(ChunkedWriteHandler::class.java.name)
                             }
                         })
             }
