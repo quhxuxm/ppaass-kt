@@ -2,6 +2,7 @@ package com.ppaass.kt.agent.handler.http
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
 import com.ppaass.kt.common.exception.PpaassException
+import com.ppaass.kt.common.netty.handler.ResourceClearHandler
 import com.ppaass.kt.common.protocol.AgentMessageBodyType
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import io.netty.bootstrap.Bootstrap
@@ -9,8 +10,8 @@ import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.*
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioSocketChannel
-import io.netty.handler.codec.http.FullHttpRequest
-import io.netty.handler.codec.http.HttpMethod
+import io.netty.handler.codec.http.*
+import io.netty.handler.stream.ChunkedWriteHandler
 import io.netty.util.ReferenceCountUtil
 import io.netty.util.concurrent.DefaultPromise
 import io.netty.util.concurrent.EventExecutorGroup
@@ -21,6 +22,7 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
         SimpleChannelInboundHandler<Any>() {
     private companion object {
         private val logger = KotlinLogging.logger {}
+        private val resourceClearHandler = ResourceClearHandler()
     }
 
     private val businessEventExecutorGroup: EventExecutorGroup
@@ -65,8 +67,23 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
             logger.debug("Incoming request is https protocol to setup connection, clientChannelId={}", clientChannelId)
             val proxyChannelActivePromise =
                     DefaultPromise<Channel>(this.businessEventExecutorGroup.next())
-            proxyChannelActivePromise.addListener(
-                    HttpsConnectRequestPromiseListener(agentChannelContext))
+            proxyChannelActivePromise.addListener {
+                if (!it.isSuccess) {
+                    return@addListener
+                }
+                with(agentChannelContext.pipeline()) {
+                    addLast(resourceClearHandler)
+                }
+                val okResponse = DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
+                agentChannelContext.writeAndFlush(okResponse)
+                        .addListener(ChannelFutureListener { okResponseFuture ->
+                            with(okResponseFuture.channel().pipeline()) {
+                                remove(HttpServerCodec::class.java.name)
+                                remove(HttpObjectAggregator::class.java.name)
+                                remove(ChunkedWriteHandler::class.java.name)
+                            }
+                        })
+            }
             val httpConnectionInfo = parseHttpConnectionInfo(msg.uri())
             this.proxyBootstrap.handler(
                     HttpsDataTransferChannelInitializer(agentChannelContext.channel(), this.businessEventExecutorGroup,
@@ -80,8 +97,22 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
         logger.debug("Incoming request is http protocol,  clientChannelId={}", clientChannelId)
         val proxyChannelActivePromise = DefaultPromise<Channel>(this.businessEventExecutorGroup.next())
         ReferenceCountUtil.retain(msg, 1)
-        proxyChannelActivePromise.addListener(
-                ProxyChannelActiveListener(msg, agentChannelContext, clientChannelId, agentConfiguration))
+        proxyChannelActivePromise.addListener {
+            if (!it.isSuccess) {
+                return@addListener
+            }
+            with(agentChannelContext.pipeline()) {
+                addLast(resourceClearHandler)
+            }
+            val channelCacheInfo = ChannelInfoCache.getChannelInfo(clientChannelId)
+            if (channelCacheInfo == null) {
+                logger.error("Fail to find channel cache information, clientChannelId={}", clientChannelId)
+                throw PpaassException()
+            }
+            writeAgentMessageToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
+                    channelCacheInfo.channel, channelCacheInfo.targetHost, channelCacheInfo.targetPort,
+                    msg, clientChannelId, MessageBodyEncryptionType.random())
+        }
         val httpConnectionInfo = parseHttpConnectionInfo(msg.uri())
         this.proxyBootstrap.handler(
                 HttpDataTransferChannelInitializer(agentChannelContext.channel(), this.businessEventExecutorGroup,
