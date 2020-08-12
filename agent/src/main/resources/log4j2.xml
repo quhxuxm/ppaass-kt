@@ -33,9 +33,9 @@
                 level="error">
             <appender-ref ref="FILE_APPENDER"/>
         </logger>
-        <logger name="io.netty.handler.logging.LoggingHandler"
+        <logger name="io.netty"
                 additivity="false"
-                level="error">
+                level="info">
             <appender-ref ref="FILE_APPENDER"/>
         </logger>
         <logger name="com.ppaass.kt.common"
