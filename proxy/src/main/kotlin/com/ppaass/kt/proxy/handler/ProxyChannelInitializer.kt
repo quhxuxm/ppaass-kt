@@ -38,13 +38,13 @@ internal class ProxyChannelInitializer(private val proxyConfiguration: ProxyConf
             addLast(Lz4FrameDecoder())
             addLast(LengthFieldBasedFrameDecoder(Int.MAX_VALUE, 0, 4, 0, 4))
             addLast(AgentMessageDecoder(
-                    proxyPrivateKeyString = proxyConfiguration.proxyPrivateKey ?: throw IllegalArgumentException()))
+                    proxyPrivateKeyString = proxyConfiguration.proxyPrivateKey))
             addLast(setupTargetConnectionHandler)
             //Outbound
             addLast(Lz4FrameEncoder())
             addLast(lengthFieldPrepender)
             addLast(ProxyMessageEncoder(
-                    agentPublicKeyString = proxyConfiguration.agentPublicKey ?: throw IllegalArgumentException()))
+                    agentPublicKeyString = proxyConfiguration.agentPublicKey))
         }
     }
 }

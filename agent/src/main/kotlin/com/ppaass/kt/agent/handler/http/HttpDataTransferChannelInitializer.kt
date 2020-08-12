@@ -42,8 +42,7 @@ internal class HttpDataTransferChannelInitializer(private val agentChannel: Chan
                     0, 4, 0,
                     4))
             addLast(ProxyMessageDecoder(
-                    agentPrivateKeyString = agentConfiguration.staticAgentConfiguration.agentPrivateKey
-                            ?: throw IllegalArgumentException()))
+                    agentPrivateKeyString = agentConfiguration.staticAgentConfiguration.agentPrivateKey))
             addLast(discardProxyHeartbeatHandler)
             addLast(ExtractProxyMessageOriginalDataDecoder())
             addLast(HttpResponseDecoder())
@@ -57,8 +56,7 @@ internal class HttpDataTransferChannelInitializer(private val agentChannel: Chan
             addLast(Lz4FrameEncoder())
             addLast(lengthFieldPrepender)
             addLast(AgentMessageEncoder(
-                    proxyPublicKeyString = agentConfiguration.staticAgentConfiguration.proxyPublicKey
-                            ?: throw IllegalArgumentException()))
+                    proxyPublicKeyString = agentConfiguration.staticAgentConfiguration.proxyPublicKey))
         }
     }
 }

@@ -73,8 +73,7 @@ internal class SocksV5ConnectCommandHandler(private val agentConfiguration: Agen
                             0, 4, 0,
                             4))
                     addLast(ProxyMessageDecoder(
-                            agentPrivateKeyString = agentConfiguration.staticAgentConfiguration.agentPrivateKey
-                                    ?: throw IllegalArgumentException()))
+                            agentPrivateKeyString = agentConfiguration.staticAgentConfiguration.agentPrivateKey))
                     addLast(discardProxyHeartbeatHandler)
                     addLast(businessEventExecutorGroup,
                             SocksV5ProxyToAgentHandler(
@@ -86,8 +85,7 @@ internal class SocksV5ConnectCommandHandler(private val agentConfiguration: Agen
                     addLast(Lz4FrameEncoder())
                     addLast(lengthFieldPrepender)
                     addLast(AgentMessageEncoder(
-                            proxyPublicKeyString = agentConfiguration.staticAgentConfiguration.proxyPublicKey
-                                    ?: throw IllegalArgumentException()))
+                            proxyPublicKeyString = agentConfiguration.staticAgentConfiguration.proxyPublicKey))
                 }
             }
         })
