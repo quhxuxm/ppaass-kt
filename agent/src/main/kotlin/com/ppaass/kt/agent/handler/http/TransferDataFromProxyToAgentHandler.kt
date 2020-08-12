@@ -45,9 +45,13 @@ internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Cha
     }
 
     override fun channelRead(proxyChannelContext: ChannelHandlerContext, msg: Any) {
-        logger.debug(
-                "Current client channel to receive the proxy response (reading), clientChannelId={}",
-                this.clientChannelId)
+        if (!this.agentChannel.isActive) {
+            proxyChannelContext.close()
+            logger.error(
+                    "Fail to send message from proxy to agent because of agent channel not active.")
+            throw PpaassException(
+                    "Fail to send message from proxy to agent because of agent channel not active.")
+        }
         this.agentChannel.writeAndFlush(msg)
     }
 
