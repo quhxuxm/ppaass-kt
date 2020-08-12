@@ -1,7 +1,6 @@
 package com.ppaass.kt.agent.handler.http
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
-
 import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.protocol.AgentMessageBodyType
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
@@ -12,6 +11,7 @@ import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.handler.codec.http.FullHttpRequest
 import io.netty.handler.codec.http.HttpMethod
+import io.netty.util.ReferenceCountUtil
 import io.netty.util.concurrent.DefaultPromise
 import io.netty.util.concurrent.EventExecutorGroup
 import mu.KotlinLogging
@@ -79,6 +79,7 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
         // A http request
         logger.debug("Incoming request is http protocol,  clientChannelId={}", clientChannelId)
         val proxyChannelActivePromise = DefaultPromise<Channel>(this.businessEventExecutorGroup.next())
+        ReferenceCountUtil.retain(msg, 1)
         proxyChannelActivePromise.addListener(
                 ProxyChannelActiveListener(msg, agentChannelContext, clientChannelId, agentConfiguration))
         val httpConnectionInfo = parseHttpConnectionInfo(msg.uri())

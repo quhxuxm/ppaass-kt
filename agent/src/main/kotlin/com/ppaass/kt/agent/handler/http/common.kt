@@ -93,11 +93,11 @@ internal fun parseHttpConnectionInfo(uri: String): HttpConnectionInfo {
     return HttpConnectionInfo(hostName, port)
 }
 
-
 fun writeAgentMessageToProxy(bodyType: AgentMessageBodyType, secureToken: String, proxyChannel: Channel,
                              host: String, port: Int,
                              input: Any?,
-                             clientChannelId: String, messageBodyEncryptionType: MessageBodyEncryptionType): ChannelFuture {
+                             clientChannelId: String,
+                             messageBodyEncryptionType: MessageBodyEncryptionType): ChannelFuture {
     var data: ByteArray? = null
     if (input != null) {
         data = if (input is HttpRequest) {
