@@ -1,7 +1,10 @@
 package com.ppaass.kt.agent.handler.http
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
+import com.ppaass.kt.agent.handler.common.DiscardProxyHeartbeatHandler
 import com.ppaass.kt.common.exception.PpaassException
+import com.ppaass.kt.common.netty.codec.AgentMessageEncoder
+import com.ppaass.kt.common.netty.codec.ProxyMessageDecoder
 import com.ppaass.kt.common.netty.handler.ResourceClearHandler
 import com.ppaass.kt.common.protocol.AgentMessageBodyType
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
@@ -9,7 +12,12 @@ import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.*
 import io.netty.channel.nio.NioEventLoopGroup
+import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder
+import io.netty.handler.codec.LengthFieldPrepender
+import io.netty.handler.codec.compression.Lz4FrameDecoder
+import io.netty.handler.codec.compression.Lz4FrameEncoder
 import io.netty.handler.codec.http.*
 import io.netty.util.ReferenceCountUtil
 import io.netty.util.concurrent.DefaultPromise
@@ -22,6 +30,8 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
     private companion object {
         private val logger = KotlinLogging.logger {}
         private val resourceClearHandler = ResourceClearHandler()
+        private val discardProxyHeartbeatHandler = DiscardProxyHeartbeatHandler()
+        private val lengthFieldPrepender = LengthFieldPrepender(4)
     }
 
     private val businessEventExecutorGroup: EventExecutorGroup
@@ -76,17 +86,41 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
                 val okResponse = DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
                 agentChannelContext.writeAndFlush(okResponse)
                         .addListener(ChannelFutureListener { okResponseFuture ->
-                            with(okResponseFuture.channel().pipeline()) {
-                                remove(HttpServerCodec::class.java.name)
-                                remove(HttpObjectAggregator::class.java.name)
+                            okResponseFuture.channel().pipeline().apply {
+                                if (this[HttpServerCodec::class.java.name] != null) {
+                                    remove(HttpServerCodec::class.java.name)
+                                }
+                                if (this[HttpObjectAggregator::class.java.name] != null) {
+                                    remove(HttpObjectAggregator::class.java.name)
+                                }
                             }
                         })
             }
             val httpConnectionInfo = parseHttpConnectionInfo(msg.uri())
-            this.proxyBootstrap.handler(
-                    HttpsDataTransferChannelInitializer(agentChannelContext.channel(), this.businessEventExecutorGroup,
-                            httpConnectionInfo, clientChannelId, proxyChannelActivePromise,
-                            this.agentConfiguration))
+            this.proxyBootstrap.handler(object : ChannelInitializer<SocketChannel>() {
+                override fun initChannel(httpsProxyChannel: SocketChannel) {
+                    with(httpsProxyChannel.pipeline()) {
+                        addLast(Lz4FrameDecoder())
+                        addLast(LengthFieldBasedFrameDecoder(Integer.MAX_VALUE,
+                                0, 4, 0,
+                                4))
+                        addLast(ProxyMessageDecoder(
+                                agentPrivateKeyString = agentConfiguration.staticAgentConfiguration.agentPrivateKey))
+                        addLast(discardProxyHeartbeatHandler)
+                        addLast(ExtractProxyMessageOriginalDataDecoder())
+                        addLast(businessEventExecutorGroup,
+                                TransferDataFromProxyToAgentHandler(agentChannelContext.channel(),
+                                        httpConnectionInfo.host, httpConnectionInfo.port,
+                                        clientChannelId,
+                                        agentConfiguration, proxyChannelActivePromise))
+                        addLast(resourceClearHandler)
+                        addLast(Lz4FrameEncoder())
+                        addLast(lengthFieldPrepender)
+                        addLast(AgentMessageEncoder(
+                                proxyPublicKeyString = agentConfiguration.staticAgentConfiguration.proxyPublicKey))
+                    }
+                }
+            })
             this.proxyBootstrap.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort).sync()
                     .addListener(ProxyChannelConnectedListener(agentChannelContext, httpConnectionInfo))
             return
@@ -112,10 +146,32 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
                     msg, clientChannelId, MessageBodyEncryptionType.random())
         }
         val httpConnectionInfo = parseHttpConnectionInfo(msg.uri())
-        this.proxyBootstrap.handler(
-                HttpDataTransferChannelInitializer(agentChannelContext.channel(), this.businessEventExecutorGroup,
-                        httpConnectionInfo, clientChannelId, proxyChannelActivePromise,
-                        this.agentConfiguration))
+        this.proxyBootstrap.handler(object : ChannelInitializer<SocketChannel>() {
+            override fun initChannel(httpProxyChannel: SocketChannel) {
+                httpProxyChannel.pipeline().apply {
+                    addLast(Lz4FrameDecoder())
+                    addLast(LengthFieldBasedFrameDecoder(java.lang.Integer.MAX_VALUE,
+                            0, 4, 0,
+                            4))
+                    addLast(ProxyMessageDecoder(
+                            agentPrivateKeyString = agentConfiguration.staticAgentConfiguration.agentPrivateKey))
+                    addLast(discardProxyHeartbeatHandler)
+                    addLast(ExtractProxyMessageOriginalDataDecoder())
+                    addLast(HttpResponseDecoder())
+                    addLast(HttpObjectAggregator(kotlin.Int.MAX_VALUE, true))
+                    addLast(businessEventExecutorGroup,
+                            TransferDataFromProxyToAgentHandler(agentChannelContext.channel(),
+                                    httpConnectionInfo.host, httpConnectionInfo.port,
+                                    clientChannelId,
+                                    agentConfiguration, proxyChannelActivePromise))
+                    addLast(resourceClearHandler)
+                    addLast(Lz4FrameEncoder())
+                    addLast(lengthFieldPrepender)
+                    addLast(AgentMessageEncoder(
+                            proxyPublicKeyString = agentConfiguration.staticAgentConfiguration.proxyPublicKey))
+                }
+            }
+        })
         this.proxyBootstrap.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort).sync()
                 .addListener(ProxyChannelConnectedListener(agentChannelContext, httpConnectionInfo))
     }
