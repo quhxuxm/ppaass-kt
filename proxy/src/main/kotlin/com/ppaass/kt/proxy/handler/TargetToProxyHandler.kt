@@ -41,6 +41,8 @@ internal class TargetToProxyHandler(private val proxyChannel: Channel, private v
         }
         this.proxyChannel.writeAndFlush(proxyMessage).addListener(ChannelFutureListener {
             if (!it.isSuccess) {
+                this@TargetToProxyHandler.proxyChannel.close()
+                targetChannelContext.close()
                 logger.error("Fail to transfer data from target to proxy server.", it.cause())
                 throw PpaassException("Fail to transfer data from target to proxy server.")
             }
