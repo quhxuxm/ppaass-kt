@@ -56,6 +56,8 @@ internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Cha
     override fun channelRead(proxyChannelContext: ChannelHandlerContext, msg: Any) {
         if (!this.agentChannel.isActive) {
             proxyChannelContext.close()
+            ChannelInfoCache.removeChannelInfo(clientChannelId)
+            this.agentChannel.close()
             logger.error(
                     "Fail to send message from proxy to agent because of agent channel not active.")
             throw PpaassException(
