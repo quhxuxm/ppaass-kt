@@ -25,12 +25,14 @@ internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Cha
                         this.targetHost, this.targetPort)
         ChannelInfoCache.saveChannelInfo(clientChannelId, channelCacheInfo)
         writeAgentMessageToProxy(AgentMessageBodyType.CONNECT, agentConfiguration.userToken,
-                channelCacheInfo.channel, channelCacheInfo.targetHost,
+                proxyChannelContext.channel(), channelCacheInfo.targetHost,
                 channelCacheInfo.targetPort, null,
                 clientChannelId, MessageBodyEncryptionType.random())
                 .addListener(ChannelFutureListener { connectCommandFuture: ChannelFuture ->
                     if (!connectCommandFuture.isSuccess) {
                         proxyChannelActivePromise.setFailure(connectCommandFuture.cause())
+                        ChannelInfoCache.removeChannelInfo(clientChannelId)
+                        proxyChannelContext.close()
                         logger.error(
                                 "Fail to send connect message from agent to proxy, clientChannelId={}, targetHost={}, targetPort={}",
                                 clientChannelId, channelCacheInfo.targetHost, channelCacheInfo.targetPort)
@@ -40,7 +42,10 @@ internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Cha
                     }
                     logger.debug("Success connect to proxy, clientChannelId={}, targetHost={}, targetPort={}",
                             clientChannelId, channelCacheInfo.targetHost, channelCacheInfo.targetPort)
-                    proxyChannelActivePromise.setSuccess(connectCommandFuture.channel())
+                    if (proxyChannelActivePromise.now == null) {
+                        proxyChannelActivePromise.setSuccess(connectCommandFuture.channel())
+                    }
+                    channelCacheInfo.proxyConnectionActivated = true
                 })
     }
 

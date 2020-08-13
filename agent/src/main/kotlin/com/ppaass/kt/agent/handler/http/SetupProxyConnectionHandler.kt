@@ -158,7 +158,7 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
                     addLast(discardProxyHeartbeatHandler)
                     addLast(ExtractProxyMessageOriginalDataDecoder())
                     addLast(HttpResponseDecoder())
-                    addLast(HttpObjectAggregator(kotlin.Int.MAX_VALUE, true))
+                    addLast(HttpObjectAggregator(Int.MAX_VALUE, true))
                     addLast(businessEventExecutorGroup,
                             TransferDataFromProxyToAgentHandler(agentChannelContext.channel(),
                                     httpConnectionInfo.host, httpConnectionInfo.port,
