@@ -30,12 +30,15 @@ internal class SocksV5ProxyChannelActiveListener(private val socks5CommandReques
         logger.debug(
                 "Success connect to target server: {}:{}", this.socks5CommandRequest.dstAddr(),
                 this.socks5CommandRequest.dstPort())
-        agentChannelContext.pipeline()
-                .addLast(businessEventExecutorGroup,
-                        SocksV5AgentToProxyHandler(proxyChannel,
-                                socks5CommandRequest, this.agentConfiguration))
-        agentChannelContext.pipeline().addLast(resourceClearHandler)
-        agentChannelContext.pipeline().remove(SocksV5ConnectCommandHandler::class.java.name)
+        agentChannelContext.pipeline().apply {
+            addLast(businessEventExecutorGroup,
+                    SocksV5AgentToProxyHandler(proxyChannel,
+                            socks5CommandRequest, agentConfiguration))
+            addLast(resourceClearHandler)
+            if (this[SocksV5ConnectCommandHandler::class.java.name] != null) {
+                remove(SocksV5ConnectCommandHandler::class.java.name)
+            }
+        }
         agentChannelContext.channel().writeAndFlush(DefaultSocks5CommandResponse(
                 Socks5CommandStatus.SUCCESS,
                 this.socks5CommandRequest.dstAddrType(),

@@ -49,7 +49,7 @@ internal class SocksV5ProxyToAgentHandler(private val agentChannel: Channel,
                                 "Fail to send connect message from agent to proxy because of exception.",
                                 future.cause())
                     }
-                    this.proxyChannelActivePromise.setSuccess(proxyChannelContext.channel())
+                    this.proxyChannelActivePromise.now ?: this.proxyChannelActivePromise.setSuccess(proxyChannelContext.channel())
                 })
     }
 

@@ -46,9 +46,7 @@ internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Cha
                     }
                     logger.debug("Success connect to proxy, clientChannelId={}, targetHost={}, targetPort={}",
                             clientChannelId, channelCacheInfo.targetHost, channelCacheInfo.targetPort)
-                    if (proxyChannelActivePromise.now == null) {
-                        proxyChannelActivePromise.setSuccess(connectCommandFuture.channel())
-                    }
+                    proxyChannelActivePromise.now ?: proxyChannelActivePromise.setSuccess(connectCommandFuture.channel())
                     channelCacheInfo.proxyConnectionActivated = true
                 })
     }
