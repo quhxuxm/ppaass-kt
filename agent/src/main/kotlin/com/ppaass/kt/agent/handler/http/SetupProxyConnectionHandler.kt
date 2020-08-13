@@ -61,13 +61,13 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
         if (msg !is FullHttpRequest) {
             //A https request to send data
             logger.debug("Incoming request is https protocol to send data, clientChannelId={}", clientChannelId)
-            val channelCacheInfo = ChannelInfoCache.getChannelInfo(clientChannelId)
+            val channelCacheInfo = ChannelInfoCache.getChannelInfoByClientChannelId(clientChannelId)
             if (channelCacheInfo == null) {
                 logger.error("Fail to find channel cache information, clientChannelId={}", clientChannelId)
                 throw PpaassException("Fail to find channel cache information, clientChannelId=$clientChannelId")
             }
             writeAgentMessageToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
-                    channelCacheInfo.channel, channelCacheInfo.targetHost, channelCacheInfo.targetPort,
+                    channelCacheInfo.proxyChannel, channelCacheInfo.targetHost, channelCacheInfo.targetPort,
                     msg, clientChannelId, MessageBodyEncryptionType.random())
             return
         }
@@ -136,13 +136,13 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
             with(agentChannelContext.pipeline()) {
                 addLast(resourceClearHandler)
             }
-            val channelCacheInfo = ChannelInfoCache.getChannelInfo(clientChannelId)
+            val channelCacheInfo = ChannelInfoCache.getChannelInfoByClientChannelId(clientChannelId)
             if (channelCacheInfo == null) {
                 logger.error("Fail to find channel cache information, clientChannelId={}", clientChannelId)
                 throw PpaassException()
             }
             writeAgentMessageToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
-                    channelCacheInfo.channel, channelCacheInfo.targetHost, channelCacheInfo.targetPort,
+                    channelCacheInfo.proxyChannel, channelCacheInfo.targetHost, channelCacheInfo.targetPort,
                     msg, clientChannelId, MessageBodyEncryptionType.random())
         }
         val httpConnectionInfo = parseHttpConnectionInfo(msg.uri())

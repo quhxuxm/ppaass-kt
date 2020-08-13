@@ -21,8 +21,12 @@ internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Cha
 
     override fun channelActive(proxyChannelContext: ChannelHandlerContext) {
         val channelCacheInfo =
-                ChannelInfo(proxyChannelContext.channel(),
-                        this.targetHost, this.targetPort)
+                ChannelInfo(
+                        clientChannelId = clientChannelId,
+                        agentChannel = agentChannel,
+                        proxyChannel = proxyChannelContext.channel(),
+                        targetHost = this.targetHost,
+                        targetPort = this.targetPort)
         ChannelInfoCache.saveChannelInfo(clientChannelId, channelCacheInfo)
         writeAgentMessageToProxy(AgentMessageBodyType.CONNECT, agentConfiguration.userToken,
                 proxyChannelContext.channel(), channelCacheInfo.targetHost,
@@ -58,6 +62,10 @@ internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Cha
                     "Fail to send message from proxy to agent because of agent channel not active.")
         }
         this.agentChannel.writeAndFlush(msg)
+    }
+
+    override fun channelInactive(proxyChannelContext: ChannelHandlerContext) {
+        this.agentChannel.close()
     }
 
     override fun channelReadComplete(ctx: ChannelHandlerContext) {

@@ -31,9 +31,19 @@ internal object ChannelInfoCache {
     private val cache = Hashtable<String, ChannelInfo>()
     private val logger = KotlinLogging.logger {}
 
-    fun getChannelInfo(clientId: String): ChannelInfo? {
-        logger.debug { "Get channel info by id=$clientId" }
-        return cache[clientId]
+    fun getChannelInfoByClientChannelId(clientChannelId: String): ChannelInfo? {
+        logger.debug { "Get channel info by client channel id=$clientChannelId" }
+        return cache[clientChannelId]
+    }
+
+    fun getChannelInfoByProxyChannelId(proxyChannelId: String): ChannelInfo? {
+        logger.debug { "Get channel info by proxy channel id=$proxyChannelId" }
+        cache.values.forEach {
+            if (it.proxyChannel.id().asLongText() == proxyChannelId) {
+                return@getChannelInfoByProxyChannelId it
+            }
+        }
+        return null
     }
 
     fun saveChannelInfo(clientId: String, channelInfo: ChannelInfo) {
