@@ -31,6 +31,7 @@ internal class HeartbeatHandler : ChannelInboundHandlerAdapter() {
             return
         }
         if (!proxyContext.channel().isActive) {
+            logger.info { "Close proxy channel ${proxyContext.channel().id().asLongText()} because it is not avtive." }
             proxyContext.close()
         }
         val utcDateTime = ZonedDateTime.now()
