@@ -30,6 +30,9 @@ internal class HeartbeatHandler : ChannelInboundHandlerAdapter() {
         if (IdleState.ALL_IDLE !== evt.state()) {
             return
         }
+        if (!proxyContext.channel().isActive) {
+            proxyContext.close()
+        }
         val utcDateTime = ZonedDateTime.now()
         val utcDataTimeString = utcDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
         val messageId = UUID.randomUUID().toString().replace("-", "")
