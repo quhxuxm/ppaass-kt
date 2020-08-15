@@ -115,12 +115,10 @@ private fun encodeAgentMessageBody(message: AgentMessageBody?, messageBodyBodyEn
     return Unpooled.wrappedBuffer(encryptedResult)
 }
 
-private fun decodeAgentMessageBody(messageBodyByteBufBeforeDecrypt: ByteBuf, messageBodyBodyEncryptionType: MessageBodyEncryptionType,
+private fun decodeAgentMessageBody(messageBytes: ByteArray, messageBodyBodyEncryptionType: MessageBodyEncryptionType,
                                    messageBodyEncryptionToken: String): AgentMessageBody {
-    val messageBodyByteArray = ByteArray(messageBodyByteBufBeforeDecrypt.readableBytes())
-    messageBodyByteBufBeforeDecrypt.readBytes(messageBodyByteArray)
     val messageBodyBytes =
-            decryptMessageBody(messageBodyByteArray, messageBodyBodyEncryptionType, messageBodyEncryptionToken);
+            decryptMessageBody(messageBytes, messageBodyBodyEncryptionType, messageBodyEncryptionToken);
     val messageBodyByteBuf = Unpooled.wrappedBuffer(messageBodyBytes)
     val bodyTypeNameLength = messageBodyByteBuf.readInt()
     val bodyTypeName = messageBodyByteBuf.readCharSequence(bodyTypeNameLength, Charsets.UTF_8).toString()
@@ -223,9 +221,11 @@ internal fun decodeAgentMessage(input: ByteBuf, proxyPrivateKeyString: String): 
             input.readCharSequence(messageBodyEncryptionTypeMaskLength, Charsets.UTF_8).toString()
     val messageBodyEncryptionType =
             MessageBodyEncryptionType.fromMask(messageBodyEncryptionTypeMask) ?: throw PpaassException()
-    val messageBodyByteBuf = input.readBytes(input.readableBytes())
+
+    val messageBodyByteArray = ByteArray(input.readableBytes())
+    input.readBytes(messageBodyByteArray)
     val agentMessage = AgentMessage(messageBodyEncryptionToken, messageBodyEncryptionType,
-            decodeAgentMessageBody(messageBodyByteBuf, messageBodyEncryptionType, messageBodyEncryptionToken))
+            decodeAgentMessageBody(messageBodyByteArray, messageBodyEncryptionType, messageBodyEncryptionToken))
     return agentMessage
 }
 
