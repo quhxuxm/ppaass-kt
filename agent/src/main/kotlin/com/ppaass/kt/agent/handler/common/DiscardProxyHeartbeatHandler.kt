@@ -1,5 +1,6 @@
 package com.ppaass.kt.agent.handler.common
 
+import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.protocol.ProxyMessage
 import com.ppaass.kt.common.protocol.ProxyMessageBodyType
 import io.netty.channel.ChannelHandler
@@ -20,8 +21,11 @@ internal class DiscardProxyHeartbeatHandler() :
             proxyChannelContext.fireChannelRead(proxyMessage)
             return
         }
-        val utcDataTimeString =
-                String(proxyMessage.body.originalData ?: System.currentTimeMillis().toString().toByteArray())
+        val originalData = proxyMessage.body.originalData
+        if (originalData == null) {
+            throw PpaassException()
+        }
+        val utcDataTimeString = String(originalData, Charsets.UTF_8)
         logger.debug("Receive heartbeat form proxy channel: {}, heartbeat time: {}",
                 proxyChannelContext.channel().id().asLongText(),
                 utcDataTimeString)

@@ -125,8 +125,5 @@ fun writeAgentMessageToProxy(bodyType: AgentMessageBodyType, secureToken: String
     agentMessageBody.targetPort = port
     val agentMessage =
             AgentMessage(UUID.randomUUID().toString(), messageBodyEncryptionType, agentMessageBody)
-    if (data != null) {
-        logger.debug("The agent message write from agent to proxy is:\n{}\n", agentMessage)
-    }
     return proxyChannel.writeAndFlush(agentMessage)
 }

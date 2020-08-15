@@ -2,166 +2,125 @@ package com.ppaass.kt.common.protocol
 
 import com.ppaass.kt.common.exception.PpaassException
 import io.netty.buffer.ByteBuf
-import io.netty.buffer.ByteBufAllocator
 import io.netty.buffer.Unpooled
-import io.netty.util.ReferenceCountUtil
 import mu.KotlinLogging
-import org.apache.commons.codec.binary.Base64
 import org.apache.commons.codec.digest.DigestUtils
-import java.security.KeyFactory
-import java.security.KeyPairGenerator
-import java.security.spec.PKCS8EncodedKeySpec
-import java.security.spec.X509EncodedKeySpec
 import java.util.*
-import javax.crypto.Cipher
-import javax.crypto.spec.SecretKeySpec
 
 private val logger = KotlinLogging.logger {}
-private const val ALGORITHM_RSA = "RSA"
-private const val ALGORITHM_AES = "AES"
-private const val ALGORITHM_BLOWFISH = "Blowfish"
-private const val AES_CIPHER = "AES/ECB/PKCS5Padding"
-private const val BLOWFISH_CIPHER = "Blowfish/ECB/PKCS5Padding"
+private const val MAGIC_CODE = "__PPAASS__"
 
-private fun encryptMessageBodyEncryptionToken(messageBodyEncryptionToken: String, publicKeyString: String): String {
-    val publicKeySpec = X509EncodedKeySpec(Base64.decodeBase64(publicKeyString))
-    val keyFactory = KeyFactory.getInstance(ALGORITHM_RSA)
-    val publicKey = keyFactory.generatePublic(publicKeySpec)
-    val cipher = Cipher.getInstance(publicKey.algorithm)
-    cipher.init(Cipher.ENCRYPT_MODE, publicKey)
-    cipher.update(messageBodyEncryptionToken.toByteArray(Charsets.UTF_8))
-    return Base64.encodeBase64String(cipher.doFinal())
-}
-
-private fun decryptMessageBodyEncryptionToken(encryptedMessageBodyEncryptionToken: String,
-                                              privateKeyString: String): String {
-    val privateKeySpec = PKCS8EncodedKeySpec(Base64.decodeBase64(privateKeyString))
-    val keyFactory = KeyFactory.getInstance(ALGORITHM_RSA)
-    val privateKey = keyFactory.generatePrivate(privateKeySpec)
-    val cipher = Cipher.getInstance(privateKey.algorithm)
-    cipher.init(Cipher.DECRYPT_MODE, privateKey)
-    cipher.update(Base64.decodeBase64(encryptedMessageBodyEncryptionToken))
-    return String(cipher.doFinal(), Charsets.UTF_8)
-}
-
-private fun aesEncrypt(messageBodyEncryptionToken: String, data: ByteArray): ByteArray {
-    val key = SecretKeySpec(messageBodyEncryptionToken.toByteArray(Charsets.UTF_8), ALGORITHM_AES)
-    val cipher = Cipher.getInstance(AES_CIPHER)
-    cipher.init(Cipher.ENCRYPT_MODE, key)
-    return cipher.doFinal(data)
-}
-
-private fun aesDecrypt(messageBodyEncryptionToken: String, aesData: ByteArray): ByteArray {
-    val key = SecretKeySpec(messageBodyEncryptionToken.toByteArray(Charsets.UTF_8), ALGORITHM_AES)
-    val cipher = Cipher.getInstance(AES_CIPHER)
-    cipher.init(Cipher.DECRYPT_MODE, key)
-    return cipher.doFinal(aesData)
-}
-
-private fun blowfishEncrypt(messageBodyEncryptionToken: String, data: ByteArray): ByteArray {
-    val key = SecretKeySpec(messageBodyEncryptionToken.toByteArray(Charsets.UTF_8), ALGORITHM_BLOWFISH)
-    val cipher = Cipher.getInstance(BLOWFISH_CIPHER)
-    cipher.init(Cipher.ENCRYPT_MODE, key)
-    return cipher.doFinal(data)
-}
-
-private fun blowfishDecrypt(messageBodyEncryptionToken: String, aesData: ByteArray): ByteArray {
-    val key = SecretKeySpec(messageBodyEncryptionToken.toByteArray(Charsets.UTF_8), ALGORITHM_BLOWFISH)
-    val cipher = Cipher.getInstance(BLOWFISH_CIPHER)
-    cipher.init(Cipher.DECRYPT_MODE, key)
-    return cipher.doFinal(aesData)
-}
-
-private fun encryptMessageBody(data: ByteArray, messageBodyBodyEncryptionType: MessageBodyEncryptionType,
+/**
+ * Encrypt the message body.
+ *
+ * @param messageBodyByteArrayBeforeEncrypt The message body byte array before encrypt.
+ * @param messageBodyBodyEncryptionType The message body encryption type.
+ * @param messageBodyEncryptionToken The message body encryption token.
+ * @return The encrypt message body byte array
+ */
+private fun encryptMessageBody(messageBodyByteArrayBeforeEncrypt: ByteArray, messageBodyBodyEncryptionType: MessageBodyEncryptionType,
                                messageBodyEncryptionToken: String): ByteArray {
+    //Read bytes from direct buffer to heap as byte array
     val encryptedByteArray: ByteArray
     when (messageBodyBodyEncryptionType) {
         MessageBodyEncryptionType.AES -> {
-            encryptedByteArray = aesEncrypt(messageBodyEncryptionToken, data)
+            encryptedByteArray = aesEncrypt(messageBodyEncryptionToken, messageBodyByteArrayBeforeEncrypt)
         }
         MessageBodyEncryptionType.BLOWFISH -> {
-            encryptedByteArray = blowfishEncrypt(messageBodyEncryptionToken, data)
+            encryptedByteArray = blowfishEncrypt(messageBodyEncryptionToken, messageBodyByteArrayBeforeEncrypt)
         }
     }
+    //Create heap byte buffer
     return encryptedByteArray
 }
 
-private fun decryptMessageBody(encryptedData: ByteArray,
+/**
+ * Decrypt the message body.
+ *
+ * @param messageBodyByteArrayBeforeDecrypt The message body byte array before decrypt.
+ * @param messageBodyBodyEncryptionType The message body encryption type.
+ * @param messageBodyEncryptionToken The message body encryption token.
+ * return The decrypt message body byte array
+ */
+private fun decryptMessageBody(messageBodyByteArrayBeforeDecrypt: ByteArray,
                                messageBodyBodyEncryptionType: MessageBodyEncryptionType,
                                messageBodyEncryptionToken: String): ByteArray {
     val decryptedByteArray: ByteArray
     when (messageBodyBodyEncryptionType) {
         MessageBodyEncryptionType.AES -> {
+            //Decrypt in heap
             decryptedByteArray =
-                    aesDecrypt(messageBodyEncryptionToken, encryptedData)
+                    aesDecrypt(messageBodyEncryptionToken, messageBodyByteArrayBeforeDecrypt)
         }
         MessageBodyEncryptionType.BLOWFISH -> {
+            //Decrypt in heap
             decryptedByteArray =
-                    blowfishDecrypt(messageBodyEncryptionToken, encryptedData)
+                    blowfishDecrypt(messageBodyEncryptionToken, messageBodyByteArrayBeforeDecrypt)
         }
     }
+    //Create heap byte buffer
     return decryptedByteArray
 }
 
+/**
+ * Encode a heap proxy message body object to heap byte buffer
+ */
 private fun encodeProxyMessageBody(message: ProxyMessageBody?, messageBodyBodyEncryptionType: MessageBodyEncryptionType,
-                                   messageBodyEncryptionToken: String): ByteArray {
+                                   messageBodyEncryptionToken: String): ByteBuf {
     logger.debug("Encode proxy message body.")
-    val result = ByteBufAllocator.DEFAULT.buffer()
+    val tempBuffer = Unpooled.buffer()
     val bodyTypeByteArray = message?.bodyType?.name?.toByteArray(Charsets.UTF_8) ?: byteArrayOf()
-    result.writeInt(bodyTypeByteArray.size)
-    result.writeBytes(bodyTypeByteArray)
+    tempBuffer.writeInt(bodyTypeByteArray.size)
+    tempBuffer.writeBytes(bodyTypeByteArray)
     val messageIdByteArray = message?.id?.toByteArray(Charsets.UTF_8) ?: byteArrayOf();
-    result.writeInt(messageIdByteArray.size)
-    result.writeBytes(messageIdByteArray)
+    tempBuffer.writeInt(messageIdByteArray.size)
+    tempBuffer.writeBytes(messageIdByteArray)
     val targetAddressByteArray = message?.targetAddress?.toByteArray() ?: byteArrayOf()
-    result.writeInt(targetAddressByteArray.size)
-    result.writeBytes(targetAddressByteArray)
+    tempBuffer.writeInt(targetAddressByteArray.size)
+    tempBuffer.writeBytes(targetAddressByteArray)
     val targetPortWriteToByteArray = message?.targetPort ?: -1
-    result.writeInt(targetPortWriteToByteArray)
-    val targetOriginalDataByteArray = message?.originalData ?: byteArrayOf()
-    result.writeInt(targetOriginalDataByteArray.size)
-    result.writeBytes(targetOriginalDataByteArray)
-    val resultByteArray = ByteArray(result.readableBytes())
-    result.readBytes(resultByteArray)
-    ReferenceCountUtil.release(result)
-    val encryptedResult =
-            encryptMessageBody(resultByteArray, messageBodyBodyEncryptionType, messageBodyEncryptionToken)
-    return encryptedResult
+    tempBuffer.writeInt(targetPortWriteToByteArray)
+    val targetOriginalData = message?.originalData ?: ByteArray(0)
+    tempBuffer.writeInt(targetOriginalData.size)
+    tempBuffer.writeBytes(targetOriginalData)
+    return Unpooled.wrappedBuffer(encryptMessageBody(tempBuffer.array(), messageBodyBodyEncryptionType, messageBodyEncryptionToken))
 }
 
+/**
+ * Encode a heap agent message body object to heap byte buffer
+ */
 private fun encodeAgentMessageBody(message: AgentMessageBody?, messageBodyBodyEncryptionType: MessageBodyEncryptionType,
-                                   messageBodyEncryptionToken: String): ByteArray {
+                                   messageBodyEncryptionToken: String): ByteBuf {
     logger.debug("Encode agent message body.")
-    val result = ByteBufAllocator.DEFAULT.buffer()
+    val tempBuf = Unpooled.buffer()
     val bodyTypeByteArray = message?.bodyType?.name?.toByteArray(Charsets.UTF_8) ?: byteArrayOf()
-    result.writeInt(bodyTypeByteArray.size)
-    result.writeBytes(bodyTypeByteArray)
+    tempBuf.writeInt(bodyTypeByteArray.size)
+    tempBuf.writeBytes(bodyTypeByteArray)
     val messageIdByteArray = message?.id?.toByteArray(Charsets.UTF_8) ?: byteArrayOf();
-    result.writeInt(messageIdByteArray.size)
-    result.writeBytes(messageIdByteArray)
+    tempBuf.writeInt(messageIdByteArray.size)
+    tempBuf.writeBytes(messageIdByteArray)
     val securityTokenArray = message?.securityToken?.toByteArray(Charsets.UTF_8) ?: byteArrayOf();
-    result.writeInt(securityTokenArray.size)
-    result.writeBytes(securityTokenArray)
+    tempBuf.writeInt(securityTokenArray.size)
+    tempBuf.writeBytes(securityTokenArray)
     val targetAddressByteArray = message?.targetAddress?.toByteArray() ?: byteArrayOf()
-    result.writeInt(targetAddressByteArray.size)
-    result.writeBytes(targetAddressByteArray)
+    tempBuf.writeInt(targetAddressByteArray.size)
+    tempBuf.writeBytes(targetAddressByteArray)
     val targetPortWriteToByteArray = message?.targetPort ?: -1
-    result.writeInt(targetPortWriteToByteArray)
-    val targetOriginalDataByteArray = message?.originalData ?: byteArrayOf()
-    result.writeInt(targetOriginalDataByteArray.size)
-    result.writeBytes(targetOriginalDataByteArray)
-    val resultByteArray = ByteArray(result.readableBytes())
-    result.readBytes(resultByteArray)
-    ReferenceCountUtil.release(result)
+    tempBuf.writeInt(targetPortWriteToByteArray)
+    val targetOriginalData = message?.originalData ?: ByteArray(0)
+    tempBuf.writeInt(targetOriginalData.size)
+    tempBuf.writeBytes(targetOriginalData)
     val encryptedResult =
-            encryptMessageBody(resultByteArray, messageBodyBodyEncryptionType, messageBodyEncryptionToken)
-    return encryptedResult
+            encryptMessageBody(tempBuf.array(), messageBodyBodyEncryptionType, messageBodyEncryptionToken)
+    return Unpooled.wrappedBuffer(encryptedResult)
 }
 
-private fun decodeAgentMessageBody(messageBytes: ByteArray, messageBodyBodyEncryptionType: MessageBodyEncryptionType,
+private fun decodeAgentMessageBody(messageBodyByteBufBeforeDecrypt: ByteBuf, messageBodyBodyEncryptionType: MessageBodyEncryptionType,
                                    messageBodyEncryptionToken: String): AgentMessageBody {
+    val messageBodyByteArray = ByteArray(messageBodyByteBufBeforeDecrypt.readableBytes())
+    messageBodyByteBufBeforeDecrypt.readBytes(messageBodyByteArray)
     val messageBodyBytes =
-            decryptMessageBody(messageBytes, messageBodyBodyEncryptionType, messageBodyEncryptionToken);
+            decryptMessageBody(messageBodyByteArray, messageBodyBodyEncryptionType, messageBodyEncryptionToken);
     val messageBodyByteBuf = Unpooled.wrappedBuffer(messageBodyBytes)
     val bodyTypeNameLength = messageBodyByteBuf.readInt()
     val bodyTypeName = messageBodyByteBuf.readCharSequence(bodyTypeNameLength, Charsets.UTF_8).toString()
@@ -178,14 +137,8 @@ private fun decodeAgentMessageBody(messageBytes: ByteArray, messageBodyBodyEncry
     }
     val targetPort = messageBodyByteBuf.readInt()
     val originalDataLength = messageBodyByteBuf.readInt()
-    val originalData = if (originalDataLength == 0) {
-        null
-    } else {
-        val tempOriginalData = ByteArray(originalDataLength)
-        messageBodyByteBuf.readBytes(tempOriginalData)
-        tempOriginalData
-    }
-    ReferenceCountUtil.release(messageBodyByteBuf)
+    val originalData = ByteArray(originalDataLength)
+    messageBodyByteBuf.readBytes(originalData)
     val agentMessageBody = AgentMessageBody(bodyType, messageId, securityToken)
     agentMessageBody.originalData = originalData
     agentMessageBody.targetPort = targetPort
@@ -215,14 +168,8 @@ private fun decodeProxyMessageBody(messageBytes: ByteArray, messageBodyBodyEncry
             }
     val targetPort = messageBodyByteBuf.readInt()
     val originalDataLength = messageBodyByteBuf.readInt()
-    val originalData = if (originalDataLength == 0) {
-        null
-    } else {
-        val tempOriginalData = ByteArray(originalDataLength)
-        messageBodyByteBuf.readBytes(tempOriginalData)
-        tempOriginalData
-    }
-    ReferenceCountUtil.release(messageBodyByteBuf)
+    val originalData = ByteArray(originalDataLength)
+    messageBodyByteBuf.readBytes(originalData)
     val proxyMessageBody = ProxyMessageBody(bodyType, messageId)
     proxyMessageBody.originalData = originalData
     proxyMessageBody.targetPort = targetPort
@@ -233,7 +180,8 @@ private fun decodeProxyMessageBody(messageBytes: ByteArray, messageBodyBodyEncry
 internal fun encodeAgentMessage(message: AgentMessage, proxyPublicKeyString: String, output: ByteBuf) {
     val originalMessageBodyEncryptionToken = DigestUtils.md5Hex(UUID.randomUUID().toString())
     val encryptedMessageBodyEncryptionToken =
-            encryptMessageBodyEncryptionToken(originalMessageBodyEncryptionToken, proxyPublicKeyString)
+            rsaEncrypt(originalMessageBodyEncryptionToken, proxyPublicKeyString)
+    output.writeCharSequence(MAGIC_CODE, Charsets.UTF_8)
     output.writeInt(encryptedMessageBodyEncryptionToken.length)
     output.writeBytes(encryptedMessageBodyEncryptionToken.toByteArray(Charsets.UTF_8))
     output.writeInt(message.messageBodyEncryptionType.mask.length)
@@ -247,7 +195,8 @@ internal fun encodeAgentMessage(message: AgentMessage, proxyPublicKeyString: Str
 internal fun encodeProxyMessage(message: ProxyMessage, agentPublicKeyString: String, output: ByteBuf) {
     val originalMessageBodyEncryptionToken = DigestUtils.md5Hex(UUID.randomUUID().toString())
     val encryptedMessageBodyEncryptionToken =
-            encryptMessageBodyEncryptionToken(originalMessageBodyEncryptionToken, agentPublicKeyString)
+            rsaEncrypt(originalMessageBodyEncryptionToken, agentPublicKeyString)
+    output.writeCharSequence(MAGIC_CODE, Charsets.UTF_8)
     output.writeInt(encryptedMessageBodyEncryptionToken.length)
     output.writeBytes(encryptedMessageBodyEncryptionToken.toByteArray(Charsets.UTF_8))
     output.writeInt(message.messageBodyEncryptionType.mask.length)
@@ -259,29 +208,38 @@ internal fun encodeProxyMessage(message: ProxyMessage, agentPublicKeyString: Str
 }
 
 internal fun decodeAgentMessage(input: ByteBuf, proxyPrivateKeyString: String): AgentMessage {
+    val magicCode = input.readCharSequence(MAGIC_CODE.toByteArray().size, Charsets.UTF_8)
+    if (MAGIC_CODE != magicCode) {
+        logger.error { "Incoming message is not follow Ppaass protocol." }
+        throw PpaassException("Incoming message is not follow Ppaass protocol.")
+    }
     val encryptedMessageBodyEncryptionTokenLength = input.readInt()
     val encryptedMessageBodyEncryptionToken =
             input.readCharSequence(encryptedMessageBodyEncryptionTokenLength, Charsets.UTF_8).toString()
     val messageBodyEncryptionToken =
-            decryptMessageBodyEncryptionToken(encryptedMessageBodyEncryptionToken, proxyPrivateKeyString)
+            rsaDecrypt(encryptedMessageBodyEncryptionToken, proxyPrivateKeyString)
     val messageBodyEncryptionTypeMaskLength = input.readInt()
     val messageBodyEncryptionTypeMask =
             input.readCharSequence(messageBodyEncryptionTypeMaskLength, Charsets.UTF_8).toString()
     val messageBodyEncryptionType =
             MessageBodyEncryptionType.fromMask(messageBodyEncryptionTypeMask) ?: throw PpaassException()
-    val messageBodyByteArray = ByteArray(input.readableBytes())
-    input.readBytes(messageBodyByteArray)
+    val messageBodyByteBuf = input.readBytes(input.readableBytes())
     val agentMessage = AgentMessage(messageBodyEncryptionToken, messageBodyEncryptionType,
-            decodeAgentMessageBody(messageBodyByteArray, messageBodyEncryptionType, messageBodyEncryptionToken))
+            decodeAgentMessageBody(messageBodyByteBuf, messageBodyEncryptionType, messageBodyEncryptionToken))
     return agentMessage
 }
 
 internal fun decodeProxyMessage(input: ByteBuf, agentPrivateKeyString: String): ProxyMessage {
+    val magicCode = input.readCharSequence(MAGIC_CODE.toByteArray().size, Charsets.UTF_8)
+    if (MAGIC_CODE != magicCode) {
+        logger.error { "Incoming message is not follow Ppaass protocol." }
+        throw PpaassException("Incoming message is not follow Ppaass protocol.")
+    }
     val encryptedMessageBodyEncryptionTokenLength = input.readInt()
     val encryptedMessageBodyEncryptionToken =
             input.readCharSequence(encryptedMessageBodyEncryptionTokenLength, Charsets.UTF_8).toString()
     val messageBodyEncryptionToken =
-            decryptMessageBodyEncryptionToken(encryptedMessageBodyEncryptionToken, agentPrivateKeyString)
+            rsaDecrypt(encryptedMessageBodyEncryptionToken, agentPrivateKeyString)
     val messageBodyEncryptionTypeMaskLength = input.readInt()
     val messageBodyEncryptionTypeMask =
             input.readCharSequence(messageBodyEncryptionTypeMaskLength, Charsets.UTF_8).toString()
@@ -294,29 +252,12 @@ internal fun decodeProxyMessage(input: ByteBuf, agentPrivateKeyString: String): 
     return proxyMessage
 }
 
-private fun generateAgentKeyPair() {
-    val keyPairGen = KeyPairGenerator.getInstance(ALGORITHM_RSA)
-    keyPairGen.initialize(1024)
-    val keyPair = keyPairGen.generateKeyPair()
-    val publicKey = keyPair.public.encoded
-    println("Generate agent public key:\n${Base64.encodeBase64String(publicKey)}")
-    val privateKey = keyPair.private.encoded
-    println("Generate agent private key:\n${Base64.encodeBase64String(privateKey)}")
-}
-
-private fun generateProxyKeyPair() {
-    val keyPairGen = KeyPairGenerator.getInstance(ALGORITHM_RSA)
-    keyPairGen.initialize(1024)
-    val keyPair = keyPairGen.generateKeyPair()
-    val publicKey = keyPair.public.encoded
-    println("Generate proxy public key:\n${Base64.encodeBase64String(publicKey)}")
-    val privateKey = keyPair.private.encoded
-    println("Generate proxy private key:\n${Base64.encodeBase64String(privateKey)}")
-}
 
 fun main() {
-    generateAgentKeyPair()
-    generateProxyKeyPair()
+    logger.info { "Generate agent RSA key pair:" }
+    generateRsaKeyPair()
+    logger.info { "Generate proxy RSA key pair:" }
+    generateRsaKeyPair()
 }
 
 

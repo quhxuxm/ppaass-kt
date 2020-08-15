@@ -12,7 +12,6 @@ internal class ExtractProxyMessageOriginalDataDecoder : MessageToMessageDecoder<
     }
 
     override fun decode(ctx: ChannelHandlerContext, msg: ProxyMessage, out: MutableList<Any>) {
-        logger.debug { "The original data in proxy message \n${String(msg.body.originalData ?: byteArrayOf())}\n" }
         out.add(Unpooled.wrappedBuffer(msg.body.originalData))
     }
 }
