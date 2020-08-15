@@ -221,7 +221,6 @@ internal fun decodeAgentMessage(input: ByteBuf, proxyPrivateKeyString: String): 
             input.readCharSequence(messageBodyEncryptionTypeMaskLength, Charsets.UTF_8).toString()
     val messageBodyEncryptionType =
             MessageBodyEncryptionType.fromMask(messageBodyEncryptionTypeMask) ?: throw PpaassException()
-
     val messageBodyByteArray = ByteArray(input.readableBytes())
     input.readBytes(messageBodyByteArray)
     val agentMessage = AgentMessage(messageBodyEncryptionToken, messageBodyEncryptionType,
