@@ -11,6 +11,7 @@ import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufUtil
 import io.netty.channel.Channel
 import io.netty.channel.ChannelFuture
+import io.netty.channel.ChannelFutureListener
 import io.netty.channel.embedded.EmbeddedChannel
 import io.netty.handler.codec.http.HttpRequest
 import io.netty.handler.codec.http.HttpRequestEncoder
@@ -107,7 +108,8 @@ fun writeAgentMessageToProxy(bodyType: AgentMessageBodyType, secureToken: String
                              host: String, port: Int,
                              input: Any?,
                              clientChannelId: String,
-                             messageBodyEncryptionType: MessageBodyEncryptionType): ChannelFuture {
+                             messageBodyEncryptionType: MessageBodyEncryptionType,
+                             afterWriteCallback: (ChannelFuture) -> Unit = {}) {
     var data: ByteArray? = null
     if (input != null) {
         data = if (input is HttpRequest) {
@@ -125,5 +127,9 @@ fun writeAgentMessageToProxy(bodyType: AgentMessageBodyType, secureToken: String
     agentMessageBody.targetPort = port
     val agentMessage =
             AgentMessage(UUID.randomUUID().toString(), messageBodyEncryptionType, agentMessageBody)
-    return proxyChannel.writeAndFlush(agentMessage)
+    proxyChannel.eventLoop().execute {
+        proxyChannel.writeAndFlush(agentMessage).addListener(ChannelFutureListener {
+            afterWriteCallback(it)
+        })
+    }
 }
