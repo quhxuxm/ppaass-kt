@@ -83,7 +83,10 @@ private fun encodeProxyMessageBody(message: ProxyMessageBody?, messageBodyBodyEn
     val targetOriginalData = message?.originalData ?: ByteArray(0)
     tempBuffer.writeInt(targetOriginalData.size)
     tempBuffer.writeBytes(targetOriginalData)
-    return Unpooled.wrappedBuffer(encryptMessageBody(tempBuffer.array(), messageBodyBodyEncryptionType, messageBodyEncryptionToken))
+    return Unpooled.wrappedBuffer(encryptMessageBody(
+            tempBuffer.array(),
+            messageBodyBodyEncryptionType,
+            messageBodyEncryptionToken))
 }
 
 /**
@@ -111,7 +114,9 @@ private fun encodeAgentMessageBody(message: AgentMessageBody?, messageBodyBodyEn
     tempBuf.writeInt(targetOriginalData.size)
     tempBuf.writeBytes(targetOriginalData)
     val encryptedResult =
-            encryptMessageBody(tempBuf.array(), messageBodyBodyEncryptionType, messageBodyEncryptionToken)
+            encryptMessageBody(tempBuf.array(),
+                    messageBodyBodyEncryptionType,
+                    messageBodyEncryptionToken)
     return Unpooled.wrappedBuffer(encryptedResult)
 }
 
@@ -131,7 +136,8 @@ private fun decodeAgentMessageBody(messageBytes: ByteArray, messageBodyBodyEncry
     val targetAddress = if (targetAddressLength == 0) {
         null
     } else {
-        messageBodyByteBuf.readCharSequence(targetAddressLength, Charsets.UTF_8).toString()
+        messageBodyByteBuf.readCharSequence(targetAddressLength,
+                Charsets.UTF_8).toString()
     }
     val targetPort = messageBodyByteBuf.readInt()
     val originalDataLength = messageBodyByteBuf.readInt()
