@@ -36,6 +36,8 @@ internal class DefaultProxy(private val proxyConfiguration: ProxyConfiguration) 
             option(ChannelOption.TCP_NODELAY, true)
             option(ChannelOption.SO_REUSEADDR, true)
             childOption(ChannelOption.TCP_NODELAY, true)
+            childOption(ChannelOption.SO_RCVBUF, proxyConfiguration.soRcvbuf)
+            childOption(ChannelOption.SO_SNDBUF, proxyConfiguration.soSndbuf)
             childHandler(proxyChannelInitializer)
         }
     }

@@ -39,6 +39,9 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
             option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
             option(ChannelOption.TCP_NODELAY, true)
             option(ChannelOption.SO_REUSEADDR, true)
+            option(ChannelOption.SO_RCVBUF, proxyConfiguration.targetSoRcvbuf)
+            option(ChannelOption.SO_SNDBUF, proxyConfiguration.targetSoSndbuf)
+
         }
     }
 
