@@ -30,16 +30,18 @@ internal class ProxyToTargetHandler(private val targetChannel: Channel,
             logger.error("Fail to transfer data from proxy to target server because of target channel is not active.")
             throw PpaassException("Fail to transfer data from proxy to target server because of target channel is not active.")
         }
-        targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData))
-                .addListener(ChannelFutureListener {
-                    if (!it.isSuccess) {
-                        logger.error("Fail to transfer data from proxy to target server.", it.cause())
-                        throw PpaassException("Fail to transfer data from proxy to target server.")
-                    }
-                    if (!proxyConfiguration.autoRead) {
-                        it.channel().read()
-                    }
-                })
+        targetChannel.eventLoop().execute {
+            targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData))
+                    .addListener(ChannelFutureListener {
+                        if (!it.isSuccess) {
+                            logger.error("Fail to transfer data from proxy to target server.", it.cause())
+                            throw PpaassException("Fail to transfer data from proxy to target server.")
+                        }
+                        if (!proxyConfiguration.autoRead) {
+                            it.channel().read()
+                        }
+                    })
+        }
     }
 
     override fun channelReadComplete(proxyContext: ChannelHandlerContext) {

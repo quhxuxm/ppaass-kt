@@ -78,7 +78,9 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
             proxyMessageBody.targetPort = agentMessage.body.targetPort
             val failProxyMessage =
                     ProxyMessage(UUID.randomUUID().toString(), MessageBodyEncryptionType.random(), proxyMessageBody)
-            proxyContext.channel().writeAndFlush(failProxyMessage).addListener(ChannelFutureListener.CLOSE)
+            proxyContext.channel().eventLoop().execute {
+                proxyContext.channel().writeAndFlush(failProxyMessage).addListener(ChannelFutureListener.CLOSE)
+            }
             logger.error("Fail to connect to: {}:{}", targetAddress, targetPort)
             return
         }
