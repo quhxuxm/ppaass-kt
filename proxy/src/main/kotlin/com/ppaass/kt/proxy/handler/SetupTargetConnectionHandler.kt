@@ -92,7 +92,6 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
                     ProxyToTargetHandler(
                             targetChannel = targetChannel,
                             proxyConfiguration = proxyConfiguration))
-            addLast(resourceClearHandler)
         }
         proxyContext.fireChannelRead(agentMessage)
         if (!proxyConfiguration.autoRead) {
