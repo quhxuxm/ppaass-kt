@@ -52,6 +52,8 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
             option(ChannelOption.AUTO_CLOSE, true)
             option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
             option(ChannelOption.TCP_NODELAY, true)
+            option(ChannelOption.SO_RCVBUF, agentConfiguration.staticAgentConfiguration.proxyServerSoRcvbuf)
+            option(ChannelOption.SO_SNDBUF, agentConfiguration.staticAgentConfiguration.proxyServerSoSndbuf)
         }
     }
 

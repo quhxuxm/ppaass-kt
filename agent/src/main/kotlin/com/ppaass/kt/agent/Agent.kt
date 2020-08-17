@@ -3,6 +3,7 @@ package com.ppaass.kt.agent
 import com.ppaass.kt.agent.configuration.AgentConfiguration
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.PooledByteBufAllocator
+import io.netty.channel.Channel
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.ChannelOption
 import io.netty.channel.EventLoopGroup
@@ -17,6 +18,7 @@ internal abstract class Agent(private val agentConfiguration: AgentConfiguration
     private var serverBootstrap: ServerBootstrap? = null
     private var masterThreadGroup: EventLoopGroup? = null
     private var workerThreadGroup: EventLoopGroup? = null
+    private var serverSocketChannel: Channel? = null
     protected abstract val channelInitializer: ChannelInitializer<SocketChannel>
 
     /**
@@ -28,16 +30,19 @@ internal abstract class Agent(private val agentConfiguration: AgentConfiguration
                 NioEventLoopGroup(agentConfiguration.staticAgentConfiguration.masterIoEventThreadNumber)
         val newWorkerThreadGroup =
                 NioEventLoopGroup(agentConfiguration.staticAgentConfiguration.workerIoEventThreadNumber)
-        with(newServerBootstrap) {
+        newServerBootstrap.apply {
             group(newMasterThreadGroup, newWorkerThreadGroup)
             channel(NioServerSocketChannel::class.java)
             option(ChannelOption.SO_BACKLOG, agentConfiguration.staticAgentConfiguration.soBacklog)
             option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
             option(ChannelOption.TCP_NODELAY, true)
             childOption(ChannelOption.TCP_NODELAY, true)
+            childOption(ChannelOption.SO_RCVBUF, agentConfiguration.staticAgentConfiguration.soRcvbuf)
+            childOption(ChannelOption.SO_SNDBUF, agentConfiguration.staticAgentConfiguration.soSndbuf)
             childHandler(this@Agent.channelInitializer)
         }
-        newServerBootstrap.bind(this.agentConfiguration.port).sync()
+        val channelFuture = newServerBootstrap.bind(this.agentConfiguration.port).sync()
+        this.serverSocketChannel = channelFuture.channel()
         this.serverBootstrap = newServerBootstrap
         this.masterThreadGroup = newMasterThreadGroup
         this.workerThreadGroup = newWorkerThreadGroup
@@ -49,6 +54,7 @@ internal abstract class Agent(private val agentConfiguration: AgentConfiguration
     fun stop() {
         this.masterThreadGroup?.shutdownGracefully()
         this.workerThreadGroup?.shutdownGracefully()
+        this.serverSocketChannel?.close()
         this.serverBootstrap = null
     }
 }

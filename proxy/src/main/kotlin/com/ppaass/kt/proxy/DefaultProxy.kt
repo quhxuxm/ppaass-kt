@@ -2,6 +2,7 @@ package com.ppaass.kt.proxy
 
 import com.ppaass.kt.proxy.handler.ProxyChannelInitializer
 import io.netty.bootstrap.ServerBootstrap
+import io.netty.channel.Channel
 import io.netty.channel.ChannelOption
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
@@ -23,13 +24,14 @@ internal class DefaultProxy(private val proxyConfiguration: ProxyConfiguration) 
     private val masterThreadGroup: NioEventLoopGroup
     private val workerThreadGroup: NioEventLoopGroup
     private val serverBootstrap: ServerBootstrap
+    private var serverChannel: Channel? = null
     private val proxyChannelInitializer = ProxyChannelInitializer(proxyConfiguration)
 
     init {
         this.masterThreadGroup = NioEventLoopGroup(this.proxyConfiguration.masterIoEventThreadNumber)
         this.workerThreadGroup = NioEventLoopGroup(this.proxyConfiguration.workerIoEventThreadNumber)
         this.serverBootstrap = ServerBootstrap()
-        with(this.serverBootstrap) {
+        this.serverBootstrap.apply {
             group(masterThreadGroup, workerThreadGroup)
             channel(NioServerSocketChannel::class.java)
             option(ChannelOption.SO_BACKLOG, proxyConfiguration.soBacklog)
@@ -44,12 +46,14 @@ internal class DefaultProxy(private val proxyConfiguration: ProxyConfiguration) 
 
     override fun start() {
         logger.debug("Begin to start proxy ...")
-        this.serverBootstrap.bind(this.proxyConfiguration.port).sync()
+        val channelFuture = this.serverBootstrap.bind(this.proxyConfiguration.port).sync()
+        this.serverChannel = channelFuture.channel()
     }
 
     override fun stop() {
         logger.debug("Stop proxy ...")
         this.masterThreadGroup.shutdownGracefully()
         this.workerThreadGroup.shutdownGracefully()
+        this.serverChannel?.close()
     }
 }
