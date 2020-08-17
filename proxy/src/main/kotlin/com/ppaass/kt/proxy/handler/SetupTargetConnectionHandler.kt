@@ -18,6 +18,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
         SimpleChannelInboundHandler<AgentMessage>() {
     private companion object {
         private val logger = KotlinLogging.logger {}
+        private val resourceClearHandler = ResourceClearHandler()
     }
 
     private val dataTransferExecutorGroup: EventExecutorGroup
@@ -40,15 +41,24 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
             option(ChannelOption.SO_REUSEADDR, true)
             option(ChannelOption.SO_RCVBUF, proxyConfiguration.targetSoRcvbuf)
             option(ChannelOption.SO_SNDBUF, proxyConfiguration.targetSoSndbuf)
-            handler(object : ChannelInitializer<SocketChannel>() {
-                override fun initChannel(targetChannel: SocketChannel) {
-                    targetChannel.pipeline().addLast(ResourceClearHandler())
-                }
-            })
         }
     }
 
     override fun channelRead0(proxyContext: ChannelHandlerContext, agentMessage: AgentMessage) {
+        this.targetBootstrap.handler(object : ChannelInitializer<SocketChannel>() {
+            override fun initChannel(targetChannel: SocketChannel) {
+                with(targetChannel.pipeline()) {
+                    addLast(dataTransferExecutorGroup,
+                            TargetToProxyHandler(
+                                    proxyChannel = proxyContext.channel(),
+                                    targetAddress = agentMessage.body.targetAddress ?: "",
+                                    targetPort = agentMessage.body.targetPort ?: -1,
+                                    proxyConfiguration = proxyConfiguration
+                            ))
+                    addLast(resourceClearHandler)
+                }
+            }
+        })
         val targetAddress = agentMessage.body.targetAddress
         val targetPort = agentMessage.body.targetPort
         if (targetAddress == null) {
@@ -62,39 +72,31 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
             return
         }
         logger.debug("Begin to connect ${targetAddress}:${targetPort}, message id=${agentMessage.body.id}")
-
-        this.targetBootstrap.connect(targetAddress, targetPort).addListener {
-            (ChannelFutureListener { targetChannelConnectFuture ->
-                if (!targetChannelConnectFuture.isSuccess) {
-                    val proxyMessageBody = ProxyMessageBody(ProxyMessageBodyType.CONNECT_FAIL, agentMessage.body.id)
-                    proxyMessageBody.targetAddress = agentMessage.body.targetAddress
-                    proxyMessageBody.targetPort = agentMessage.body.targetPort
-                    val failProxyMessage =
-                            ProxyMessage(UUID.randomUUID().toString(), MessageBodyEncryptionType.random(), proxyMessageBody)
-                    proxyContext.channel().eventLoop().execute {
-                        proxyContext.channel().writeAndFlush(failProxyMessage).addListener(ChannelFutureListener.CLOSE)
-                    }
-                    logger.error("Fail to connect to: {}:{}", targetAddress, targetPort)
-                    return@ChannelFutureListener
-                }
-                val targetChannel = targetChannelConnectFuture.channel()
-                targetChannel.pipeline().addLast(dataTransferExecutorGroup,
-                        TargetToProxyHandler(
-                                proxyChannel = proxyContext.channel(),
-                                targetAddress = agentMessage.body.targetAddress ?: "",
-                                targetPort = agentMessage.body.targetPort ?: -1,
-                                proxyConfiguration = proxyConfiguration
-                        ))
-                proxyContext.pipeline().remove(this@SetupTargetConnectionHandler)
-                proxyContext.pipeline().addLast(dataTransferExecutorGroup,
-                        ProxyToTargetHandler(
-                                targetChannel = targetChannel,
-                                proxyConfiguration = proxyConfiguration))
-                proxyContext.fireChannelRead(agentMessage)
-                if (!proxyConfiguration.autoRead) {
-                    targetChannel.read()
-                }
-            })
+        val targetChannelConnectFuture = this.targetBootstrap.connect(targetAddress, targetPort).sync()
+        if (!targetChannelConnectFuture.isSuccess) {
+            val proxyMessageBody = ProxyMessageBody(ProxyMessageBodyType.CONNECT_FAIL, agentMessage.body.id)
+            proxyMessageBody.targetAddress = agentMessage.body.targetAddress
+            proxyMessageBody.targetPort = agentMessage.body.targetPort
+            val failProxyMessage =
+                    ProxyMessage(UUID.randomUUID().toString(), MessageBodyEncryptionType.random(), proxyMessageBody)
+            proxyContext.channel().eventLoop().execute {
+                proxyContext.channel().writeAndFlush(failProxyMessage).addListener(ChannelFutureListener.CLOSE)
+            }
+            logger.error("Fail to connect to: {}:{}", targetAddress, targetPort)
+            return
+        }
+        val targetChannel = targetChannelConnectFuture.channel()
+        with(proxyContext.pipeline()) {
+            remove(this@SetupTargetConnectionHandler)
+            addLast(dataTransferExecutorGroup,
+                    ProxyToTargetHandler(
+                            targetChannel = targetChannel,
+                            proxyConfiguration = proxyConfiguration))
+            addLast(resourceClearHandler)
+        }
+        proxyContext.fireChannelRead(agentMessage)
+        if (!proxyConfiguration.autoRead) {
+            targetChannel.read()
         }
     }
 
