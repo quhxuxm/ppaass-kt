@@ -28,7 +28,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
         this.dataTransferExecutorGroup =
                 DefaultEventLoopGroup(proxyConfiguration.dataTransferHandlerExecutorGroupThreadNumber)
         this.targetBootstrap = Bootstrap()
-        with(this.targetBootstrap) {
+        this.targetBootstrap.apply {
             group(NioEventLoopGroup(proxyConfiguration.targetDataTransferIoEventThreadNumber))
             channel(NioSocketChannel::class.java)
             option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
@@ -41,7 +41,6 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
             option(ChannelOption.SO_REUSEADDR, true)
             option(ChannelOption.SO_RCVBUF, proxyConfiguration.targetSoRcvbuf)
             option(ChannelOption.SO_SNDBUF, proxyConfiguration.targetSoSndbuf)
-
         }
     }
 
@@ -52,7 +51,6 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
                     addLast(dataTransferExecutorGroup,
                             TargetToProxyHandler(
                                     proxyChannel = proxyContext.channel(),
-                                    messageId = agentMessage.body.id,
                                     targetAddress = agentMessage.body.targetAddress ?: "",
                                     targetPort = agentMessage.body.targetPort ?: -1,
                                     proxyConfiguration = proxyConfiguration

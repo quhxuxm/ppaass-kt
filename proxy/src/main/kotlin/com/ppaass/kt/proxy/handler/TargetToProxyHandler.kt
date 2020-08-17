@@ -14,7 +14,7 @@ import io.netty.channel.SimpleChannelInboundHandler
 import mu.KotlinLogging
 import java.util.*
 
-internal class TargetToProxyHandler(private val proxyChannel: Channel, private val messageId: String,
+internal class TargetToProxyHandler(private val proxyChannel: Channel,
                                     private val targetAddress: String, private val targetPort: Int,
                                     private val proxyConfiguration: ProxyConfiguration) :
         SimpleChannelInboundHandler<ByteBuf>() {
@@ -25,7 +25,7 @@ internal class TargetToProxyHandler(private val proxyChannel: Channel, private v
     override fun channelRead0(targetChannelContext: ChannelHandlerContext, targetMessage: ByteBuf) {
         val originalDataByteArray = ByteArray(targetMessage.readableBytes())
         targetMessage.readBytes(originalDataByteArray)
-        val proxyMessageBody = ProxyMessageBody(ProxyMessageBodyType.OK, messageId)
+        val proxyMessageBody = ProxyMessageBody(ProxyMessageBodyType.OK, UUID.randomUUID().toString().replace("-", ""))
         with(proxyMessageBody) {
             targetAddress = this@TargetToProxyHandler.targetAddress
             targetPort = this@TargetToProxyHandler.targetPort
@@ -40,6 +40,7 @@ internal class TargetToProxyHandler(private val proxyChannel: Channel, private v
                     "Fail to transfer data from target to proxy server because of proxy channel is not active.")
         }
         this.proxyChannel.eventLoop().execute {
+            logger.debug { "Write proxy message to agent, proxyMessage=\n$proxyMessage\n" }
             this.proxyChannel.writeAndFlush(proxyMessage).addListener(ChannelFutureListener {
                 if (!it.isSuccess) {
                     this@TargetToProxyHandler.proxyChannel.close()
