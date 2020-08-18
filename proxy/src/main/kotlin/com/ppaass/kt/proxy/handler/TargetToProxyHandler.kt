@@ -21,13 +21,11 @@ internal class TargetToProxyHandler(private val proxyChannelContext: ChannelHand
 
 
     override fun channelActive(targetChannelContext: ChannelHandlerContext) {
-        logger.debug { "${agentMessage.body.targetAddress}:${agentMessage.body.targetPort} connected." }
         val targetChannel = targetChannelContext.channel()
         proxyChannelContext.pipeline().addLast(dataTransferExecutorGroup,
                 ProxyToTargetHandler(
                         targetChannel = targetChannel,
                         proxyConfiguration = proxyConfiguration))
-        //Continue transfer agent message to the target
         proxyChannelContext.fireChannelRead(agentMessage)
         if (!proxyConfiguration.autoRead) {
             targetChannel.read()
@@ -52,7 +50,7 @@ internal class TargetToProxyHandler(private val proxyChannelContext: ChannelHand
         }
         proxyChannel.eventLoop().execute {
             logger.debug { "Write proxy message to agent, proxyMessage=\n$proxyMessage\n" }
-            proxyChannel.write(proxyMessage).addListener(ChannelFutureListener {
+            proxyChannel.writeAndFlush(proxyMessage).addListener(ChannelFutureListener {
                 if (!it.isSuccess) {
                     proxyChannel.close()
                     targetChannelContext.close()
