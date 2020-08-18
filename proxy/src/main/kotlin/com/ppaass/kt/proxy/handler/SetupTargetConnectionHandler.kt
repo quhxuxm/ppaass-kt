@@ -61,7 +61,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
             override fun initChannel(targetChannel: SocketChannel) {
                 with(targetChannel.pipeline()) {
                     logger.debug { "Initializing channel for $targetAddress:$targetPort" }
-                    addLast(dataTransferExecutorGroup,
+                    addLast(
                             TargetToProxyHandler(
                                     proxyChannelContext = proxyChannelContext,
                                     agentMessage = agentMessage,
