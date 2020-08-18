@@ -67,6 +67,7 @@ internal class TargetToProxyHandler(private val proxyChannelContext: ChannelHand
                             throw PpaassException("Fail to transfer data from target to proxy server.")
                         }
                     }
+                    return@ChannelFutureListener
                 }
                 if (!proxyConfiguration.autoRead) {
                     targetChannelContext.channel().read()
