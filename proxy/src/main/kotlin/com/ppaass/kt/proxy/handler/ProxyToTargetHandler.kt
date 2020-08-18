@@ -34,7 +34,7 @@ internal class ProxyToTargetHandler(private val targetChannel: Channel,
             targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData))
                     .addListener(ChannelFutureListener { _1stFuture ->
                         if (!_1stFuture.isSuccess) {
-                            logger.error("Fail to transfer data from proxy to target server in the 1st time, will try 2nd time..", _1stFuture.cause())
+                            logger.error("Fail to transfer data from proxy to target server in the 1st time, will try 2nd time.")
                             targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData)).addListener { _2ndFuture ->
                                 targetChannel.close()
                                 proxyContext.close()
