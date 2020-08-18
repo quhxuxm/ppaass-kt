@@ -77,6 +77,10 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
             if (it.isSuccess) {
                 logger.debug { "Success connect to $targetAddress:$targetPort." }
                 if (proxyContext.pipeline()[SetupTargetConnectionHandler::class.java] != null) {
+                    logger.debug {
+                        "Remove ${SetupTargetConnectionHandler::class.java} because of connection to $targetAddress:$targetPort built success already, connect will " +
+                                "never happen again in the channel lifecycle."
+                    }
                     proxyContext.pipeline().remove(this)
                 }
                 return@addListener
