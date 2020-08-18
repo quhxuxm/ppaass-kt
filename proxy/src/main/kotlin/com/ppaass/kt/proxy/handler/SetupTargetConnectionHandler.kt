@@ -73,25 +73,35 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
             }
         })
         logger.debug("Begin to connect ${targetAddress}:${targetPort}, message id=${agentMessage.body.id}")
-        this.targetBootstrap.connect(targetAddress, targetPort).addListener {
-            if (it.isSuccess) {
-                logger.debug { "Success connect to $targetAddress:$targetPort." }
-                if (proxyChannelContext.pipeline()[SetupTargetConnectionHandler::class.java] != null) {
-                    logger.debug {
-                        "Remove ${SetupTargetConnectionHandler::class.java} because of connection to $targetAddress:$targetPort built success already, connect will " +
-                                "never happen again in the channel lifecycle."
-                    }
-                    proxyChannelContext.pipeline().remove(this)
-                }
-                return@addListener
+        this.targetBootstrap.connect(targetAddress, targetPort).addListener _1stListener@{ _1stFuture ->
+            if (_1stFuture.isSuccess) {
+                onTargetConnectSuccess(targetAddress, targetPort, proxyChannelContext)
+                return@_1stListener
             }
-            val proxyMessageBody = ProxyMessageBody(ProxyMessageBodyType.CONNECT_FAIL, agentMessage.body.id)
-            proxyMessageBody.targetAddress = agentMessage.body.targetAddress
-            proxyMessageBody.targetPort = agentMessage.body.targetPort
-            val failProxyMessage =
-                    ProxyMessage(UUID.randomUUID().toString(), MessageBodyEncryptionType.random(), proxyMessageBody)
-            proxyChannelContext.channel().writeAndFlush(failProxyMessage).addListener(ChannelFutureListener.CLOSE)
-            logger.error("Fail connect to {}:{}.", targetAddress, targetPort)
+            this.targetBootstrap.connect(targetAddress, targetPort).addListener _2ndListener@{ _2ndFuture ->
+                if (_2ndFuture.isSuccess) {
+                    onTargetConnectSuccess(targetAddress, targetPort, proxyChannelContext)
+                    return@_2ndListener
+                }
+                val proxyMessageBody = ProxyMessageBody(ProxyMessageBodyType.CONNECT_FAIL, agentMessage.body.id)
+                proxyMessageBody.targetAddress = agentMessage.body.targetAddress
+                proxyMessageBody.targetPort = agentMessage.body.targetPort
+                val failProxyMessage =
+                        ProxyMessage(UUID.randomUUID().toString(), MessageBodyEncryptionType.random(), proxyMessageBody)
+                proxyChannelContext.channel().writeAndFlush(failProxyMessage).addListener(ChannelFutureListener.CLOSE)
+                logger.error("Fail connect to {}:{}.", targetAddress, targetPort)
+            }
+        }
+    }
+
+    private fun onTargetConnectSuccess(targetAddress: String, targetPort: Int, proxyChannelContext: ChannelHandlerContext) {
+        logger.debug { "Success connect to $targetAddress:$targetPort." }
+        if (proxyChannelContext.pipeline()[SetupTargetConnectionHandler::class.java] != null) {
+            logger.debug {
+                "Remove ${SetupTargetConnectionHandler::class.java} because of connection to $targetAddress:$targetPort built success already, connect will " +
+                        "never happen again in the channel lifecycle."
+            }
+            proxyChannelContext.pipeline().remove(this)
         }
     }
 
