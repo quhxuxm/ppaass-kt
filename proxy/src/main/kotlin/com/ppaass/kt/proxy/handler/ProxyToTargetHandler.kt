@@ -34,13 +34,11 @@ internal class ProxyToTargetHandler(private val targetChannel: Channel,
             targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData))
                     .addListener(ChannelFutureListener { _1stFuture ->
                         if (!_1stFuture.isSuccess) {
-                            logger.error("Fail to transfer data from proxy to target server in the 1st time, will try 2nd time.")
-                            targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData)).addListener { _2ndFuture ->
-                                targetChannel.close()
-                                proxyContext.close()
-                                logger.error("Fail to transfer data from proxy to target server in the 2nd time, will close channel", _2ndFuture.cause())
-                                throw PpaassException("Fail to transfer data from proxy to target server.")
-                            }
+                            targetChannel.close()
+                            proxyContext.close()
+                            logger.error("Fail to transfer data from proxy to target server, target=${agentMessage.body.targetAddress}:${agentMessage.body.targetPort}",
+                                    _1stFuture.cause())
+                            throw PpaassException("Fail to transfer data from proxy to target server, target=${agentMessage.body.targetAddress}:${agentMessage.body.targetPort}")
                             return@ChannelFutureListener
                         }
                         if (!proxyConfiguration.autoRead) {
