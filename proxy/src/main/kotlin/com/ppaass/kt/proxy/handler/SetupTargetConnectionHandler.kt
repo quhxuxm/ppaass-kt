@@ -78,20 +78,14 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
                 onTargetConnectSuccess(targetAddress, targetPort, proxyChannelContext)
                 return@_1stListener
             }
-            logger.error { "Fail connect to ${targetAddress}:${targetPort} in the 1st time, will try 2nd time." }
-            this.targetBootstrap.connect(targetAddress, targetPort).addListener _2ndListener@{ _2ndFuture ->
-                if (_2ndFuture.isSuccess) {
-                    onTargetConnectSuccess(targetAddress, targetPort, proxyChannelContext)
-                    return@_2ndListener
-                }
-                logger.error("Fail connect to ${targetAddress}:${targetPort} in the 2nd time.", _2ndFuture.cause())
-                val proxyMessageBody = ProxyMessageBody(ProxyMessageBodyType.CONNECT_FAIL, agentMessage.body.id)
-                proxyMessageBody.targetAddress = agentMessage.body.targetAddress
-                proxyMessageBody.targetPort = agentMessage.body.targetPort
-                val failProxyMessage =
-                        ProxyMessage(UUID.randomUUID().toString(), MessageBodyEncryptionType.random(), proxyMessageBody)
-                proxyChannelContext.channel().writeAndFlush(failProxyMessage).addListener(ChannelFutureListener.CLOSE)
-                logger.error("Fail connect to {}:{}.", targetAddress, targetPort)
+            logger.error("Fail connect to ${targetAddress}:${targetPort}.", _1stFuture.cause())
+            val proxyMessageBody = ProxyMessageBody(ProxyMessageBodyType.CONNECT_FAIL, agentMessage.body.id)
+            proxyMessageBody.targetAddress = agentMessage.body.targetAddress
+            proxyMessageBody.targetPort = agentMessage.body.targetPort
+            val failProxyMessage =
+                    ProxyMessage(UUID.randomUUID().toString(), MessageBodyEncryptionType.random(), proxyMessageBody)
+            proxyChannelContext.channel().writeAndFlush(failProxyMessage).addListener {
+                proxyChannelContext.close()
             }
         }
     }
