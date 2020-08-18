@@ -57,10 +57,10 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
             proxyContext.close()
             return
         }
-
         this.targetBootstrap.handler(object : ChannelInitializer<SocketChannel>() {
             override fun initChannel(targetChannel: SocketChannel) {
                 with(targetChannel.pipeline()) {
+                    logger.debug { "Initializing channel for $targetAddress:$targetPort" }
                     addLast(dataTransferExecutorGroup,
                             TargetToProxyHandler(
                                     proxyChannelContext = proxyContext,
@@ -75,6 +75,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
         logger.debug("Begin to connect ${targetAddress}:${targetPort}, message id=${agentMessage.body.id}")
         this.targetBootstrap.connect(targetAddress, targetPort).addListener {
             if (it.isSuccess) {
+                logger.debug { "Success connect to $targetAddress:$targetPort." }
                 if (proxyContext.pipeline()[SetupTargetConnectionHandler::class.java] != null) {
                     proxyContext.pipeline().remove(this)
                 }
@@ -88,7 +89,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
             proxyContext.channel().eventLoop().execute {
                 proxyContext.channel().writeAndFlush(failProxyMessage).addListener(ChannelFutureListener.CLOSE)
             }
-            logger.error("Fail to connect to: {}:{}", targetAddress, targetPort)
+            logger.error("Fail connect to {}:{}.", targetAddress, targetPort)
         }
     }
 
