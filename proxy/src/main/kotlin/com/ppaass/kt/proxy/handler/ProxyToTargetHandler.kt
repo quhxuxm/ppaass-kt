@@ -31,7 +31,7 @@ internal class ProxyToTargetHandler(private val targetChannel: Channel,
             throw PpaassException("Fail to transfer data from proxy to target server because of target channel is not active.")
         }
         targetChannel.eventLoop().execute {
-            targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData))
+            targetChannel.write(Unpooled.wrappedBuffer(agentMessage.body.originalData))
                     .addListener(ChannelFutureListener {
                         if (!it.isSuccess) {
                             logger.error("Fail to transfer data from proxy to target server.", it.cause())
