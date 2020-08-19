@@ -9,14 +9,12 @@ import io.netty.channel.Channel
 import io.netty.channel.ChannelFuture
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
-import io.netty.util.concurrent.Promise
 import mu.KotlinLogging
 
 internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Channel, private val targetHost: String,
                                                    private val targetPort: Int,
                                                    private val clientChannelId: String,
-                                                   private val agentConfiguration: AgentConfiguration,
-                                                   private val proxyChannelActivePromise: Promise<Channel>) :
+                                                   private val agentConfiguration: AgentConfiguration) :
         ChannelInboundHandlerAdapter() {
     private companion object {
         private val logger = KotlinLogging.logger {}
@@ -36,7 +34,6 @@ internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Cha
                 channelCacheInfo.targetPort, null,
                 clientChannelId, MessageBodyEncryptionType.random()) { connectCommandFuture: ChannelFuture ->
             if (!connectCommandFuture.isSuccess) {
-                proxyChannelActivePromise.setFailure(connectCommandFuture.cause())
                 ChannelInfoCache.removeChannelInfo(clientChannelId)
                 proxyChannelContext.close()
                 logger.error(
@@ -48,7 +45,6 @@ internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Cha
             }
             logger.debug("Success connect to proxy, clientChannelId={}, targetHost={}, targetPort={}",
                     clientChannelId, channelCacheInfo.targetHost, channelCacheInfo.targetPort)
-            proxyChannelActivePromise.now ?: proxyChannelActivePromise.setSuccess(connectCommandFuture.channel())
             channelCacheInfo.proxyConnectionActivated = true
         }
     }

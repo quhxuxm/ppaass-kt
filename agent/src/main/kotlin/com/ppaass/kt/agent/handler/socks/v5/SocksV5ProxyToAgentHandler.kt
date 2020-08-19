@@ -9,15 +9,12 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest
 import io.netty.util.concurrent.Future
-import io.netty.util.concurrent.GenericFutureListener
-import io.netty.util.concurrent.Promise
 import mu.KotlinLogging
 import java.util.*
 
 internal class SocksV5ProxyToAgentHandler(private val agentChannel: Channel,
                                           private val socks5CommandRequest: Socks5CommandRequest,
-                                          private val agentConfiguration: AgentConfiguration,
-                                          private val proxyChannelActivePromise: Promise<Channel>) :
+                                          private val agentConfiguration: AgentConfiguration) :
         SimpleChannelInboundHandler<ProxyMessage>() {
     private companion object {
         private val logger = KotlinLogging.logger {}
@@ -39,19 +36,16 @@ internal class SocksV5ProxyToAgentHandler(private val agentChannel: Channel,
                     "Fail to send connect message from agent to proxy because of proxy channel not active.")
         }
         proxyChannelContext.channel().eventLoop().execute {
-            proxyChannelContext.channel().writeAndFlush(agentMessage).addListener(
-                    GenericFutureListener { future: Future<in Void?> ->
-                        if (!future.isSuccess) {
-                            this.proxyChannelActivePromise.setFailure(future.cause())
-                            logger.error(
-                                    "Fail to send connect message from agent to proxy because of exception.",
-                                    future.cause())
-                            throw PpaassException(
-                                    "Fail to send connect message from agent to proxy because of exception.",
-                                    future.cause())
-                        }
-                        this.proxyChannelActivePromise.now ?: this.proxyChannelActivePromise.setSuccess(proxyChannelContext.channel())
-                    })
+            proxyChannelContext.channel().writeAndFlush(agentMessage).addListener { future: Future<in Void?> ->
+                if (!future.isSuccess) {
+                    logger.error(
+                            "Fail to send connect message from agent to proxy because of exception.",
+                            future.cause())
+                    throw PpaassException(
+                            "Fail to send connect message from agent to proxy because of exception.",
+                            future.cause())
+                }
+            }
         }
     }
 

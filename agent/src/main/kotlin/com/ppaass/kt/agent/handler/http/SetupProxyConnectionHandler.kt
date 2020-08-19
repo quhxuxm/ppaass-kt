@@ -70,28 +70,7 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
         if (HttpMethod.CONNECT === msg.method()) {
             //A https request to setup the connection
             logger.debug("Incoming request is https protocol to setup connection, clientChannelId={}", clientChannelId)
-            val proxyChannelActivePromise =
-                    DefaultPromise<Channel>(agentChannelContext.executor())
-            proxyChannelActivePromise.addListener {
-                if (!it.isSuccess) {
-                    return@addListener
-                }
-                with(agentChannelContext.pipeline()) {
-                    addLast(resourceClearHandler)
-                }
-                val okResponse = DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
-                agentChannelContext.writeAndFlush(okResponse)
-                        .addListener(ChannelFutureListener { okResponseFuture ->
-                            okResponseFuture.channel().pipeline().apply {
-                                if (this[HttpServerCodec::class.java.name] != null) {
-                                    remove(HttpServerCodec::class.java.name)
-                                }
-                                if (this[HttpObjectAggregator::class.java.name] != null) {
-                                    remove(HttpObjectAggregator::class.java.name)
-                                }
-                            }
-                        })
-            }
+
             val httpConnectionInfo = parseHttpConnectionInfo(msg.uri())
             this.proxyBootstrap.handler(object : ChannelInitializer<SocketChannel>() {
                 override fun initChannel(httpsProxyChannel: SocketChannel) {
@@ -108,7 +87,7 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
                                 TransferDataFromProxyToAgentHandler(agentChannelContext.channel(),
                                         httpConnectionInfo.host, httpConnectionInfo.port,
                                         clientChannelId,
-                                        agentConfiguration, proxyChannelActivePromise))
+                                        agentConfiguration))
                         addLast(resourceClearHandler)
                         addLast(Lz4FrameEncoder())
                         addLast(lengthFieldPrepender)
@@ -118,29 +97,40 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
                 }
             })
             this.proxyBootstrap.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort).sync()
-                    .addListener(ProxyChannelConnectedListener(agentChannelContext, httpConnectionInfo))
+                    .addListener {
+                        if (!it.isSuccess) {
+                            agentChannelContext.close()
+                            logger.error("Fail to connect to proxy server because of exception.",
+                                    it.cause())
+                            throw PpaassException("Fail to connect to proxy server because of exception.", it.cause())
+                        }
+                        with(agentChannelContext.pipeline()) {
+                            addLast(resourceClearHandler)
+                        }
+                        val okResponse = DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
+                        agentChannelContext.writeAndFlush(okResponse)
+                                .addListener(ChannelFutureListener { okResponseFuture ->
+                                    okResponseFuture.channel().pipeline().apply {
+                                        if (this[HttpServerCodec::class.java.name] != null) {
+                                            remove(HttpServerCodec::class.java.name)
+                                        }
+                                        if (this[HttpObjectAggregator::class.java.name] != null) {
+                                            remove(HttpObjectAggregator::class.java.name)
+                                        }
+                                    }
+                                    logger.debug(
+                                            "Success connect to proxy server for target server, targetAddress={}, targetPort={}",
+                                            httpConnectionInfo.host, httpConnectionInfo.port)
+                                })
+
+                    }
             return
         }
         // A http request
         logger.debug("Incoming request is http protocol,  clientChannelId={}", clientChannelId)
         val proxyChannelActivePromise = DefaultPromise<Channel>(agentChannelContext.executor())
         ReferenceCountUtil.retain(msg, 1)
-        proxyChannelActivePromise.addListener {
-            if (!it.isSuccess) {
-                return@addListener
-            }
-            with(agentChannelContext.pipeline()) {
-                addLast(resourceClearHandler)
-            }
-            val channelCacheInfo = ChannelInfoCache.getChannelInfoByClientChannelId(clientChannelId)
-            if (channelCacheInfo == null) {
-                logger.error("Fail to find channel cache information, clientChannelId={}", clientChannelId)
-                throw PpaassException()
-            }
-            writeAgentMessageToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
-                    channelCacheInfo.proxyChannel, channelCacheInfo.targetHost, channelCacheInfo.targetPort,
-                    msg, clientChannelId, MessageBodyEncryptionType.random())
-        }
+
         val httpConnectionInfo = parseHttpConnectionInfo(msg.uri())
         this.proxyBootstrap.handler(object : ChannelInitializer<SocketChannel>() {
             override fun initChannel(httpProxyChannel: SocketChannel) {
@@ -159,7 +149,7 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
                             TransferDataFromProxyToAgentHandler(agentChannelContext.channel(),
                                     httpConnectionInfo.host, httpConnectionInfo.port,
                                     clientChannelId,
-                                    agentConfiguration, proxyChannelActivePromise))
+                                    agentConfiguration))
                     addLast(resourceClearHandler)
                     addLast(Lz4FrameEncoder())
                     addLast(lengthFieldPrepender)
@@ -169,7 +159,28 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
             }
         })
         this.proxyBootstrap.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort).sync()
-                .addListener(ProxyChannelConnectedListener(agentChannelContext, httpConnectionInfo))
+                .addListener {
+                    if (!it.isSuccess) {
+                        agentChannelContext.close()
+                        logger.error("Fail to connect to proxy server because of exception.",
+                                it.cause())
+                        throw PpaassException("Fail to connect to proxy server because of exception.", it.cause())
+                    }
+                    with(agentChannelContext.pipeline()) {
+                        addLast(resourceClearHandler)
+                    }
+                    val channelCacheInfo = ChannelInfoCache.getChannelInfoByClientChannelId(clientChannelId)
+                    if (channelCacheInfo == null) {
+                        logger.error("Fail to find channel cache information, clientChannelId={}", clientChannelId)
+                        throw PpaassException()
+                    }
+                    writeAgentMessageToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
+                            channelCacheInfo.proxyChannel, channelCacheInfo.targetHost, channelCacheInfo.targetPort,
+                            msg, clientChannelId, MessageBodyEncryptionType.random())
+                    logger.debug(
+                            "Success connect to proxy server for target server, targetAddress={}, targetPort={}",
+                            httpConnectionInfo.host, httpConnectionInfo.port)
+                }
     }
 
     override fun channelInactive(agentChannelContext: ChannelHandlerContext) {
