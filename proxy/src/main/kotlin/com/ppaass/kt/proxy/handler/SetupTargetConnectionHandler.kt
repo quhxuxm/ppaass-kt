@@ -8,7 +8,6 @@ import io.netty.channel.*
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
-import io.netty.util.concurrent.EventExecutorGroup
 import mu.KotlinLogging
 import java.util.*
 
@@ -19,17 +18,17 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
         private val logger = KotlinLogging.logger {}
     }
 
-    private val receiveDataFromTargetEventExecutorGroup: EventExecutorGroup
-    private val sendDataToTargetEventLoopGroup: NioEventLoopGroup
+    //    private val receiveDataFromTargetEventExecutorGroup: EventExecutorGroup
+    private val targetEventLoopGroup: NioEventLoopGroup
     private val targetBootstrap: Bootstrap
 
     init {
-        this.receiveDataFromTargetEventExecutorGroup =
-                DefaultEventLoopGroup(proxyConfiguration.receiveDataFromTargetThreadNumber)
-        this.sendDataToTargetEventLoopGroup = NioEventLoopGroup(proxyConfiguration.sendDataToTargetThreadNumber)
+//        this.receiveDataFromTargetEventExecutorGroup =
+//                DefaultEventLoopGroup(proxyConfiguration.receiveDataFromTargetThreadNumber)
+        this.targetEventLoopGroup = NioEventLoopGroup(proxyConfiguration.targetEventLoopGroupThreadNumber)
         this.targetBootstrap = Bootstrap()
         this.targetBootstrap.apply {
-            group(sendDataToTargetEventLoopGroup)
+            group(targetEventLoopGroup)
             channel(NioSocketChannel::class.java)
             option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
                     proxyConfiguration.targetConnectionTimeout)
@@ -61,7 +60,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
             override fun initChannel(targetChannel: SocketChannel) {
                 with(targetChannel.pipeline()) {
                     logger.debug { "Initializing channel for $targetAddress:$targetPort" }
-                    addLast(receiveDataFromTargetEventExecutorGroup,
+                    addLast(
                             TargetToProxyHandler(
                                     proxyChannelContext = proxyChannelContext,
                                     agentMessage = agentMessage,
