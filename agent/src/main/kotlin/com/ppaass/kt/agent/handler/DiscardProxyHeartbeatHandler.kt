@@ -1,4 +1,4 @@
-package com.ppaass.kt.agent.handler.common
+package com.ppaass.kt.agent.handler
 
 import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.protocol.ProxyMessage

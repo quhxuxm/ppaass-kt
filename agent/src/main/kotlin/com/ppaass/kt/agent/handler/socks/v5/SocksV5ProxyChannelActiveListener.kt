@@ -7,14 +7,12 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandResponse
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest
 import io.netty.handler.codec.socksx.v5.Socks5CommandStatus
-import io.netty.util.concurrent.EventExecutorGroup
 import io.netty.util.concurrent.Future
 import io.netty.util.concurrent.GenericFutureListener
 import mu.KotlinLogging
 
 internal class SocksV5ProxyChannelActiveListener(private val socks5CommandRequest: Socks5CommandRequest,
                                                  private val agentChannelContext: ChannelHandlerContext,
-                                                 private val businessEventExecutorGroup: EventExecutorGroup,
                                                  private val agentConfiguration: AgentConfiguration) :
         GenericFutureListener<Future<Channel>> {
     companion object {
@@ -31,7 +29,7 @@ internal class SocksV5ProxyChannelActiveListener(private val socks5CommandReques
                 "Success connect to target server: {}:{}", this.socks5CommandRequest.dstAddr(),
                 this.socks5CommandRequest.dstPort())
         agentChannelContext.pipeline().apply {
-            addLast(businessEventExecutorGroup,
+            addLast(
                     SocksV5AgentToProxyHandler(proxyChannel,
                             socks5CommandRequest, agentConfiguration))
             addLast(resourceClearHandler)

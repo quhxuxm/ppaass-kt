@@ -25,7 +25,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
     init {
 //        this.receiveDataFromTargetEventExecutorGroup =
 //                DefaultEventLoopGroup(proxyConfiguration.receiveDataFromTargetThreadNumber)
-        this.targetEventLoopGroup = NioEventLoopGroup(proxyConfiguration.targetEventLoopGroupThreadNumber)
+        this.targetEventLoopGroup = NioEventLoopGroup(proxyConfiguration.targetIoEventThreadNumber)
         this.targetBootstrap = Bootstrap()
         this.targetBootstrap.apply {
             group(targetEventLoopGroup)

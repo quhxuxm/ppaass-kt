@@ -1,7 +1,7 @@
 package com.ppaass.kt.agent
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
-import com.ppaass.kt.agent.handler.common.HeartbeatHandler
+import com.ppaass.kt.agent.handler.HeartbeatHandler
 import com.ppaass.kt.agent.handler.socks.SwitchSocksVersionHandler
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.socket.SocketChannel

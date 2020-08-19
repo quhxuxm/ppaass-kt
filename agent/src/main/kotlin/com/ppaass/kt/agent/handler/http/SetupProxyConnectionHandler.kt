@@ -1,11 +1,12 @@
 package com.ppaass.kt.agent.handler.http
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
-import com.ppaass.kt.agent.handler.common.DiscardProxyHeartbeatHandler
+import com.ppaass.kt.agent.handler.discardProxyHeartbeatHandler
+import com.ppaass.kt.agent.handler.lengthFieldPrepender
+import com.ppaass.kt.agent.handler.resourceClearHandler
 import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.netty.codec.AgentMessageEncoder
 import com.ppaass.kt.common.netty.codec.ProxyMessageDecoder
-import com.ppaass.kt.common.netty.handler.ResourceClearHandler
 import com.ppaass.kt.common.protocol.AgentMessageBodyType
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import io.netty.bootstrap.Bootstrap
@@ -15,13 +16,11 @@ import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder
-import io.netty.handler.codec.LengthFieldPrepender
 import io.netty.handler.codec.compression.Lz4FrameDecoder
 import io.netty.handler.codec.compression.Lz4FrameEncoder
 import io.netty.handler.codec.http.*
 import io.netty.util.ReferenceCountUtil
 import io.netty.util.concurrent.DefaultPromise
-import io.netty.util.concurrent.EventExecutorGroup
 import mu.KotlinLogging
 
 @ChannelHandler.Sharable
@@ -29,21 +28,16 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
         SimpleChannelInboundHandler<Any>() {
     private companion object {
         private val logger = KotlinLogging.logger {}
-        private val resourceClearHandler = ResourceClearHandler()
-        private val discardProxyHeartbeatHandler = DiscardProxyHeartbeatHandler()
-        private val lengthFieldPrepender = LengthFieldPrepender(4)
     }
 
-    private val businessEventExecutorGroup: EventExecutorGroup
     private val proxyBootstrap: Bootstrap
 
     init {
-        this.businessEventExecutorGroup =
-                DefaultEventLoopGroup(this.agentConfiguration.staticAgentConfiguration.businessEventThreadNumber)
+
         this.proxyBootstrap = Bootstrap()
         with(this.proxyBootstrap) {
             group(NioEventLoopGroup(
-                    agentConfiguration.staticAgentConfiguration.proxyDataTransferIoEventThreadNumber))
+                    agentConfiguration.staticAgentConfiguration.proxyIoEventThreadNumber))
             channel(NioSocketChannel::class.java)
             option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
                     agentConfiguration.staticAgentConfiguration.proxyConnectionTimeout)
@@ -77,7 +71,7 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
             //A https request to setup the connection
             logger.debug("Incoming request is https protocol to setup connection, clientChannelId={}", clientChannelId)
             val proxyChannelActivePromise =
-                    DefaultPromise<Channel>(this.businessEventExecutorGroup.next())
+                    DefaultPromise<Channel>(agentChannelContext.executor())
             proxyChannelActivePromise.addListener {
                 if (!it.isSuccess) {
                     return@addListener
@@ -110,7 +104,7 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
                                 agentPrivateKeyString = agentConfiguration.staticAgentConfiguration.agentPrivateKey))
                         addLast(discardProxyHeartbeatHandler)
                         addLast(ExtractProxyMessageOriginalDataDecoder())
-                        addLast(businessEventExecutorGroup,
+                        addLast(
                                 TransferDataFromProxyToAgentHandler(agentChannelContext.channel(),
                                         httpConnectionInfo.host, httpConnectionInfo.port,
                                         clientChannelId,
@@ -129,7 +123,7 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
         }
         // A http request
         logger.debug("Incoming request is http protocol,  clientChannelId={}", clientChannelId)
-        val proxyChannelActivePromise = DefaultPromise<Channel>(this.businessEventExecutorGroup.next())
+        val proxyChannelActivePromise = DefaultPromise<Channel>(agentChannelContext.executor())
         ReferenceCountUtil.retain(msg, 1)
         proxyChannelActivePromise.addListener {
             if (!it.isSuccess) {
@@ -161,7 +155,7 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
                     addLast(ExtractProxyMessageOriginalDataDecoder())
                     addLast(HttpResponseDecoder())
                     addLast(HttpObjectAggregator(Int.MAX_VALUE, true))
-                    addLast(businessEventExecutorGroup,
+                    addLast(
                             TransferDataFromProxyToAgentHandler(agentChannelContext.channel(),
                                     httpConnectionInfo.host, httpConnectionInfo.port,
                                     clientChannelId,
