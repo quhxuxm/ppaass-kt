@@ -105,6 +105,10 @@ class AgentMessageBody(val bodyType: AgentMessageBodyType, override val id: Stri
         this.targetAddress = targetAddress
         this.targetPort = targetPort
     }
+
+    override fun toString(): String {
+        return "AgentMessageBody(bodyType=$bodyType, id='$id', securityToken='$securityToken', originalData=${originalData?.contentToString()}, targetAddress=$targetAddress, targetPort=$targetPort)"
+    }
 }
 
 /**
@@ -141,6 +145,12 @@ class ProxyMessageBody(val bodyType: ProxyMessageBodyType, override val id: Stri
         this.targetAddress = targetAddress
         this.targetPort = targetPort
     }
+
+    override fun toString(): String {
+        return "ProxyMessageBody(bodyType=$bodyType, id='$id', originalData=${originalData?.contentToString()}, targetAddress=$targetAddress, targetPort=$targetPort)"
+    }
+
+
 }
 
 /**
