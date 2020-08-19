@@ -2,13 +2,11 @@ package com.ppaass.kt.proxy.handler
 
 import com.ppaass.kt.common.netty.codec.AgentMessageDecoder
 import com.ppaass.kt.common.netty.codec.ProxyMessageEncoder
-import com.ppaass.kt.common.netty.handler.ResourceClearHandler
 import com.ppaass.kt.proxy.ProxyConfiguration
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder
-import io.netty.handler.codec.LengthFieldPrepender
 import io.netty.handler.codec.compression.Lz4FrameDecoder
 import io.netty.handler.codec.compression.Lz4FrameEncoder
 import io.netty.handler.timeout.IdleStateHandler
@@ -22,13 +20,10 @@ import org.springframework.stereotype.Service
 @ChannelHandler.Sharable
 internal class ProxyChannelInitializer(private val proxyConfiguration: ProxyConfiguration) :
         ChannelInitializer<SocketChannel>() {
-    private val heartbeatHandler = HeartbeatHandler()
     private val setupTargetConnectionHandler = SetupTargetConnectionHandler(proxyConfiguration)
 
     private companion object {
         private val logger = KotlinLogging.logger {}
-        private val lengthFieldPrepender = LengthFieldPrepender(4)
-        private val resourceClearHandler = ResourceClearHandler()
     }
 
     override fun initChannel(proxyChannel: SocketChannel) {

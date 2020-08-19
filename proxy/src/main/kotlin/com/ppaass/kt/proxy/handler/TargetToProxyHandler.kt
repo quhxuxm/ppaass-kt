@@ -4,7 +4,6 @@ import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.protocol.*
 import com.ppaass.kt.proxy.ProxyConfiguration
 import io.netty.buffer.ByteBuf
-import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.util.concurrent.EventExecutorGroup
@@ -50,18 +49,17 @@ internal class TargetToProxyHandler(private val proxyChannelContext: ChannelHand
         }
         proxyChannel.eventLoop().execute {
             logger.debug { "Write proxy message to agent, proxyMessage=\n$proxyMessage\n" }
-            proxyChannel.writeAndFlush(proxyMessage).addListener(ChannelFutureListener {
+            proxyChannel.writeAndFlush(proxyMessage).addListener {
                 if (!it.isSuccess) {
                     proxyChannel.close()
                     targetChannelContext.close()
                     logger.error("Fail to write proxy message to agent, target=${agentMessage.body.targetAddress}:${agentMessage.body.targetPort}", it.cause())
                     throw PpaassException("Fail to write proxy message to agent, target=${agentMessage.body.targetAddress}:${agentMessage.body.targetPort}")
-                    return@ChannelFutureListener
                 }
                 if (!proxyConfiguration.autoRead) {
                     targetChannelContext.channel().read()
                 }
-            })
+            }
         }
     }
 

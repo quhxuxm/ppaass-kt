@@ -1,6 +1,5 @@
 package com.ppaass.kt.proxy.handler
 
-import com.ppaass.kt.common.netty.handler.ResourceClearHandler
 import com.ppaass.kt.common.protocol.*
 import com.ppaass.kt.proxy.ProxyConfiguration
 import io.netty.bootstrap.Bootstrap
@@ -18,7 +17,6 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
         SimpleChannelInboundHandler<AgentMessage>() {
     private companion object {
         private val logger = KotlinLogging.logger {}
-        private val resourceClearHandler = ResourceClearHandler()
     }
 
     private val dataTransferExecutorGroup: EventExecutorGroup
