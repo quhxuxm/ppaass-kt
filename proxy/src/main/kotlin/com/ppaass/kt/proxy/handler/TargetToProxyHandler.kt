@@ -6,12 +6,11 @@ import com.ppaass.kt.proxy.ProxyConfiguration
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
-import io.netty.util.concurrent.EventExecutorGroup
 import mu.KotlinLogging
 import java.util.*
 
 internal class TargetToProxyHandler(private val proxyChannelContext: ChannelHandlerContext,
-                                    private val agentMessage: AgentMessage, private val dataTransferExecutorGroup: EventExecutorGroup,
+                                    private val agentMessage: AgentMessage,
                                     private val proxyConfiguration: ProxyConfiguration) :
         SimpleChannelInboundHandler<ByteBuf>() {
     private companion object {
@@ -21,7 +20,7 @@ internal class TargetToProxyHandler(private val proxyChannelContext: ChannelHand
 
     override fun channelActive(targetChannelContext: ChannelHandlerContext) {
         val targetChannel = targetChannelContext.channel()
-        proxyChannelContext.pipeline().addLast(dataTransferExecutorGroup,
+        proxyChannelContext.pipeline().addLast(
                 ProxyToTargetHandler(
                         targetChannel = targetChannel,
                         proxyConfiguration = proxyConfiguration))

@@ -19,15 +19,17 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
         private val logger = KotlinLogging.logger {}
     }
 
-    private val dataTransferExecutorGroup: EventExecutorGroup
+    private val receiveDataFromTargetEventExecutorGroup: EventExecutorGroup
+    private val sendDataToTargetEventLoopGroup: NioEventLoopGroup
     private val targetBootstrap: Bootstrap
 
     init {
-        this.dataTransferExecutorGroup =
-                DefaultEventLoopGroup(proxyConfiguration.dataTransferHandlerExecutorGroupThreadNumber)
+        this.receiveDataFromTargetEventExecutorGroup =
+                DefaultEventLoopGroup(proxyConfiguration.receiveDataFromTargetEventExecutorGroupThreadNumber)
+        this.sendDataToTargetEventLoopGroup = NioEventLoopGroup(proxyConfiguration.sendDataToTargetEventLoopGroupThreadNumber)
         this.targetBootstrap = Bootstrap()
         this.targetBootstrap.apply {
-            group(NioEventLoopGroup(proxyConfiguration.targetDataTransferIoEventThreadNumber))
+            group(sendDataToTargetEventLoopGroup)
             channel(NioSocketChannel::class.java)
             option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
                     proxyConfiguration.targetConnectionTimeout)
@@ -59,11 +61,10 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
             override fun initChannel(targetChannel: SocketChannel) {
                 with(targetChannel.pipeline()) {
                     logger.debug { "Initializing channel for $targetAddress:$targetPort" }
-                    addLast(
+                    addLast(receiveDataFromTargetEventExecutorGroup,
                             TargetToProxyHandler(
                                     proxyChannelContext = proxyChannelContext,
                                     agentMessage = agentMessage,
-                                    dataTransferExecutorGroup = dataTransferExecutorGroup,
                                     proxyConfiguration = proxyConfiguration
                             ))
                     addLast(resourceClearHandler)
