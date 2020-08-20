@@ -41,6 +41,10 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
                 logger.error("Fail to find channel cache information, clientChannelId={}", clientChannelId)
                 throw PpaassException("Fail to find channel cache information, clientChannelId=$clientChannelId")
             }
+            if(!channelCacheInfo.proxyChannel.isActive){
+                logger.error("Fail to write data to proxy channel because of it is inactive, clientChannelId={}", clientChannelId)
+                throw PpaassException("Fail to write data to proxy channel because of it is inactive, clientChannelId=$clientChannelId")
+            }
             writeAgentMessageToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
                     channelCacheInfo.proxyChannel, channelCacheInfo.targetHost, channelCacheInfo.targetPort,
                     msg, clientChannelId, MessageBodyEncryptionType.random())
@@ -79,20 +83,22 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
         ReferenceCountUtil.retain(msg, 1)
         val channelCacheInfo = ChannelInfoCache.getChannelInfoByClientChannelId(clientChannelId)
         if (channelCacheInfo != null) {
-            writeAgentMessageToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
-                    channelCacheInfo.proxyChannel, channelCacheInfo.targetHost, channelCacheInfo.targetPort,
-                    msg, clientChannelId, MessageBodyEncryptionType.random()) {
-                if (!it.isSuccess) {
-                    ChannelInfoCache.removeChannelInfo(clientChannelId)
-                    agentChannelContext.close()
-                    channelCacheInfo.proxyChannel.close()
-                    throw PpaassException(
-                            "Fail to send connect message from agent to proxy, clientChannelId=$clientChannelId, " +
-                                    "targetHost=${channelCacheInfo.targetHost}, targetPort =${channelCacheInfo.targetPort}",
-                            it.cause())
+            if (channelCacheInfo.proxyChannel.isActive) {
+                writeAgentMessageToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
+                        channelCacheInfo.proxyChannel, channelCacheInfo.targetHost, channelCacheInfo.targetPort,
+                        msg, clientChannelId, MessageBodyEncryptionType.random()) {
+                    if (!it.isSuccess) {
+                        ChannelInfoCache.removeChannelInfo(clientChannelId)
+                        agentChannelContext.close()
+                        channelCacheInfo.proxyChannel.close()
+                        throw PpaassException(
+                                "Fail to send connect message from agent to proxy, clientChannelId=$clientChannelId, " +
+                                        "targetHost=${channelCacheInfo.targetHost}, targetPort =${channelCacheInfo.targetPort}",
+                                it.cause())
+                    }
                 }
+                return
             }
-            return
         }
         val httpConnectionInfo = parseHttpConnectionInfo(msg.uri())
         val proxyBootstrap = createProxyBootstrapForHttp(agentChannelContext, httpConnectionInfo, clientChannelId) { proxyChannelContext ->
