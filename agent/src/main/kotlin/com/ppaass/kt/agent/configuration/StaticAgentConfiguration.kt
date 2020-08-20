@@ -10,7 +10,6 @@ import java.util.*
 class StaticAgentConfiguration {
     var masterIoEventThreadNumber = 0
     var workerIoEventThreadNumber = 0
-    var proxyIoEventThreadNumber = 0
     var soBacklog = 0
     var soRcvbuf = 0
     var soSndbuf = 0
