@@ -101,7 +101,17 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
             }
             writeAgentMessageToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
                     channelCacheInfo.proxyChannel, channelCacheInfo.targetHost, channelCacheInfo.targetPort,
-                    msg, clientChannelId, MessageBodyEncryptionType.random())
+                    msg, clientChannelId, MessageBodyEncryptionType.random()) {
+                if (!it.isSuccess) {
+                    ChannelInfoCache.removeChannelInfo(clientChannelId)
+                    agentChannelContext.close()
+                    channelCacheInfo.proxyChannel.close()
+                    throw PpaassException(
+                            "Fail to send connect message from agent to proxy, clientChannelId=$clientChannelId, " +
+                                    "targetHost=${httpConnectionInfo.host}, targetPort =${httpConnectionInfo.port}",
+                            it.cause())
+                }
+            }
             logger.debug(
                     "Success connect to proxy server for target server, targetAddress={}, targetPort={}",
                     httpConnectionInfo.host, httpConnectionInfo.port)
