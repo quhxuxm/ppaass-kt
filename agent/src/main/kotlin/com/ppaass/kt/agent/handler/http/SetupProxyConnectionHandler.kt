@@ -94,20 +94,6 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
         ReferenceCountUtil.retain(msg, 1)
         val httpConnectionInfo = parseHttpConnectionInfo(msg.uri())
         val proxyBootstrap = createProxyBootstrapForHttp(agentChannelContext, httpConnectionInfo, clientChannelId) {
-            writeAgentMessageToProxy(AgentMessageBodyType.CONNECT, agentConfiguration.userToken,
-                    it.channel(), httpConnectionInfo.host,
-                    httpConnectionInfo.port, null,
-                    clientChannelId, MessageBodyEncryptionType.random()) { connectCommandFuture: ChannelFuture ->
-                if (!connectCommandFuture.isSuccess) {
-                    ChannelInfoCache.removeChannelInfo(clientChannelId)
-                    it.close()
-                    agentChannelContext.close()
-                    throw PpaassException(
-                            "Fail to send connect message from agent to proxy, clientChannelId=$clientChannelId, " +
-                                    "targetHost=${httpConnectionInfo.host}, targetPort =${httpConnectionInfo.port}",
-                            connectCommandFuture.cause())
-                }
-            }
             val channelCacheInfo = ChannelInfoCache.getChannelInfoByClientChannelId(clientChannelId)
             if (channelCacheInfo == null) {
                 logger.error("Fail to find channel cache information, clientChannelId={}", clientChannelId)
