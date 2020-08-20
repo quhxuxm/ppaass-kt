@@ -38,17 +38,15 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
             return
         }
         logger.debug("Begin to connect ${targetAddress}:${targetPort}, message id=${agentMessage.body.id}")
-        targetBootstrap.connect(targetAddress, targetPort).addListener _1stListener@{ _1stFuture ->
-            if (!_1stFuture.isSuccess) {
-                logger.error("Fail connect to ${targetAddress}:${targetPort}.", _1stFuture.cause())
+        targetBootstrap.connect(targetAddress, targetPort).addListener {
+            if (!it.isSuccess) {
+                logger.error("Fail connect to ${targetAddress}:${targetPort}.", it.cause())
                 val proxyMessageBody = ProxyMessageBody(ProxyMessageBodyType.CONNECT_FAIL, agentMessage.body.id)
                 proxyMessageBody.targetAddress = agentMessage.body.targetAddress
                 proxyMessageBody.targetPort = agentMessage.body.targetPort
                 val failProxyMessage =
                         ProxyMessage(UUID.randomUUID().toString(), MessageBodyEncryptionType.random(), proxyMessageBody)
-                proxyChannelContext.channel().writeAndFlush(failProxyMessage).addListener {
-                    proxyChannelContext.close()
-                }
+                proxyChannelContext.channel().writeAndFlush(failProxyMessage).addListener(ChannelFutureListener.CLOSE)
             }
         }
     }
