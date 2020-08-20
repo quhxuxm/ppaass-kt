@@ -33,7 +33,7 @@ internal class SwitchSocksVersionHandler(private val agentConfiguration: AgentCo
             agentChannelContext.close()
             return
         }
-        with(agentChannelPipeline) {
+        agentChannelPipeline.apply {
             logger.debug("Incoming request socks5, clientChannelId={}", clientChannelId)
             addLast(SocksV5Handler::class.java.name, socksV5Handler)
             remove(this@SwitchSocksVersionHandler)

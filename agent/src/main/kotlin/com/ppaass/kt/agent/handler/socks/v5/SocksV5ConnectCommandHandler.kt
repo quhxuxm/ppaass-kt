@@ -9,14 +9,11 @@ import com.ppaass.kt.common.netty.codec.ProxyMessageDecoder
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.*
-import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder
 import io.netty.handler.codec.compression.Lz4FrameDecoder
 import io.netty.handler.codec.compression.Lz4FrameEncoder
-import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandResponse
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest
-import io.netty.handler.codec.socksx.v5.Socks5CommandStatus
 import mu.KotlinLogging
 
 @ChannelHandler.Sharable
@@ -26,13 +23,15 @@ internal class SocksV5ConnectCommandHandler(private val agentConfiguration: Agen
         private val logger = KotlinLogging.logger {}
     }
 
-    private val proxyBootstrap: Bootstrap
+    override fun channelRead0(agentChannelContext: ChannelHandlerContext, socks5CommandRequest: Socks5CommandRequest) {
+        val proxyBootstrap = createProxyServerBootstrap(agentChannelContext, socks5CommandRequest)
+        proxyBootstrap.connect(agentConfiguration.proxyAddress, agentConfiguration.proxyPort)
+    }
 
-    init {
-        this.proxyBootstrap = Bootstrap()
-        with(this.proxyBootstrap) {
-            group(NioEventLoopGroup(
-                    agentConfiguration.staticAgentConfiguration.proxyIoEventThreadNumber))
+    private fun createProxyServerBootstrap(agentChannelContext: ChannelHandlerContext, socks5CommandRequest: Socks5CommandRequest): Bootstrap {
+        val proxyBootstrap = Bootstrap()
+        proxyBootstrap.apply {
+            group(agentChannelContext.channel().eventLoop())
             channel(NioSocketChannel::class.java)
             option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
                     agentConfiguration.staticAgentConfiguration.proxyConnectionTimeout)
@@ -44,9 +43,6 @@ internal class SocksV5ConnectCommandHandler(private val agentConfiguration: Agen
             option(ChannelOption.SO_RCVBUF, agentConfiguration.staticAgentConfiguration.proxyServerSoRcvbuf)
             option(ChannelOption.SO_SNDBUF, agentConfiguration.staticAgentConfiguration.proxyServerSoSndbuf)
         }
-    }
-
-    override fun channelRead0(agentChannelContext: ChannelHandlerContext, socks5CommandRequest: Socks5CommandRequest) {
         proxyBootstrap.handler(object : ChannelInitializer<Channel>() {
             override fun initChannel(proxyChannel: Channel) {
                 with(proxyChannel.pipeline()) {
@@ -70,37 +66,6 @@ internal class SocksV5ConnectCommandHandler(private val agentConfiguration: Agen
                 }
             }
         })
-        proxyBootstrap.connect(agentConfiguration.proxyAddress, agentConfiguration.proxyPort).addListener(
-                ChannelFutureListener { proxyConnectionFuture: ChannelFuture ->
-                    if (!proxyConnectionFuture.isSuccess) {
-                        // Close the connection if the connection attempt has failed.
-                        logger.debug(
-                                "Fail connect to: {}:{}", socks5CommandRequest.dstAddr(),
-                                socks5CommandRequest.dstPort())
-                        agentChannelContext.channel().writeAndFlush(
-                                DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE,
-                                        socks5CommandRequest.dstAddrType()))
-                                .addListener(ChannelFutureListener.CLOSE)
-                    }
-
-                    val proxyChannel = proxyConnectionFuture.channel()
-                    logger.debug(
-                            "Success connect to target server: {}:{}", socks5CommandRequest.dstAddr(),
-                            socks5CommandRequest.dstPort())
-                    agentChannelContext.pipeline().apply {
-                        addLast(
-                                SocksV5AgentToProxyHandler(proxyChannel,
-                                        socks5CommandRequest, agentConfiguration))
-                        addLast(resourceClearHandler)
-                        if (this[SocksV5ConnectCommandHandler::class.java.name] != null) {
-                            remove(SocksV5ConnectCommandHandler::class.java.name)
-                        }
-                    }
-                    agentChannelContext.channel().writeAndFlush(DefaultSocks5CommandResponse(
-                            Socks5CommandStatus.SUCCESS,
-                            socks5CommandRequest.dstAddrType(),
-                            socks5CommandRequest.dstAddr(),
-                            socks5CommandRequest.dstPort()))
-                })
+        return proxyBootstrap
     }
 }
