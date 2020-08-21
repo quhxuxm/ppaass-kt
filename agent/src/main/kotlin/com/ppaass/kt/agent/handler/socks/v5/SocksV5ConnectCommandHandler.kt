@@ -9,6 +9,7 @@ import com.ppaass.kt.common.netty.codec.ProxyMessageDecoder
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.*
+import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder
 import io.netty.handler.codec.compression.Lz4FrameDecoder
@@ -23,6 +24,8 @@ internal class SocksV5ConnectCommandHandler(private val agentConfiguration: Agen
         private val logger = KotlinLogging.logger {}
     }
 
+    private val proxyServerBootstrapIoEventLoopGroup = NioEventLoopGroup(agentConfiguration.staticAgentConfiguration.dataTransferIoEventThreadNumber)
+
     override fun channelRead0(agentChannelContext: ChannelHandlerContext, socks5CommandRequest: Socks5CommandRequest) {
         val proxyBootstrap = createProxyServerBootstrap(agentChannelContext, socks5CommandRequest)
         proxyBootstrap.connect(agentConfiguration.proxyAddress, agentConfiguration.proxyPort)
@@ -31,7 +34,7 @@ internal class SocksV5ConnectCommandHandler(private val agentConfiguration: Agen
     private fun createProxyServerBootstrap(agentChannelContext: ChannelHandlerContext, socks5CommandRequest: Socks5CommandRequest): Bootstrap {
         val proxyBootstrap = Bootstrap()
         proxyBootstrap.apply {
-            group(agentChannelContext.channel().eventLoop())
+            group(proxyServerBootstrapIoEventLoopGroup)
             channel(NioSocketChannel::class.java)
             option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
                     agentConfiguration.staticAgentConfiguration.proxyConnectionTimeout)
@@ -54,7 +57,7 @@ internal class SocksV5ConnectCommandHandler(private val agentConfiguration: Agen
                     addLast(ProxyMessageDecoder(
                             agentPrivateKeyString = agentConfiguration.staticAgentConfiguration.agentPrivateKey))
                     addLast(discardProxyHeartbeatHandler)
-                    addLast(
+                    addLast(proxyServerBootstrapIoEventLoopGroup,
                             SocksV5ProxyToAgentHandler(
                                     agentChannel = agentChannelContext.channel(),
                                     agentConfiguration = agentConfiguration,

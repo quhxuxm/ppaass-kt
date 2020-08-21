@@ -37,7 +37,7 @@ internal class SocksV5ProxyToAgentHandler(private val agentChannel: Channel,
                 remove(SocksV5ConnectCommandHandler::class.java)
             }
             if (this[SocksV5AgentToProxyHandler::class.java] == null) {
-                addLast(
+                addLast(proxyChannelContext.executor(),
                         SocksV5AgentToProxyHandler(proxyChannelContext.channel(),
                                 socks5CommandRequest, agentConfiguration))
             }

@@ -13,6 +13,7 @@ import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.*
+import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder
@@ -29,6 +30,7 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
         private val logger = KotlinLogging.logger {}
     }
 
+    private val proxyServerBootstrapIoEventLoopGroup = NioEventLoopGroup(agentConfiguration.staticAgentConfiguration.dataTransferIoEventThreadNumber)
 
     override fun channelRead0(agentChannelContext: ChannelHandlerContext, msg: Any) {
         val clientChannelId = agentChannelContext.channel().id().asLongText()
@@ -134,7 +136,7 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
                                             initOnChannelActivate: (proxyChannelContext: ChannelHandlerContext) -> Unit = {}): Bootstrap {
         val proxyBootstrap = Bootstrap()
         proxyBootstrap.apply {
-            group(agentChannelContext.channel().eventLoop())
+            group(proxyServerBootstrapIoEventLoopGroup)
             channel(NioSocketChannel::class.java)
             option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
                     agentConfiguration.staticAgentConfiguration.proxyConnectionTimeout)
@@ -160,7 +162,7 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
                     addLast(ExtractProxyMessageOriginalDataDecoder())
                     addLast(HttpResponseDecoder())
                     addLast(HttpObjectAggregator(Int.MAX_VALUE, true))
-                    addLast(
+                    addLast(proxyServerBootstrapIoEventLoopGroup,
                             TransferDataFromProxyToAgentHandler(agentChannelContext.channel(),
                                     httpConnectionInfo.host, httpConnectionInfo.port,
                                     clientChannelId,
@@ -182,7 +184,7 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
                                              initOnChannelActivate: (proxyChannelContext: ChannelHandlerContext) -> Unit = {}): Bootstrap {
         val proxyBootstrap = Bootstrap()
         proxyBootstrap.apply {
-            group(agentChannelContext.channel().eventLoop())
+            group(proxyServerBootstrapIoEventLoopGroup)
             channel(NioSocketChannel::class.java)
             option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
                     agentConfiguration.staticAgentConfiguration.proxyConnectionTimeout)
@@ -205,7 +207,7 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
                                 agentPrivateKeyString = agentConfiguration.staticAgentConfiguration.agentPrivateKey))
                         addLast(discardProxyHeartbeatHandler)
                         addLast(ExtractProxyMessageOriginalDataDecoder())
-                        addLast(
+                        addLast(proxyServerBootstrapIoEventLoopGroup,
                                 TransferDataFromProxyToAgentHandler(agentChannelContext.channel(),
                                         httpConnectionInfo.host, httpConnectionInfo.port,
                                         clientChannelId,
