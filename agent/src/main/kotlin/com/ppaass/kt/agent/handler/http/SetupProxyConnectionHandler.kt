@@ -41,7 +41,7 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
                 logger.error("Fail to find channel cache information, clientChannelId={}", clientChannelId)
                 throw PpaassException("Fail to find channel cache information, clientChannelId=$clientChannelId")
             }
-            if(!channelCacheInfo.proxyChannel.isActive){
+            if (!channelCacheInfo.proxyChannel.isActive) {
                 logger.error("Fail to write data to proxy channel because of it is inactive, clientChannelId={}", clientChannelId)
                 throw PpaassException("Fail to write data to proxy channel because of it is inactive, clientChannelId=$clientChannelId")
             }
@@ -116,14 +116,16 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
                 }
             }
         }
-        proxyBootstrap.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort).addListener {
+        proxyBootstrap.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort).addListener(ChannelFutureListener {
             if (!it.isSuccess) {
+                ChannelInfoCache.removeChannelInfo(clientChannelId)
                 agentChannelContext.close()
+                it.channel().close()
                 logger.error("Fail to connect to proxy server because of exception.",
                         it.cause())
                 throw PpaassException("Fail to connect to proxy server because of exception.", it.cause())
             }
-        }
+        })
     }
 
     private fun createProxyBootstrapForHttp(agentChannelContext: ChannelHandlerContext,
