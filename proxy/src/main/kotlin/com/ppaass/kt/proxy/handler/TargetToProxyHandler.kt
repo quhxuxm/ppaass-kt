@@ -17,7 +17,6 @@ internal class TargetToProxyHandler(private val proxyChannelContext: ChannelHand
         private val logger = KotlinLogging.logger {}
     }
 
-
     override fun channelActive(targetChannelContext: ChannelHandlerContext) {
         val targetChannel = targetChannelContext.channel()
         proxyChannelContext.pipeline().apply {
