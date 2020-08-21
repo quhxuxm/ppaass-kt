@@ -24,7 +24,6 @@ class StaticAgentConfiguration {
     var proxyServerReceiveDataAverageBufferMaxSize = 0
     var proxyServerSoRcvbuf = 0
     var proxyServerSoSndbuf = 0
-    var proxyServerSoTimeout = 0
     val proxyPublicKey: String by lazy {
         val lines = IOUtils.readLines(
                 StaticAgentConfiguration::class.java.classLoader.getResourceAsStream("security/proxyPublicKey.txt"),

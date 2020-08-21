@@ -18,7 +18,6 @@ class ProxyConfiguration {
     var targetReceiveDataAverageBufferMaxSize: Int = 0
     var targetSoRcvbuf: Int = 0
     var targetSoSndbuf: Int = 0
-    var targetSoTimeout: Int = 0
     var soRcvbuf: Int = 0
     var soSndbuf: Int = 0
     var autoRead: Boolean = false
