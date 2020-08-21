@@ -139,6 +139,8 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
             option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
                     agentConfiguration.staticAgentConfiguration.proxyConnectionTimeout)
             option(ChannelOption.SO_KEEPALIVE, true)
+            option(ChannelOption.SO_REUSEADDR, true)
+            option(ChannelOption.SO_TIMEOUT, agentConfiguration.staticAgentConfiguration.proxyServerSoTimeout)
             option(ChannelOption.AUTO_READ, true)
             option(ChannelOption.AUTO_CLOSE, true)
             option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
@@ -189,6 +191,8 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
             option(ChannelOption.AUTO_READ, true)
             option(ChannelOption.AUTO_CLOSE, true)
             option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+            option(ChannelOption.SO_REUSEADDR, true)
+            option(ChannelOption.SO_TIMEOUT, agentConfiguration.staticAgentConfiguration.proxyServerSoTimeout)
             option(ChannelOption.TCP_NODELAY, true)
             option(ChannelOption.SO_RCVBUF, agentConfiguration.staticAgentConfiguration.proxyServerSoRcvbuf)
             option(ChannelOption.SO_SNDBUF, agentConfiguration.staticAgentConfiguration.proxyServerSoSndbuf)
