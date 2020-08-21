@@ -35,14 +35,7 @@ internal class SocksV5ProxyToAgentHandler(private val agentChannel: Channel,
         if (agentChannel.pipeline()[SocksV5ConnectCommandHandler::class.java] != null) {
             agentChannel.pipeline().remove(SocksV5ConnectCommandHandler::class.java)
         }
-        agentChannel.pipeline().apply {
-            if (this[SocksV5ConnectCommandHandler::class.java] != null) {
-                remove(SocksV5ConnectCommandHandler::class.java)
-            }
-            addLast(
-                    SocksV5AgentToProxyHandler(proxyChannelContext.channel(),
-                            socks5CommandRequest, agentConfiguration))
-        }
+
         proxyChannelContext.channel().writeAndFlush(agentMessage).addListener { future: Future<in Void?> ->
             if (!future.isSuccess) {
                 agentChannel.writeAndFlush(
@@ -55,6 +48,14 @@ internal class SocksV5ProxyToAgentHandler(private val agentChannel: Channel,
                 throw PpaassException(
                         "Fail to send connect message from agent to proxy because of exception.",
                         future.cause())
+            }
+            agentChannel.pipeline().apply {
+                if (this[SocksV5ConnectCommandHandler::class.java] != null) {
+                    remove(SocksV5ConnectCommandHandler::class.java)
+                }
+                addLast(
+                        SocksV5AgentToProxyHandler(proxyChannelContext.channel(),
+                                socks5CommandRequest, agentConfiguration))
             }
             logger.debug(
                     "Success connect to target server: {}:{}", socks5CommandRequest.dstAddr(),
