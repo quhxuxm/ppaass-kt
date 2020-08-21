@@ -26,7 +26,6 @@ internal class SocksV5ConnectCommandHandler(private val agentConfiguration: Agen
     override fun channelRead0(agentChannelContext: ChannelHandlerContext, socks5CommandRequest: Socks5CommandRequest) {
         val proxyBootstrap = createProxyServerBootstrap(agentChannelContext, socks5CommandRequest)
         proxyBootstrap.connect(agentConfiguration.proxyAddress, agentConfiguration.proxyPort)
-        agentChannelContext.pipeline().remove(this)
     }
 
     private fun createProxyServerBootstrap(agentChannelContext: ChannelHandlerContext, socks5CommandRequest: Socks5CommandRequest): Bootstrap {

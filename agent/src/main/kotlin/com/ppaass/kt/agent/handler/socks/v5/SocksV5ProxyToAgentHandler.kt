@@ -33,6 +33,9 @@ internal class SocksV5ProxyToAgentHandler(private val agentChannel: Channel,
                 encryptionToken = UUID.randomUUID().toString(),
                 messageBodyEncryptionType = MessageBodyEncryptionType.random(),
                 body = agentMessageBody)
+        if (agentChannel.pipeline()[SocksV5ConnectCommandHandler::class.java] != null) {
+            agentChannel.pipeline().remove(SocksV5ConnectCommandHandler::class.java)
+        }
         if (!proxyChannelContext.channel().isActive) {
             logger.error(
                     "Fail to send connect message from agent to proxy because of proxy channel not active.")
