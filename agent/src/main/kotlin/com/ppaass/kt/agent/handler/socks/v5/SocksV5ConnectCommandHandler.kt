@@ -40,6 +40,8 @@ internal class SocksV5ConnectCommandHandler(private val agentConfiguration: Agen
             option(ChannelOption.AUTO_CLOSE, true)
             option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
             option(ChannelOption.TCP_NODELAY, true)
+            option(ChannelOption.SO_REUSEADDR, true)
+            option(ChannelOption.SO_TIMEOUT, agentConfiguration.staticAgentConfiguration.proxyServerSoTimeout)
             option(ChannelOption.SO_RCVBUF, agentConfiguration.staticAgentConfiguration.proxyServerSoRcvbuf)
             option(ChannelOption.SO_SNDBUF, agentConfiguration.staticAgentConfiguration.proxyServerSoSndbuf)
         }
