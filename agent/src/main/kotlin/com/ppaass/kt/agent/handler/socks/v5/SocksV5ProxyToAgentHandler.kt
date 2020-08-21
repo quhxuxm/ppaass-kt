@@ -62,9 +62,6 @@ internal class SocksV5ProxyToAgentHandler(private val agentChannel: Channel,
                         SocksV5AgentToProxyHandler(proxyChannel,
                                 socks5CommandRequest, agentConfiguration))
                 addLast(resourceClearHandler)
-                if (this[SocksV5ConnectCommandHandler::class.java.name] != null) {
-                    remove(SocksV5ConnectCommandHandler::class.java.name)
-                }
             }
             agentChannel.writeAndFlush(DefaultSocks5CommandResponse(
                     Socks5CommandStatus.SUCCESS,

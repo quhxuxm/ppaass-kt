@@ -19,15 +19,10 @@ internal class TargetToProxyHandler(private val proxyChannelContext: ChannelHand
 
     override fun channelActive(targetChannelContext: ChannelHandlerContext) {
         val targetChannel = targetChannelContext.channel()
-        proxyChannelContext.pipeline().apply {
-            if (this[SetupTargetConnectionHandler::class.java] != null) {
-                remove(SetupTargetConnectionHandler::class.java)
-            }
-            addLast(
-                    ProxyToTargetHandler(
-                            targetChannel = targetChannel,
-                            proxyConfiguration = proxyConfiguration))
-        }
+        proxyChannelContext.pipeline().addLast(
+                ProxyToTargetHandler(
+                        targetChannel = targetChannel,
+                        proxyConfiguration = proxyConfiguration))
         proxyChannelContext.fireChannelRead(agentMessage)
         if (!proxyConfiguration.autoRead) {
             targetChannel.read()

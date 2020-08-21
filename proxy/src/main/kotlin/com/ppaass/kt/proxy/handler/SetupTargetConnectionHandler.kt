@@ -49,6 +49,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
                 proxyChannelContext.channel().writeAndFlush(failProxyMessage).addListener(ChannelFutureListener.CLOSE)
             }
         }
+        proxyChannelContext.pipeline().remove(this)
     }
 
     private fun createTargetBootstrap(proxyChannelContext: ChannelHandlerContext, agentMessage: AgentMessage): Bootstrap? {
