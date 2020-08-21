@@ -23,7 +23,7 @@ internal class TargetToProxyHandler(private val proxyChannelContext: ChannelHand
             if (this[SetupTargetConnectionHandler::class.java] != null) {
                 remove(SetupTargetConnectionHandler::class.java)
             }
-            addLast(
+            addLast(targetChannelContext.executor(),
                     ProxyToTargetHandler(
                             targetChannel = targetChannel,
                             proxyConfiguration = proxyConfiguration))

@@ -5,6 +5,7 @@ import com.ppaass.kt.proxy.ProxyConfiguration
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.*
+import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import mu.KotlinLogging
@@ -17,6 +18,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
         private val logger = KotlinLogging.logger {}
     }
 
+    private val targetBootstrapIoEventLoopGroup = NioEventLoopGroup(proxyConfiguration.dataTransferIoEventThreadNumber)
 
     override fun channelRead0(proxyChannelContext: ChannelHandlerContext, agentMessage: AgentMessage) {
         val targetAddress = agentMessage.body.targetAddress
@@ -66,7 +68,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
         }
         val targetBootstrap = Bootstrap()
         targetBootstrap.apply {
-            group(proxyChannelContext.channel().eventLoop())
+            group(targetBootstrapIoEventLoopGroup)
             channel(NioSocketChannel::class.java)
             option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
                     proxyConfiguration.targetConnectionTimeout)
