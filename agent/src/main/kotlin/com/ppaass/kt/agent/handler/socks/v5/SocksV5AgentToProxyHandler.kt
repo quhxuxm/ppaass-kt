@@ -41,9 +41,7 @@ internal class SocksV5AgentToProxyHandler(private val proxyChannel: Channel,
             throw PpaassException(
                     "Fail to send connect message from agent to proxy because of proxy channel not active.")
         }
-        proxyChannel.eventLoop().execute {
-            proxyChannel.writeAndFlush(agentMessage)
-        }
+        proxyChannel.writeAndFlush(agentMessage)
     }
 
     override fun channelReadComplete(agentChannelContext: ChannelHandlerContext) {
