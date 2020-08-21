@@ -30,22 +30,22 @@ internal class ProxyToTargetHandler(private val targetChannel: Channel,
             logger.error("Fail to transfer data from proxy to target server because of target channel is not active.")
             throw PpaassException("Fail to transfer data from proxy to target server because of target channel is not active.")
         }
-        targetChannel.eventLoop().execute {
-            targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData))
-                    .addListener(ChannelFutureListener { _1stFuture ->
-                        if (!_1stFuture.isSuccess) {
-                            targetChannel.close()
-                            proxyContext.close()
-                            logger.error("Fail to transfer data from proxy to target server, target=${agentMessage.body.targetAddress}:${agentMessage.body.targetPort}",
-                                    _1stFuture.cause())
-                            throw PpaassException("Fail to transfer data from proxy to target server, target=${agentMessage.body.targetAddress}:${agentMessage.body.targetPort}")
-                            return@ChannelFutureListener
-                        }
-                        if (!proxyConfiguration.autoRead) {
-                            _1stFuture.channel().read()
-                        }
-                    })
-        }
+
+        targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData))
+                .addListener(ChannelFutureListener { _1stFuture ->
+                    if (!_1stFuture.isSuccess) {
+                        targetChannel.close()
+                        proxyContext.close()
+                        logger.error("Fail to transfer data from proxy to target server, target=${agentMessage.body.targetAddress}:${agentMessage.body.targetPort}",
+                                _1stFuture.cause())
+                        throw PpaassException("Fail to transfer data from proxy to target server, target=${agentMessage.body.targetAddress}:${agentMessage.body.targetPort}")
+                        return@ChannelFutureListener
+                    }
+                    if (!proxyConfiguration.autoRead) {
+                        _1stFuture.channel().read()
+                    }
+                })
+
     }
 
     override fun channelReadComplete(proxyContext: ChannelHandlerContext) {

@@ -50,20 +50,20 @@ internal class TargetToProxyHandler(private val proxyChannelContext: ChannelHand
             throw PpaassException(
                     "Fail to transfer data from target to proxy server because of proxy channel is not active.")
         }
-        proxyChannel.eventLoop().execute {
-            logger.debug { "Write proxy message to agent, proxyMessage=\n$proxyMessage\n" }
-            proxyChannel.writeAndFlush(proxyMessage).addListener {
-                if (!it.isSuccess) {
-                    proxyChannel.close()
-                    targetChannelContext.close()
-                    logger.error("Fail to write proxy message to agent, target=${agentMessage.body.targetAddress}:${agentMessage.body.targetPort}", it.cause())
-                    throw PpaassException("Fail to write proxy message to agent, target=${agentMessage.body.targetAddress}:${agentMessage.body.targetPort}")
-                }
-                if (!proxyConfiguration.autoRead) {
-                    targetChannelContext.channel().read()
-                }
+
+        logger.debug { "Write proxy message to agent, proxyMessage=\n$proxyMessage\n" }
+        proxyChannel.writeAndFlush(proxyMessage).addListener {
+            if (!it.isSuccess) {
+                proxyChannel.close()
+                targetChannelContext.close()
+                logger.error("Fail to write proxy message to agent, target=${agentMessage.body.targetAddress}:${agentMessage.body.targetPort}", it.cause())
+                throw PpaassException("Fail to write proxy message to agent, target=${agentMessage.body.targetAddress}:${agentMessage.body.targetPort}")
+            }
+            if (!proxyConfiguration.autoRead) {
+                targetChannelContext.channel().read()
             }
         }
+
     }
 
     override fun channelReadComplete(targetChannelContext: ChannelHandlerContext) {
