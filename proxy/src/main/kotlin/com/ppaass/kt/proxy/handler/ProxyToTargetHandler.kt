@@ -22,7 +22,9 @@ internal class ProxyToTargetHandler(private val targetChannel: Channel,
         if (AgentMessageBodyType.CONNECT === agentMessage.body.bodyType) {
             logger.debug("Discard CONNECT message from agent.")
             if (!proxyConfiguration.autoRead) {
-                targetChannel.read()
+                targetChannel.eventLoop().execute {
+                    targetChannel.read()
+                }
             }
             return
         }
@@ -32,17 +34,19 @@ internal class ProxyToTargetHandler(private val targetChannel: Channel,
         }
 
         targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData))
-                .addListener(ChannelFutureListener { _1stFuture ->
-                    if (!_1stFuture.isSuccess) {
+                .addListener(ChannelFutureListener { targetChannelWriteFuture ->
+                    if (!targetChannelWriteFuture.isSuccess) {
                         targetChannel.close()
                         proxyContext.close()
                         logger.error("Fail to transfer data from proxy to target server, target=${agentMessage.body.targetAddress}:${agentMessage.body.targetPort}",
-                                _1stFuture.cause())
+                                targetChannelWriteFuture.cause())
                         throw PpaassException("Fail to transfer data from proxy to target server, target=${agentMessage.body.targetAddress}:${agentMessage.body.targetPort}")
                         return@ChannelFutureListener
                     }
                     if (!proxyConfiguration.autoRead) {
-                        _1stFuture.channel().read()
+                        targetChannelWriteFuture.channel().eventLoop().execute {
+                            targetChannelWriteFuture.channel().read()
+                        }
                     }
                 })
 
