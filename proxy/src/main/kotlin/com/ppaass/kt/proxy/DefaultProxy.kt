@@ -2,6 +2,7 @@ package com.ppaass.kt.proxy
 
 import com.ppaass.kt.proxy.handler.ProxyChannelInitializer
 import io.netty.bootstrap.ServerBootstrap
+import io.netty.channel.AdaptiveRecvByteBufAllocator
 import io.netty.channel.Channel
 import io.netty.channel.ChannelOption
 import io.netty.channel.nio.NioEventLoopGroup
@@ -40,6 +41,8 @@ internal class DefaultProxy(private val proxyConfiguration: ProxyConfiguration) 
             childOption(ChannelOption.TCP_NODELAY, true)
             childOption(ChannelOption.SO_RCVBUF, proxyConfiguration.soRcvbuf)
             childOption(ChannelOption.SO_SNDBUF, proxyConfiguration.soSndbuf)
+            childOption(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator(proxyConfiguration.targetReceiveDataAverageBufferMinSize, proxyConfiguration
+                    .targetReceiveDataAverageBufferInitialSize, proxyConfiguration.targetReceiveDataAverageBufferMaxSize))
             childHandler(proxyChannelInitializer)
         }
     }
