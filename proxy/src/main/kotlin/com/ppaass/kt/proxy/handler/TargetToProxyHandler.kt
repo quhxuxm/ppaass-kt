@@ -30,9 +30,7 @@ internal class TargetToProxyHandler(private val proxyChannelContext: ChannelHand
         }
         proxyChannelContext.fireChannelRead(agentMessage)
         if (!proxyConfiguration.autoRead) {
-            targetChannel.eventLoop().execute {
-                targetChannel.read()
-            }
+            targetChannel.read()
         }
     }
 
@@ -62,9 +60,7 @@ internal class TargetToProxyHandler(private val proxyChannelContext: ChannelHand
                 throw PpaassException("Fail to write proxy message to agent, target=${agentMessage.body.targetAddress}:${agentMessage.body.targetPort}")
             }
             if (!proxyConfiguration.autoRead) {
-                targetChannelContext.channel().eventLoop().execute {
-                    targetChannelContext.channel().read()
-                }
+                targetChannelContext.channel().read()
             }
         }
 

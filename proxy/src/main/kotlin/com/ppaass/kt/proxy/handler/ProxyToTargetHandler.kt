@@ -22,9 +22,7 @@ internal class ProxyToTargetHandler(private val targetChannel: Channel,
         if (AgentMessageBodyType.CONNECT === agentMessage.body.bodyType) {
             logger.debug("Discard CONNECT message from agent.")
             if (!proxyConfiguration.autoRead) {
-                targetChannel.eventLoop().execute {
-                    targetChannel.read()
-                }
+                targetChannel.read()
             }
             return
         }
@@ -44,9 +42,7 @@ internal class ProxyToTargetHandler(private val targetChannel: Channel,
                         return@ChannelFutureListener
                     }
                     if (!proxyConfiguration.autoRead) {
-                        targetChannelWriteFuture.channel().eventLoop().execute {
-                            targetChannelWriteFuture.channel().read()
-                        }
+                        targetChannelWriteFuture.channel().read()
                     }
                 })
 
