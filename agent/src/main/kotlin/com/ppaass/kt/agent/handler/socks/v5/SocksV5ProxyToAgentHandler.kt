@@ -1,7 +1,6 @@
 package com.ppaass.kt.agent.handler.socks.v5
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
-import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.protocol.*
 import io.netty.buffer.Unpooled
 import io.netty.channel.Channel
@@ -44,16 +43,15 @@ internal class SocksV5ProxyToAgentHandler(private val agentChannel: Channel,
         }
         proxyChannelContext.channel().writeAndFlush(agentMessage).addListener { future: Future<in Void?> ->
             if (!future.isSuccess) {
+                proxyChannelContext.close()
                 agentChannel.writeAndFlush(
                         DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE,
                                 socks5CommandRequest.dstAddrType()))
                         .addListener(ChannelFutureListener.CLOSE)
-                logger.error(
+                logger.debug(
                         "Fail to send connect message from agent to proxy because of exception.",
                         future.cause())
-                throw PpaassException(
-                        "Fail to send connect message from agent to proxy because of exception.",
-                        future.cause())
+                return@addListener
             }
             logger.debug(
                     "Success connect to target server: {}:{}", socks5CommandRequest.dstAddr(),
@@ -70,10 +68,10 @@ internal class SocksV5ProxyToAgentHandler(private val agentChannel: Channel,
         val originalDataBuf = Unpooled.wrappedBuffer(msg.body.originalData)
         if (!agentChannel.isActive) {
             proxyChannelContext.close()
-            logger.error(
+            agentChannel.close()
+            logger.debug(
                     "Fail to send message from proxy to agent because of agent channel not active.")
-            throw PpaassException(
-                    "Fail to send message from proxy to agent because of agent channel not active.")
+            return
         }
         agentChannel.writeAndFlush(originalDataBuf)
     }
