@@ -238,9 +238,13 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
     }
 
     override fun exceptionCaught(agentChannelContext: ChannelHandlerContext, cause: Throwable) {
-        ChannelInfoCache.removeChannelInfo(
-                agentChannelContext.channel().id().asLongText())
+        val channelCacheInfo = ChannelInfoCache.getChannelInfoByClientChannelId(agentChannelContext.channel().id().asLongText())
+        if (channelCacheInfo != null) {
+            channelCacheInfo.agentChannel.close()
+            channelCacheInfo.proxyChannel.close()
+            ChannelInfoCache.removeChannelInfo(
+                    agentChannelContext.channel().id().asLongText())
+        }
         logger.error("Exception happen when setup the proxy connection.", cause)
-        agentChannelContext.fireExceptionCaught(cause)
     }
 }
