@@ -5,7 +5,6 @@ import com.ppaass.kt.agent.handler.discardProxyHeartbeatHandler
 import com.ppaass.kt.agent.handler.http.bo.HttpConnectionInfo
 import com.ppaass.kt.agent.handler.lengthFieldPrepender
 import com.ppaass.kt.agent.handler.resourceClearHandler
-import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.netty.codec.AgentMessageEncoder
 import com.ppaass.kt.common.netty.codec.ProxyMessageDecoder
 import com.ppaass.kt.common.protocol.AgentMessageBodyType
@@ -40,12 +39,15 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
             logger.debug("Incoming request is https protocol to send data, clientChannelId={}", clientChannelId)
             val channelCacheInfo = ChannelInfoCache.getChannelInfoByClientChannelId(clientChannelId)
             if (channelCacheInfo == null) {
-                logger.error("Fail to find channel cache information, clientChannelId={}", clientChannelId)
-                throw PpaassException("Fail to find channel cache information, clientChannelId=$clientChannelId")
+                agentChannelContext.close()
+                logger.debug("Fail to find channel cache information, clientChannelId={}", clientChannelId)
+                return
             }
             if (!channelCacheInfo.proxyChannel.isActive) {
-                logger.error("Fail to write data to proxy channel because of it is inactive, clientChannelId={}", clientChannelId)
-                throw PpaassException("Fail to write data to proxy channel because of it is inactive, clientChannelId=$clientChannelId")
+                channelCacheInfo.proxyChannel.close()
+                channelCacheInfo.agentChannel.close()
+                logger.debug("Fail to write data to proxy channel because of it is inactive, clientChannelId={}", clientChannelId)
+                return
             }
             writeAgentMessageToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
                     channelCacheInfo.proxyChannel, channelCacheInfo.targetHost, channelCacheInfo.targetPort,
@@ -73,9 +75,9 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
             proxyBootstrapForHttps.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort).addListener {
                 if (!it.isSuccess) {
                     agentChannelContext.close()
-                    logger.error("Fail to connect to proxy server because of exception.",
+                    logger.debug("Fail to connect to proxy server because of exception.",
                             it.cause())
-                    throw PpaassException("Fail to connect to proxy server because of exception.", it.cause())
+                    return@addListener
                 }
             }
             return
@@ -93,10 +95,11 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
                         ChannelInfoCache.removeChannelInfo(clientChannelId)
                         agentChannelContext.close()
                         channelCacheInfo.proxyChannel.close()
-                        throw PpaassException(
+                        logger.debug(
                                 "Fail to send connect message from agent to proxy, clientChannelId=$clientChannelId, " +
                                         "targetHost=${channelCacheInfo.targetHost}, targetPort =${channelCacheInfo.targetPort}",
                                 it.cause())
+                        return@writeAgentMessageToProxy
                     }
                 }
                 return
@@ -111,10 +114,11 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
                     ChannelInfoCache.removeChannelInfo(clientChannelId)
                     agentChannelContext.close()
                     proxyChannelContext.close()
-                    throw PpaassException(
+                    logger.debug(
                             "Fail to send connect message from agent to proxy, clientChannelId=$clientChannelId, " +
                                     "targetHost=${httpConnectionInfo.host}, targetPort =${httpConnectionInfo.port}",
                             it.cause())
+                    return@writeAgentMessageToProxy
                 }
             }
         }
@@ -125,7 +129,7 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
                 it.channel().close()
                 logger.error("Fail to connect to proxy server because of exception.",
                         it.cause())
-                throw PpaassException("Fail to connect to proxy server because of exception.", it.cause())
+                return@ChannelFutureListener
             }
         })
     }

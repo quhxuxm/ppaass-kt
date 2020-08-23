@@ -2,7 +2,6 @@ package com.ppaass.kt.agent.handler.http
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
 import com.ppaass.kt.agent.handler.http.bo.ChannelInfo
-import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.protocol.AgentMessageBodyType
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import io.netty.channel.Channel
@@ -34,10 +33,11 @@ internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Cha
                 ChannelInfoCache.removeChannelInfo(clientChannelId)
                 proxyChannelContext.close()
                 agentChannel.close()
-                throw PpaassException(
+                logger.debug(
                         "Fail to send connect message from agent to proxy, clientChannelId=$clientChannelId, " +
                                 "targetHost=$targetHost, targetPort =$targetPort",
                         it.cause())
+                return@writeAgentMessageToProxy
             }
             val channelCacheInfo =
                     ChannelInfo(
@@ -55,12 +55,11 @@ internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Cha
     override fun channelRead(proxyChannelContext: ChannelHandlerContext, msg: Any) {
         if (!this.agentChannel.isActive) {
             proxyChannelContext.close()
-            ChannelInfoCache.removeChannelInfo(clientChannelId)
             this.agentChannel.close()
-            logger.error(
+            ChannelInfoCache.removeChannelInfo(clientChannelId)
+            logger.debug(
                     "Fail to send message from proxy to agent because of agent channel not active.")
-            throw PpaassException(
-                    "Fail to send message from proxy to agent because of agent channel not active.")
+            return
         }
         this.agentChannel.writeAndFlush(msg)
     }
