@@ -22,7 +22,7 @@ fun main() {
             inputStream.close()
             val endTime = System.currentTimeMillis()
             println("The ${Thread.currentThread().name} end, use: ${endTime - startTime}ms.")
-            Thread.sleep(1000)
         }
+        Thread.sleep(3000)
     }
 }
