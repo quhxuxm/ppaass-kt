@@ -7,7 +7,6 @@ import java.net.URL
 import java.util.concurrent.Executors
 
 fun main() {
-
     val url = URL("https://www.behance.net/")
     val proxyAddress = InetSocketAddress.createUnresolved("localhost", 10080)
     val threadPool = Executors.newFixedThreadPool(100)
