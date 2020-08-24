@@ -7,7 +7,7 @@ import java.net.URL
 
 fun main() {
 
-    val url = URL("https://www.youdao.com")
+    val url = URL("https://www.behance.net/")
     val proxyAddress = InetSocketAddress.createUnresolved("localhost", 10080)
     (1..1000).forEach {
         val connection = url.openConnection(Proxy(Proxy.Type.SOCKS, proxyAddress))
