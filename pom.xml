@@ -102,8 +102,10 @@
                         <compilerPlugins>
                             <plugin>spring</plugin>
                         </compilerPlugins>
+                        <languageVersion>1.4</languageVersion>
+                        <apiVersion>1.4</apiVersion>
                         <nowarn>true</nowarn>  <!-- Disable warnings -->
-                        <jvmTarget>11</jvmTarget>
+                        <jvmTarget>14</jvmTarget>
                         <args>
                             <arg>-Xjsr305=strict</arg> <!-- Enable strict mode for JSR-305 annotations -->
                         </args>
