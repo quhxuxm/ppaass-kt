@@ -17,6 +17,11 @@ class ProxyConfiguration {
     var targetReceiveDataAverageBufferMinSize: Int = 0
     var targetReceiveDataAverageBufferInitialSize: Int = 0
     var targetReceiveDataAverageBufferMaxSize: Int = 0
+
+    var receiveDataAverageBufferMinSize: Int = 0
+    var receiveDataAverageBufferInitialSize: Int = 0
+    var receiveDataAverageBufferMaxSize: Int = 0
+
     var targetSoRcvbuf: Int = 0
     var targetSoSndbuf: Int = 0
     var soRcvbuf: Int = 0

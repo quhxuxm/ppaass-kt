@@ -41,8 +41,8 @@ internal class DefaultProxy(private val proxyConfiguration: ProxyConfiguration) 
             childOption(ChannelOption.TCP_NODELAY, true)
             childOption(ChannelOption.SO_RCVBUF, proxyConfiguration.soRcvbuf)
             childOption(ChannelOption.SO_SNDBUF, proxyConfiguration.soSndbuf)
-            childOption(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator(proxyConfiguration.targetReceiveDataAverageBufferMinSize, proxyConfiguration
-                    .targetReceiveDataAverageBufferInitialSize, proxyConfiguration.targetReceiveDataAverageBufferMaxSize))
+            childOption(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator(proxyConfiguration.receiveDataAverageBufferMinSize, proxyConfiguration
+                    .receiveDataAverageBufferInitialSize, proxyConfiguration.receiveDataAverageBufferMaxSize))
             childHandler(proxyChannelInitializer)
         }
     }
