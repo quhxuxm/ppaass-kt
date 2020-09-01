@@ -1,10 +1,7 @@
 package com.ppaass.kt.agent.handler.socks.v5
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
-import com.ppaass.kt.common.protocol.AgentMessage
-import com.ppaass.kt.common.protocol.AgentMessageBody
-import com.ppaass.kt.common.protocol.AgentMessageBodyType
-import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
+import com.ppaass.kt.common.protocol.*
 import io.netty.buffer.ByteBuf
 import io.netty.channel.Channel
 import io.netty.channel.ChannelHandlerContext
@@ -31,7 +28,7 @@ internal class SocksV5AgentToProxyHandler(private val proxyChannel: Channel,
         agentMessageBody.targetPort = socks5CommandRequest.dstPort()
         agentMessageBody.originalData = data
         val agentMessage = AgentMessage(
-                encryptionToken = UUID.randomUUID().toString(),
+                encryptionToken = generateUid(),
                 messageBodyEncryptionType = MessageBodyEncryptionType.random(),
                 body = agentMessageBody)
         if (!proxyChannel.isActive) {

@@ -1,6 +1,7 @@
 package com.ppaass.kt.agent
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
+import com.ppaass.kt.common.protocol.generateUid
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationContext
 import org.springframework.context.MessageSource
@@ -204,7 +205,7 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
                 return@addActionListener
             }
             this.agentConfiguration.userToken = if (tokenInput.text.isEmpty()) {
-                UUID.randomUUID().toString().replace("-", "")
+                generateUid()
             } else {
                 tokenInput.text
             }

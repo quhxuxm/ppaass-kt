@@ -3,10 +3,7 @@ package com.ppaass.kt.agent.handler.http
 import com.ppaass.kt.agent.handler.http.bo.ChannelInfo
 import com.ppaass.kt.agent.handler.http.bo.HttpConnectionInfo
 import com.ppaass.kt.common.exception.PpaassException
-import com.ppaass.kt.common.protocol.AgentMessage
-import com.ppaass.kt.common.protocol.AgentMessageBody
-import com.ppaass.kt.common.protocol.AgentMessageBodyType
-import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
+import com.ppaass.kt.common.protocol.*
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufUtil
 import io.netty.channel.Channel
@@ -126,7 +123,7 @@ fun writeAgentMessageToProxy(bodyType: AgentMessageBodyType, secureToken: String
     agentMessageBody.targetAddress = host
     agentMessageBody.targetPort = port
     val agentMessage =
-            AgentMessage(UUID.randomUUID().toString(), messageBodyEncryptionType, agentMessageBody)
+            AgentMessage(generateUid(), messageBodyEncryptionType, agentMessageBody)
     proxyChannel.eventLoop().execute {
         proxyChannel.writeAndFlush(agentMessage).addListener(ChannelFutureListener {
             afterWriteCallback(it)

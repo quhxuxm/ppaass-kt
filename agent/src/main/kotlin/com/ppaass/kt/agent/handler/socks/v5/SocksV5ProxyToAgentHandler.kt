@@ -28,7 +28,7 @@ internal class SocksV5ProxyToAgentHandler(private val agentChannel: Channel,
                 securityToken = agentConfiguration.userToken,
                 targetAddress = socks5CommandRequest.dstAddr(), targetPort = socks5CommandRequest.dstPort())
         val agentMessage = AgentMessage(
-                encryptionToken = UUID.randomUUID().toString(),
+                encryptionToken = generateUid(),
                 messageBodyEncryptionType = MessageBodyEncryptionType.random(),
                 body = agentMessageBody)
         agentChannel.pipeline().apply {

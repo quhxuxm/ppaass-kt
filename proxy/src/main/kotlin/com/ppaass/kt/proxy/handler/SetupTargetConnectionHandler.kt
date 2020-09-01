@@ -47,7 +47,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
                 proxyMessageBody.targetAddress = agentMessage.body.targetAddress
                 proxyMessageBody.targetPort = agentMessage.body.targetPort
                 val failProxyMessage =
-                        ProxyMessage(UUID.randomUUID().toString(), MessageBodyEncryptionType.random(), proxyMessageBody)
+                        ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
                 proxyChannelContext.channel().writeAndFlush(failProxyMessage).addListener(ChannelFutureListener.CLOSE)
             }
         }

@@ -3,6 +3,7 @@ package com.ppaass.kt.agent.configuration
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
+import com.ppaass.kt.common.protocol.generateUid
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.io.File
@@ -18,7 +19,7 @@ class AgentConfiguration(val staticAgentConfiguration: StaticAgentConfiguration)
         private val logger = LoggerFactory.getLogger(AgentConfiguration::class.java)
         private const val USER_CONFIGURATION_FILE_NAME = ".ppaass"
         private const val USER_HOME_PROPERTY = "user.home"
-        private val RANDOM_USER_TOKEN = UUID.randomUUID().toString().replace("-", "")
+        private val RANDOM_USER_TOKEN = generateUid()
     }
 
     final var userToken: String = RANDOM_USER_TOKEN

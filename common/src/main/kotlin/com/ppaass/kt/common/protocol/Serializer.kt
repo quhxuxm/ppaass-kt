@@ -182,7 +182,7 @@ private fun decodeProxyMessageBody(messageBytes: ByteArray, messageBodyBodyEncry
 }
 
 internal fun encodeAgentMessage(message: AgentMessage, proxyPublicKeyString: String, output: ByteBuf) {
-    val originalMessageBodyEncryptionToken = DigestUtils.md5Hex(UUID.randomUUID().toString())
+    val originalMessageBodyEncryptionToken = DigestUtils.md5Hex(generateUid())
     val encryptedMessageBodyEncryptionToken =
             rsaEncrypt(originalMessageBodyEncryptionToken, proxyPublicKeyString)
     output.writeCharSequence(MAGIC_CODE, Charsets.UTF_8)
@@ -197,7 +197,7 @@ internal fun encodeAgentMessage(message: AgentMessage, proxyPublicKeyString: Str
 }
 
 internal fun encodeProxyMessage(message: ProxyMessage, agentPublicKeyString: String, output: ByteBuf) {
-    val originalMessageBodyEncryptionToken = DigestUtils.md5Hex(UUID.randomUUID().toString())
+    val originalMessageBodyEncryptionToken = DigestUtils.md5Hex(generateUid())
     val encryptedMessageBodyEncryptionToken =
             rsaEncrypt(originalMessageBodyEncryptionToken, agentPublicKeyString)
     output.writeCharSequence(MAGIC_CODE, Charsets.UTF_8)
