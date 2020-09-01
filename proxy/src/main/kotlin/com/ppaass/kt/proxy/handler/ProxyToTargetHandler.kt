@@ -21,9 +21,7 @@ internal class ProxyToTargetHandler(private val targetChannel: Channel,
     override fun channelRead0(proxyContext: ChannelHandlerContext, agentMessage: AgentMessage) {
         if (AgentMessageBodyType.CONNECT === agentMessage.body.bodyType) {
             logger.debug("Discard CONNECT message from agent.")
-            if (!proxyConfiguration.autoRead) {
-                targetChannel.read()
-            }
+            targetChannel.read()
             return
         }
         if (!targetChannel.isActive) {
@@ -39,11 +37,8 @@ internal class ProxyToTargetHandler(private val targetChannel: Channel,
                         logger.error("Fail to transfer data from proxy to target server, target=${agentMessage.body.targetAddress}:${agentMessage.body.targetPort}",
                                 targetChannelWriteFuture.cause())
                         throw PpaassException("Fail to transfer data from proxy to target server, target=${agentMessage.body.targetAddress}:${agentMessage.body.targetPort}")
-                        return@ChannelFutureListener
                     }
-                    if (!proxyConfiguration.autoRead) {
-                        targetChannelWriteFuture.channel().read()
-                    }
+                    targetChannelWriteFuture.channel().read()
                 })
 
     }

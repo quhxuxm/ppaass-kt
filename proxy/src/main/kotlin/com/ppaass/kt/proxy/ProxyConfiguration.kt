@@ -21,7 +21,6 @@ class ProxyConfiguration {
     var targetSoSndbuf: Int = 0
     var soRcvbuf: Int = 0
     var soSndbuf: Int = 0
-    var autoRead: Boolean = false
     val agentPublicKey: String by lazy {
         val lines = IOUtils.readLines(
                 ProxyConfiguration::class.java.classLoader.getResourceAsStream("security/agentPublicKey.txt"),
