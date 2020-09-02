@@ -43,22 +43,9 @@ internal class TargetToProxyHandler(private val proxyChannelContext: ChannelHand
                 ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
         logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
         val proxyChannel = proxyChannelContext.channel()
-        if (!proxyChannel.isActive) {
-            logger.error("Fail to transfer data from target to proxy server because of proxy channel is not active.")
-            throw PpaassException(
-                    "Fail to transfer data from target to proxy server because of proxy channel is not active.")
-        }
-
         logger.debug { "Write proxy message to agent, proxyMessage=\n$proxyMessage\n" }
-        proxyChannel.writeAndFlush(proxyMessage).addListener {
-            if (!it.isSuccess) {
-                proxyChannel.close()
-                targetChannelContext.close()
-                logger.error("Fail to write proxy message to agent, target=${agentMessage.body.targetAddress}:${agentMessage.body.targetPort}", it.cause())
-                throw PpaassException("Fail to write proxy message to agent, target=${agentMessage.body.targetAddress}:${agentMessage.body.targetPort}")
-            }
-            targetChannelContext.channel().read()
-        }
+        proxyChannel.writeAndFlush(proxyMessage)
+        targetChannelContext.channel().read()
 
     }
 

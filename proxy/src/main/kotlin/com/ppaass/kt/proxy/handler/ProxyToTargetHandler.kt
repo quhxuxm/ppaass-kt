@@ -24,22 +24,8 @@ internal class ProxyToTargetHandler(private val targetChannel: Channel,
             targetChannel.read()
             return
         }
-        if (!targetChannel.isActive) {
-            logger.error("Fail to transfer data from proxy to target server because of target channel is not active.")
-            throw PpaassException("Fail to transfer data from proxy to target server because of target channel is not active.")
-        }
-
         targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData))
-                .addListener(ChannelFutureListener { targetChannelWriteFuture ->
-                    if (!targetChannelWriteFuture.isSuccess) {
-                        targetChannel.close()
-                        proxyContext.close()
-                        logger.error("Fail to transfer data from proxy to target server, target=${agentMessage.body.targetAddress}:${agentMessage.body.targetPort}",
-                                targetChannelWriteFuture.cause())
-                        throw PpaassException("Fail to transfer data from proxy to target server, target=${agentMessage.body.targetAddress}:${agentMessage.body.targetPort}")
-                    }
-                    targetChannelWriteFuture.channel().read()
-                })
+        targetChannel.read()
 
     }
 
