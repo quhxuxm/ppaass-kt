@@ -25,13 +25,11 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
         val targetPort = agentMessage.body.targetPort
         if (targetAddress == null) {
             logger.error("Return because of targetAddress is null, message id=${agentMessage.body.id}")
-            proxyChannelContext.close()
-            return
+            throw PpaassException("Return because of targetAddress is null, message id=${agentMessage.body.id}")
         }
         if (targetPort == null) {
             logger.error("Return because of targetPort is null, message id=${agentMessage.body.id}")
-            proxyChannelContext.close()
-            return
+            throw PpaassException("Return because of targetPort is null, message id=${agentMessage.body.id}")
         }
         val targetBootstrap = createTargetBootstrap(proxyChannelContext, agentMessage)
         logger.debug("Begin to connect ${targetAddress}:${targetPort}, message id=${agentMessage.body.id}")
