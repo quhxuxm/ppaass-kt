@@ -1,12 +1,10 @@
 package com.ppaass.kt.proxy.handler
 
-import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.protocol.AgentMessage
 import com.ppaass.kt.common.protocol.AgentMessageBodyType
 import com.ppaass.kt.proxy.ProxyConfiguration
 import io.netty.buffer.Unpooled
 import io.netty.channel.Channel
-import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
 import mu.KotlinLogging
@@ -24,12 +22,8 @@ internal class ProxyToTargetHandler(private val targetChannel: Channel,
             targetChannel.read()
             return
         }
-        targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData))
-        targetChannel.read()
-
-    }
-
-    override fun channelReadComplete(proxyContext: ChannelHandlerContext) {
-        targetChannel.flush()
+        targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData)).addListener {
+            targetChannel.read()
+        }
     }
 }
