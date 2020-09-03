@@ -70,9 +70,8 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
                         logger.debug { "Initializing channel for $targetAddress:$targetPort" }
                         addLast(
                                 TargetToProxyHandler(
-                                        proxyChannelContext = proxyChannelContext,
-                                        agentMessage = agentMessage,
-                                        proxyConfiguration = proxyConfiguration
+                                        proxyChannel = proxyChannelContext.channel(),
+                                        agentMessage = agentMessage
                                 ))
                         addLast(resourceClearHandler)
                     }
