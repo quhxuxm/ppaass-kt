@@ -31,7 +31,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
             logger.error("Return because of targetPort is null, message id=${agentMessage.body.id}")
             throw PpaassException("Return because of targetPort is null, message id=${agentMessage.body.id}")
         }
-        val targetBootstrap = createTargetBootstrap(proxyChannelContext, agentMessage)
+        val targetBootstrap = createTargetBootstrap(proxyChannelContext, targetAddress, targetPort, agentMessage)
         logger.debug("Begin to connect ${targetAddress}:${targetPort}, message id=${agentMessage.body.id}")
         targetBootstrap.connect(targetAddress, targetPort).addListener {
             if (!it.isSuccess) {
@@ -47,19 +47,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
         }
     }
 
-    private fun createTargetBootstrap(proxyChannelContext: ChannelHandlerContext, agentMessage: AgentMessage): Bootstrap {
-        val targetAddress = agentMessage.body.targetAddress
-        val targetPort = agentMessage.body.targetPort
-        if (targetAddress == null) {
-            logger.error("Return because of targetAddress is null, message id=${agentMessage.body.id}")
-            proxyChannelContext.close()
-            throw PpaassException("Return because of targetAddress is null, message id=${agentMessage.body.id}")
-        }
-        if (targetPort == null) {
-            logger.error("Return because of targetPort is null, message id=${agentMessage.body.id}")
-            proxyChannelContext.close()
-            throw PpaassException("Return because of targetPort is null, message id=${agentMessage.body.id}")
-        }
+    private fun createTargetBootstrap(proxyChannelContext: ChannelHandlerContext, targetAddress: String, targetPort: Int, agentMessage: AgentMessage): Bootstrap {
         val targetBootstrap = Bootstrap()
         targetBootstrap.apply {
             group(targetBootstrapIoEventLoopGroup)
