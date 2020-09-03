@@ -47,7 +47,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
         }
     }
 
-    private fun createTargetBootstrap(proxyChannelContext: ChannelHandlerContext, targetAddress: String, targetPort: Int, agentMessage: AgentMessage): Bootstrap {
+    private fun createTargetBootstrap(proxyChannelHandlerContext: ChannelHandlerContext, targetAddress: String, targetPort: Int, agentMessage: AgentMessage): Bootstrap {
         val targetBootstrap = Bootstrap()
         targetBootstrap.apply {
             group(targetBootstrapIoEventLoopGroup)
@@ -70,7 +70,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
                         logger.debug { "Initializing channel for $targetAddress:$targetPort" }
                         addLast(
                                 TargetToProxyHandler(
-                                        proxyChannel = proxyChannelContext.channel(),
+                                        proxyChannelHandlerContext = proxyChannelHandlerContext,
                                         agentMessage = agentMessage
                                 ))
                         addLast(resourceClearHandler)

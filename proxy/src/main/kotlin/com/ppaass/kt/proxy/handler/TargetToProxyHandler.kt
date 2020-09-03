@@ -2,12 +2,11 @@ package com.ppaass.kt.proxy.handler
 
 import com.ppaass.kt.common.protocol.*
 import io.netty.buffer.ByteBuf
-import io.netty.channel.Channel
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
 import mu.KotlinLogging
 
-internal class TargetToProxyHandler(private val proxyChannel: Channel,
+internal class TargetToProxyHandler(private val proxyChannelHandlerContext: ChannelHandlerContext,
                                     private val agentMessage: AgentMessage) :
         SimpleChannelInboundHandler<ByteBuf>() {
     private companion object {
@@ -16,7 +15,7 @@ internal class TargetToProxyHandler(private val proxyChannel: Channel,
 
     override fun channelActive(targetChannelContext: ChannelHandlerContext) {
         val targetChannel = targetChannelContext.channel()
-        proxyChannel.pipeline().apply {
+        proxyChannelHandlerContext.pipeline().apply {
             if (this[SetupTargetConnectionHandler::class.java] != null) {
                 remove(SetupTargetConnectionHandler::class.java)
             }
@@ -24,7 +23,7 @@ internal class TargetToProxyHandler(private val proxyChannel: Channel,
                     ProxyToTargetHandler(
                             targetChannel = targetChannel))
         }
-        proxyChannel.pipeline().context(ProxyToTargetHandler::class.java).fireChannelRead(agentMessage)
+        proxyChannelHandlerContext.fireChannelRead(agentMessage)
         targetChannel.read()
     }
 
@@ -38,7 +37,7 @@ internal class TargetToProxyHandler(private val proxyChannel: Channel,
         val proxyMessage =
                 ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
         logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
-        proxyChannel.writeAndFlush(proxyMessage).addListener {
+        proxyChannelHandlerContext.channel().writeAndFlush(proxyMessage).addListener {
             targetChannelContext.channel().read()
         }
     }
