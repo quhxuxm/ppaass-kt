@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service
  * The proxy implementation
  */
 @Service
-@Scope("singleton")
 internal class DefaultProxy(private val proxyConfiguration: ProxyConfiguration) :
         IProxy {
     private companion object {
