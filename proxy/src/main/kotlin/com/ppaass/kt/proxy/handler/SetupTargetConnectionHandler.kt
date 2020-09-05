@@ -62,6 +62,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
             option(ChannelOption.SO_REUSEADDR, true)
             option(ChannelOption.SO_RCVBUF, proxyConfiguration.targetSoRcvbuf)
             option(ChannelOption.SO_SNDBUF, proxyConfiguration.targetSoSndbuf)
+            option(ChannelOption.WRITE_SPIN_COUNT, proxyConfiguration.targetWriteSpinCount)
             option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator(proxyConfiguration.targetReceiveDataAverageBufferMinSize, proxyConfiguration
                     .targetReceiveDataAverageBufferInitialSize, proxyConfiguration.targetReceiveDataAverageBufferMaxSize))
             handler(object : ChannelInitializer<SocketChannel>() {

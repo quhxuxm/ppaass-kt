@@ -8,7 +8,6 @@ import io.netty.channel.ChannelOption
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import mu.KotlinLogging
-import org.springframework.context.annotation.Scope
 import org.springframework.stereotype.Service
 
 /**
@@ -40,6 +39,7 @@ internal class DefaultProxy(private val proxyConfiguration: ProxyConfiguration) 
             childOption(ChannelOption.TCP_NODELAY, true)
             childOption(ChannelOption.SO_RCVBUF, proxyConfiguration.soRcvbuf)
             childOption(ChannelOption.SO_SNDBUF, proxyConfiguration.soSndbuf)
+            childOption(ChannelOption.SO_SNDBUF, proxyConfiguration.writeSpinCount)
             childOption(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator(proxyConfiguration.receiveDataAverageBufferMinSize, proxyConfiguration
                     .receiveDataAverageBufferInitialSize, proxyConfiguration.receiveDataAverageBufferMaxSize))
             childHandler(proxyChannelInitializer)
