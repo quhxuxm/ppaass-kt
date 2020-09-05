@@ -21,10 +21,12 @@ class ProxyConfiguration(
         val receiveDataAverageBufferMinSize: Int = 0,
         val receiveDataAverageBufferInitialSize: Int = 0,
         val receiveDataAverageBufferMaxSize: Int = 0,
+        val connectionKeepAlive: Boolean = true,
 
         val targetSoRcvbuf: Int = 0,
         val targetSoSndbuf: Int = 0,
         val targetWriteSpinCount: Int = 0,
+        val targetConnectionKeepAlive: Boolean = true,
         val soRcvbuf: Int = 0,
         val soSndbuf: Int = 0,
         val writeSpinCount: Int = 0,
