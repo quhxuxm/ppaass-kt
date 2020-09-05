@@ -2,30 +2,31 @@ package com.ppaass.kt.proxy
 
 import org.apache.commons.io.IOUtils
 import org.springframework.boot.context.properties.ConfigurationProperties
-import org.springframework.stereotype.Service
+import org.springframework.boot.context.properties.ConstructorBinding
 
+@ConstructorBinding
 @ConfigurationProperties("ppaass.proxy")
-@Service
-class ProxyConfiguration {
-    var masterIoEventThreadNumber: Int = 0
-    var workerIoEventThreadNumber: Int = 0
-    var dataTransferIoEventThreadNumber: Int = 0
-    var soBacklog: Int = 0
-    var port: Int = 0
-    var targetConnectionTimeout: Int = 0
-    var agentConnectionIdleSeconds: Int = 0
-    var targetReceiveDataAverageBufferMinSize: Int = 0
-    var targetReceiveDataAverageBufferInitialSize: Int = 0
-    var targetReceiveDataAverageBufferMaxSize: Int = 0
+class ProxyConfiguration(
+        val masterIoEventThreadNumber: Int = 0,
+        val workerIoEventThreadNumber: Int = 0,
+        val dataTransferIoEventThreadNumber: Int = 0,
+        val soBacklog: Int = 0,
+        val port: Int = 0,
+        val targetConnectionTimeout: Int = 0,
+        val agentConnectionIdleSeconds: Int = 0,
+        val targetReceiveDataAverageBufferMinSize: Int = 0,
+        val targetReceiveDataAverageBufferInitialSize: Int = 0,
+        val targetReceiveDataAverageBufferMaxSize: Int = 0,
 
-    var receiveDataAverageBufferMinSize: Int = 0
-    var receiveDataAverageBufferInitialSize: Int = 0
-    var receiveDataAverageBufferMaxSize: Int = 0
+        val receiveDataAverageBufferMinSize: Int = 0,
+        val receiveDataAverageBufferInitialSize: Int = 0,
+        val receiveDataAverageBufferMaxSize: Int = 0,
 
-    var targetSoRcvbuf: Int = 0
-    var targetSoSndbuf: Int = 0
-    var soRcvbuf: Int = 0
-    var soSndbuf: Int = 0
+        val targetSoRcvbuf: Int = 0,
+        val targetSoSndbuf: Int = 0,
+        val soRcvbuf: Int = 0,
+        val soSndbuf: Int = 0,
+) {
     val agentPublicKey: String by lazy {
         val lines = IOUtils.readLines(
                 ProxyConfiguration::class.java.classLoader.getResourceAsStream("security/agentPublicKey.txt"),

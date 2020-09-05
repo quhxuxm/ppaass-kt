@@ -1,5 +1,6 @@
 package com.ppaass.kt.agent;
 
+import com.ppaass.kt.agent.configuration.StaticAgentConfiguration
 import mu.KotlinLogging
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.builder.SpringApplicationBuilder
@@ -10,7 +11,7 @@ import java.awt.EventQueue
  * The proxy launcher
  */
 @SpringBootApplication
-@EnableConfigurationProperties
+@EnableConfigurationProperties(StaticAgentConfiguration::class)
 class AgentLauncher {
     private companion object {
         private val logger = KotlinLogging.logger {}

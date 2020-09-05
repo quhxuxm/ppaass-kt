@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
  * The proxy launcher
  */
 @SpringBootApplication
-@EnableConfigurationProperties
+@EnableConfigurationProperties(ProxyConfiguration::class)
 class ProxyLauncher {
     private companion object {
         private val logger = KotlinLogging.logger {}
