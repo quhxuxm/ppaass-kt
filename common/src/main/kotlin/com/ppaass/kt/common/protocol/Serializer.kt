@@ -5,7 +5,6 @@ import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
 import mu.KotlinLogging
 import org.apache.commons.codec.digest.DigestUtils
-import java.util.*
 
 private val logger = KotlinLogging.logger {}
 private const val MAGIC_CODE = "__PPAASS__"
@@ -208,7 +207,7 @@ internal fun encodeProxyMessage(message: ProxyMessage, agentPublicKeyString: Str
     val bodyByteArray = encodeProxyMessageBody(message.body,
             message.messageBodyEncryptionType,
             originalMessageBodyEncryptionToken)
-    output.writeBytes(bodyByteArray);
+    output.writeBytes(bodyByteArray)
 }
 
 internal fun decodeAgentMessage(input: ByteBuf, proxyPrivateKeyString: String): AgentMessage {

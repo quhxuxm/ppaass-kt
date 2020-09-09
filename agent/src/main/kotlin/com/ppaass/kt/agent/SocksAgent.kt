@@ -22,6 +22,7 @@ internal class SocksAgent(private val agentConfiguration: AgentConfiguration) : 
     }
 
     init {
+        logger.info { "Initializing socks agent." }
         this.channelInitializer = object : ChannelInitializer<SocketChannel>() {
             override fun initChannel(socketChannel: SocketChannel) {
                 with(socketChannel.pipeline()) {

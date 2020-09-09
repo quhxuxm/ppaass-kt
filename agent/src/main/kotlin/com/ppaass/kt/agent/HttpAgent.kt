@@ -23,6 +23,7 @@ internal class HttpAgent(private val agentConfiguration: AgentConfiguration) : A
     }
 
     init {
+        logger.info { "Initializing http agent." }
         this.channelInitializer = object : ChannelInitializer<SocketChannel>() {
             override fun initChannel(agentChannel: SocketChannel) {
                 with(agentChannel.pipeline()) {
