@@ -1,13 +1,16 @@
 package com.ppaass.kt.proxy.handler
 
 import com.ppaass.kt.common.protocol.*
+import com.ppaass.kt.proxy.ProxyConfiguration
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
 import mu.KotlinLogging
 
-internal class TargetToProxyHandler(private val proxyChannelHandlerContext: ChannelHandlerContext,
-                                    private val agentMessage: AgentMessage) :
+internal class TargetToProxyHandler(
+        private val proxyChannelHandlerContext: ChannelHandlerContext,
+        private val proxyConfiguration: ProxyConfiguration,
+        private val agentMessage: AgentMessage) :
         SimpleChannelInboundHandler<ByteBuf>() {
     private companion object {
         private val logger = KotlinLogging.logger {}
@@ -21,10 +24,13 @@ internal class TargetToProxyHandler(private val proxyChannelHandlerContext: Chan
             }
             addLast(targetChannelContext.executor(),
                     ProxyToTargetHandler(
+                            proxyConfiguration = proxyConfiguration,
                             targetChannel = targetChannel))
         }
         proxyChannelHandlerContext.fireChannelRead(agentMessage)
-        targetChannel.read()
+        if (!proxyConfiguration.targetAutoRead) {
+            targetChannel.read()
+        }
     }
 
     override fun channelRead0(targetChannelContext: ChannelHandlerContext, targetMessage: ByteBuf) {
@@ -38,7 +44,9 @@ internal class TargetToProxyHandler(private val proxyChannelHandlerContext: Chan
                 ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
         logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
         proxyChannelHandlerContext.channel().writeAndFlush(proxyMessage).addListener {
-            targetChannelContext.channel().read()
+            if (!proxyConfiguration.targetAutoRead) {
+                targetChannelContext.channel().read()
+            }
         }
     }
 }
