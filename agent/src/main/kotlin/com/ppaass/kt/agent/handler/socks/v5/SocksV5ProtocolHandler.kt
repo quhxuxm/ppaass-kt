@@ -14,7 +14,7 @@ import io.netty.handler.codec.socksx.v5.Socks5InitialRequest
 import mu.KotlinLogging
 
 @ChannelHandler.Sharable
-class SocksV5Handler(private val agentConfiguration: AgentConfiguration) : SimpleChannelInboundHandler<SocksMessage>() {
+class SocksV5ProtocolHandler(private val agentConfiguration: AgentConfiguration) : SimpleChannelInboundHandler<SocksMessage>() {
     companion object {
         private val logger = KotlinLogging.logger {}
     }
@@ -29,7 +29,7 @@ class SocksV5Handler(private val agentConfiguration: AgentConfiguration) : Simpl
                 is Socks5InitialRequest -> {
                     logger.debug(
                         "Socks5 initial request coming always NO_AUTH ...")
-                    addBefore(SocksV5Handler::class.java.name, Socks5CommandRequestDecoder::class.java.name,
+                    addBefore(SocksV5ProtocolHandler::class.java.name, Socks5CommandRequestDecoder::class.java.name,
                         Socks5CommandRequestDecoder())
                     agentChannelContext.write(DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH))
                     return@channelRead0
@@ -40,7 +40,7 @@ class SocksV5Handler(private val agentConfiguration: AgentConfiguration) : Simpl
                     when (socksRequest.type()) {
                         Socks5CommandType.CONNECT -> {
                             addLast(SocksV5ConnectCommandHandler::class.java.name,
-                                this@SocksV5Handler.socksV5ConnectHandler)
+                                this@SocksV5ProtocolHandler.socksV5ConnectHandler)
                             agentChannelContext.fireChannelRead(socksRequest)
                             return@channelRead0
                         }
@@ -48,7 +48,7 @@ class SocksV5Handler(private val agentConfiguration: AgentConfiguration) : Simpl
                             logger.error(
                                 "BIND socks5 request still not support, clientChannelId={}",
                                 clientChannelId)
-                            remove(this@SocksV5Handler)
+                            remove(this@SocksV5ProtocolHandler)
                             agentChannelContext.close()
                             return@channelRead0
                         }
@@ -56,7 +56,7 @@ class SocksV5Handler(private val agentConfiguration: AgentConfiguration) : Simpl
                             logger.error(
                                 "UDP_ASSOCIATE socks5 request still not support, clientChannelId={}",
                                 clientChannelId)
-                            remove(this@SocksV5Handler)
+                            remove(this@SocksV5ProtocolHandler)
                             agentChannelContext.close()
                             return@channelRead0
                         }
@@ -64,7 +64,7 @@ class SocksV5Handler(private val agentConfiguration: AgentConfiguration) : Simpl
                             logger.error(
                                 "Unknown command type[{}] clientChannelId={}", socksRequest.type(),
                                 clientChannelId)
-                            remove(this@SocksV5Handler)
+                            remove(this@SocksV5ProtocolHandler)
                             agentChannelContext.close()
                             return@channelRead0
                         }
@@ -73,7 +73,7 @@ class SocksV5Handler(private val agentConfiguration: AgentConfiguration) : Simpl
                 else -> {
                     logger.error(
                         "Current request type of socks5 still do not support, socks5 message: {}", socksRequest)
-                    remove(this@SocksV5Handler)
+                    remove(this@SocksV5ProtocolHandler)
                     agentChannelContext.close()
                     return@channelRead0
                 }
