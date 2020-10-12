@@ -7,41 +7,40 @@ import org.springframework.boot.context.properties.ConstructorBinding
 @ConstructorBinding
 @ConfigurationProperties("ppaass.proxy")
 class ProxyConfiguration(
-        val masterIoEventThreadNumber: Int = 0,
-        val workerIoEventThreadNumber: Int = 0,
-        val dataTransferIoEventThreadNumber: Int = 0,
-        val soBacklog: Int = 0,
-        val port: Int = 0,
-        val targetConnectionTimeout: Int = 0,
-        val agentConnectionIdleSeconds: Int = 0,
-        val targetReceiveDataAverageBufferMinSize: Int = 0,
-        val targetReceiveDataAverageBufferInitialSize: Int = 0,
-        val targetReceiveDataAverageBufferMaxSize: Int = 0,
-        val targetAutoRead: Boolean = false,
-        val receiveDataAverageBufferMinSize: Int = 0,
-        val receiveDataAverageBufferInitialSize: Int = 0,
-        val receiveDataAverageBufferMaxSize: Int = 0,
-        val connectionKeepAlive: Boolean = true,
-
-        val targetSoRcvbuf: Int = 0,
-        val targetSoSndbuf: Int = 0,
-        val targetWriteSpinCount: Int = 0,
-        val targetConnectionKeepAlive: Boolean = true,
-        val soRcvbuf: Int = 0,
-        val soSndbuf: Int = 0,
-        val writeSpinCount: Int = 0,
+    val masterIoEventThreadNumber: Int = 0,
+    val workerIoEventThreadNumber: Int = 0,
+    val dataTransferIoEventThreadNumber: Int = 0,
+    val soBacklog: Int = 0,
+    val port: Int = 0,
+    val targetConnectionTimeout: Int = 0,
+    val agentConnectionIdleSeconds: Int = 0,
+    val targetReceiveDataAverageBufferMinSize: Int = 0,
+    val targetReceiveDataAverageBufferInitialSize: Int = 0,
+    val targetReceiveDataAverageBufferMaxSize: Int = 0,
+    val targetAutoRead: Boolean = false,
+    val receiveDataAverageBufferMinSize: Int = 0,
+    val receiveDataAverageBufferInitialSize: Int = 0,
+    val receiveDataAverageBufferMaxSize: Int = 0,
+    val connectionKeepAlive: Boolean = true,
+    val targetSoRcvbuf: Int = 0,
+    val targetSoSndbuf: Int = 0,
+    val targetWriteSpinCount: Int = 0,
+    val targetConnectionKeepAlive: Boolean = true,
+    val soRcvbuf: Int = 0,
+    val soSndbuf: Int = 0,
+    val writeSpinCount: Int = 0,
 ) {
     val agentPublicKey: String by lazy {
         val lines = IOUtils.readLines(
-                ProxyConfiguration::class.java.classLoader.getResourceAsStream("security/agentPublicKey.txt"),
-                Charsets.UTF_8)
+            ProxyConfiguration::class.java.classLoader.getResourceAsStream("security/agentPublicKey.txt"),
+            Charsets.UTF_8)
         val result = lines.joinToString("")
         result
     }
     val proxyPrivateKey: String by lazy {
         val lines = IOUtils.readLines(
-                ProxyConfiguration::class.java.classLoader.getResourceAsStream("security/proxyPrivateKey.txt"),
-                Charsets.UTF_8)
+            ProxyConfiguration::class.java.classLoader.getResourceAsStream("security/proxyPrivateKey.txt"),
+            Charsets.UTF_8)
         val result = lines.joinToString("")
         result
     }

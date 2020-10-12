@@ -11,7 +11,7 @@ import mu.KotlinLogging
 
 @ChannelHandler.Sharable
 internal class SwitchSocksVersionHandler(private val agentConfiguration: AgentConfiguration) :
-        SimpleChannelInboundHandler<SocksMessage>() {
+    SimpleChannelInboundHandler<SocksMessage>() {
     private companion object {
         private val logger = KotlinLogging.logger {}
     }
@@ -22,14 +22,14 @@ internal class SwitchSocksVersionHandler(private val agentConfiguration: AgentCo
         val clientChannelId = agentChannelContext.channel().id().asLongText();
         if (SocksVersion.UNKNOWN == socksRequest.version()) {
             logger.error(
-                    "Incoming protocol is unknown protocol, clientChannelId={}.", clientChannelId)
+                "Incoming protocol is unknown protocol, clientChannelId={}.", clientChannelId)
             agentChannelContext.close()
             return
         }
         val agentChannelPipeline = agentChannelContext.pipeline();
         if (SocksVersion.SOCKS4a == socksRequest.version()) {
             logger.error(
-                    "Socks4a not support, clientChannelId={}.", clientChannelId)
+                "Socks4a not support, clientChannelId={}.", clientChannelId)
             agentChannelContext.close()
             return
         }

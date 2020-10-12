@@ -27,9 +27,9 @@ internal abstract class Agent(private val agentConfiguration: AgentConfiguration
     fun start() {
         val newServerBootstrap = ServerBootstrap()
         val newMasterThreadGroup =
-                NioEventLoopGroup(agentConfiguration.staticAgentConfiguration.masterIoEventThreadNumber)
+            NioEventLoopGroup(agentConfiguration.staticAgentConfiguration.masterIoEventThreadNumber)
         val newWorkerThreadGroup =
-                NioEventLoopGroup(agentConfiguration.staticAgentConfiguration.workerIoEventThreadNumber)
+            NioEventLoopGroup(agentConfiguration.staticAgentConfiguration.workerIoEventThreadNumber)
         newServerBootstrap.apply {
             group(newMasterThreadGroup, newWorkerThreadGroup)
             channel(NioServerSocketChannel::class.java)

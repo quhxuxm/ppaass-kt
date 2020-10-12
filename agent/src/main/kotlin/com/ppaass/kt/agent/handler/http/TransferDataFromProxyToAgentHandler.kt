@@ -14,38 +14,38 @@ internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Cha
                                                    private val clientChannelId: String,
                                                    private val agentConfiguration: AgentConfiguration,
                                                    private val initOnChannelActivate: (proxyChannelContext: ChannelHandlerContext) -> Unit) :
-        ChannelInboundHandlerAdapter() {
+    ChannelInboundHandlerAdapter() {
     private companion object {
         private val logger = KotlinLogging.logger {}
     }
 
     override fun channelActive(proxyChannelContext: ChannelHandlerContext) {
         writeAgentMessageToProxy(
-                bodyType = AgentMessageBodyType.CONNECT,
-                secureToken = agentConfiguration.userToken,
-                proxyChannel = proxyChannelContext.channel(),
-                host = this.targetHost,
-                port = this.targetPort,
-                input = null,
-                clientChannelId = clientChannelId,
-                messageBodyEncryptionType = MessageBodyEncryptionType.random()) {
+            bodyType = AgentMessageBodyType.CONNECT,
+            secureToken = agentConfiguration.userToken,
+            proxyChannel = proxyChannelContext.channel(),
+            host = this.targetHost,
+            port = this.targetPort,
+            input = null,
+            clientChannelId = clientChannelId,
+            messageBodyEncryptionType = MessageBodyEncryptionType.random()) {
             if (!it.isSuccess) {
                 ChannelInfoCache.removeChannelInfo(clientChannelId)
                 proxyChannelContext.close()
                 agentChannel.close()
                 logger.debug(
-                        "Fail to send connect message from agent to proxy, clientChannelId=$clientChannelId, " +
-                                "targetHost=$targetHost, targetPort =$targetPort",
-                        it.cause())
+                    "Fail to send connect message from agent to proxy, clientChannelId=$clientChannelId, " +
+                        "targetHost=$targetHost, targetPort =$targetPort",
+                    it.cause())
                 return@writeAgentMessageToProxy
             }
             val channelCacheInfo =
-                    ChannelInfo(
-                            clientChannelId = clientChannelId,
-                            agentChannel = agentChannel,
-                            proxyChannel = proxyChannelContext.channel(),
-                            targetHost = this.targetHost,
-                            targetPort = this.targetPort)
+                ChannelInfo(
+                    clientChannelId = clientChannelId,
+                    agentChannel = agentChannel,
+                    proxyChannel = proxyChannelContext.channel(),
+                    targetHost = this.targetHost,
+                    targetPort = this.targetPort)
             channelCacheInfo.proxyConnectionActivated = true
             ChannelInfoCache.saveChannelInfo(clientChannelId, channelCacheInfo)
             this.initOnChannelActivate(proxyChannelContext)
@@ -58,7 +58,7 @@ internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Cha
             this.agentChannel.close()
             ChannelInfoCache.removeChannelInfo(clientChannelId)
             logger.debug(
-                    "Fail to send message from proxy to agent because of agent channel not active.")
+                "Fail to send message from proxy to agent because of agent channel not active.")
             return
         }
         this.agentChannel.writeAndFlush(msg)
@@ -70,8 +70,8 @@ internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Cha
 
     override fun channelReadComplete(ctx: ChannelHandlerContext) {
         logger.debug(
-                "Current client channel to receive the proxy response (read complete), clientChannelId={}",
-                this.clientChannelId)
+            "Current client channel to receive the proxy response (read complete), clientChannelId={}",
+            this.clientChannelId)
         this.agentChannel.flush()
     }
 }

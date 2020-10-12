@@ -28,12 +28,12 @@ internal class HttpAgent(private val agentConfiguration: AgentConfiguration) : A
             override fun initChannel(agentChannel: SocketChannel) {
                 with(agentChannel.pipeline()) {
                     addLast(IdleStateHandler(0, 0,
-                            agentConfiguration.staticAgentConfiguration.clientConnectionIdleSeconds))
+                        agentConfiguration.staticAgentConfiguration.clientConnectionIdleSeconds))
                     addLast(heartbeatHandler)
                     addLast(resourceClearHandler)
                     addLast(HttpServerCodec::class.java.name, HttpServerCodec())
                     addLast(HttpObjectAggregator::class.java.name,
-                            HttpObjectAggregator(Int.MAX_VALUE, true))
+                        HttpObjectAggregator(Int.MAX_VALUE, true))
                     addLast(setupProxyConnectionHandler)
                 }
             }

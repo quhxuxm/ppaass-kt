@@ -24,7 +24,7 @@ import mu.KotlinLogging
 
 @ChannelHandler.Sharable
 internal class SetupTargetConnectionHandler(private val proxyConfiguration: ProxyConfiguration) :
-        SimpleChannelInboundHandler<AgentMessage>() {
+    SimpleChannelInboundHandler<AgentMessage>() {
     private companion object {
         private val logger = KotlinLogging.logger {}
     }
@@ -51,7 +51,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
                 proxyMessageBody.targetAddress = agentMessage.body.targetAddress
                 proxyMessageBody.targetPort = agentMessage.body.targetPort
                 val failProxyMessage =
-                        ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
+                    ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
                 proxyChannelContext.channel().writeAndFlush(failProxyMessage).addListener(ChannelFutureListener.CLOSE)
                 throw PpaassException("Fail connect to ${targetAddress}:${targetPort}.", it.cause())
             }
@@ -64,7 +64,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
             group(targetBootstrapIoEventLoopGroup)
             channel(NioSocketChannel::class.java)
             option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
-                    proxyConfiguration.targetConnectionTimeout)
+                proxyConfiguration.targetConnectionTimeout)
             option(ChannelOption.SO_KEEPALIVE, proxyConfiguration.targetConnectionKeepAlive)
             option(ChannelOption.AUTO_CLOSE, true)
             option(ChannelOption.AUTO_READ, proxyConfiguration.targetAutoRead)
@@ -75,17 +75,17 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
             option(ChannelOption.SO_SNDBUF, proxyConfiguration.targetSoSndbuf)
             option(ChannelOption.WRITE_SPIN_COUNT, proxyConfiguration.targetWriteSpinCount)
             option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator(proxyConfiguration.targetReceiveDataAverageBufferMinSize, proxyConfiguration
-                    .targetReceiveDataAverageBufferInitialSize, proxyConfiguration.targetReceiveDataAverageBufferMaxSize))
+                .targetReceiveDataAverageBufferInitialSize, proxyConfiguration.targetReceiveDataAverageBufferMaxSize))
             handler(object : ChannelInitializer<SocketChannel>() {
                 override fun initChannel(targetChannel: SocketChannel) {
                     with(targetChannel.pipeline()) {
                         logger.debug { "Initializing channel for $targetAddress:$targetPort" }
                         addLast(
-                                TargetToProxyHandler(
-                                        proxyChannelHandlerContext = proxyChannelHandlerContext,
-                                        proxyConfiguration = proxyConfiguration,
-                                        agentMessage = agentMessage
-                                ))
+                            TargetToProxyHandler(
+                                proxyChannelHandlerContext = proxyChannelHandlerContext,
+                                proxyConfiguration = proxyConfiguration,
+                                agentMessage = agentMessage
+                            ))
                         addLast(resourceClearHandler)
                     }
                 }

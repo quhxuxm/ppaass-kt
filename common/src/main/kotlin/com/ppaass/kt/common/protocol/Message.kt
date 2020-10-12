@@ -61,7 +61,6 @@ sealed class MessageBody {
      * The message id.
      */
     abstract val id: String
-
 }
 
 /**
@@ -101,14 +100,14 @@ class AgentMessageBody(val bodyType: AgentMessageBodyType, override val id: Stri
 
     constructor(bodyType: AgentMessageBodyType, id: String, securityToken: String, targetAddress: String?,
                 targetPort: Int?) : this(bodyType,
-            id, securityToken) {
+        id, securityToken) {
         this.targetAddress = targetAddress
         this.targetPort = targetPort
     }
 
     override fun toString(): String {
         return "AgentMessageBody(bodyType=$bodyType, id='$id', securityToken='$securityToken', " +
-                "targetAddress=$targetAddress, targetPort=$targetPort, originalData=${originalData?.contentToString()})"
+            "targetAddress=$targetAddress, targetPort=$targetPort, originalData=${originalData?.contentToString()})"
     }
 }
 
@@ -136,7 +135,6 @@ enum class ProxyMessageBodyType {
  * The proxy message body
  */
 class ProxyMessageBody(val bodyType: ProxyMessageBodyType, override val id: String) : MessageBody() {
-
     override var originalData: ByteArray? = null
     override var targetAddress: String? = null
     override var targetPort: Int? = null
@@ -149,7 +147,7 @@ class ProxyMessageBody(val bodyType: ProxyMessageBodyType, override val id: Stri
 
     override fun toString(): String {
         return "ProxyMessageBody(bodyType=$bodyType, id='$id', targetAddress=$targetAddress, " +
-                "targetPort=$targetPort, originalData=${originalData?.contentToString()})"
+            "targetPort=$targetPort, originalData=${originalData?.contentToString()})"
     }
 }
 

@@ -12,8 +12,10 @@ class ResourceClearHandler : ChannelInboundHandlerAdapter() {
     }
 
     override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
-        logger.error("Exception happen in current channel: ${ctx.channel().id()
-                .asLongText()}, remote address: ${ctx.channel().remoteAddress()}", cause)
+        logger.error("Exception happen in current channel: ${
+            ctx.channel().id()
+                .asLongText()
+        }, remote address: ${ctx.channel().remoteAddress()}", cause)
         logger.debug("Close current channel on exception, current channel: ${ctx.channel().id().asLongText()}", cause)
         ctx.close()
     }

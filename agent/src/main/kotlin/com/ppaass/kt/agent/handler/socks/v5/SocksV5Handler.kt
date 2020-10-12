@@ -5,7 +5,12 @@ import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.handler.codec.socksx.SocksMessage
-import io.netty.handler.codec.socksx.v5.*
+import io.netty.handler.codec.socksx.v5.DefaultSocks5InitialResponse
+import io.netty.handler.codec.socksx.v5.Socks5AuthMethod
+import io.netty.handler.codec.socksx.v5.Socks5CommandRequest
+import io.netty.handler.codec.socksx.v5.Socks5CommandRequestDecoder
+import io.netty.handler.codec.socksx.v5.Socks5CommandType
+import io.netty.handler.codec.socksx.v5.Socks5InitialRequest
 import mu.KotlinLogging
 
 @ChannelHandler.Sharable
@@ -23,42 +28,42 @@ class SocksV5Handler(private val agentConfiguration: AgentConfiguration) : Simpl
             when (socksRequest) {
                 is Socks5InitialRequest -> {
                     logger.debug(
-                            "Socks5 initial request coming always NO_AUTH ...")
+                        "Socks5 initial request coming always NO_AUTH ...")
                     addBefore(SocksV5Handler::class.java.name, Socks5CommandRequestDecoder::class.java.name,
-                            Socks5CommandRequestDecoder())
+                        Socks5CommandRequestDecoder())
                     agentChannelContext.write(DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH))
                     return@channelRead0
                 }
                 is Socks5CommandRequest -> {
                     logger.debug(
-                            "Socks5 command request with {} command coming ...", socksRequest.type())
+                        "Socks5 command request with {} command coming ...", socksRequest.type())
                     when (socksRequest.type()) {
                         Socks5CommandType.CONNECT -> {
                             addLast(SocksV5ConnectCommandHandler::class.java.name,
-                                    this@SocksV5Handler.socksV5ConnectHandler)
+                                this@SocksV5Handler.socksV5ConnectHandler)
                             agentChannelContext.fireChannelRead(socksRequest)
                             return@channelRead0
                         }
                         Socks5CommandType.BIND -> {
                             logger.error(
-                                    "BIND socks5 request still not support, clientChannelId={}",
-                                    clientChannelId)
+                                "BIND socks5 request still not support, clientChannelId={}",
+                                clientChannelId)
                             remove(this@SocksV5Handler)
                             agentChannelContext.close()
                             return@channelRead0
                         }
                         Socks5CommandType.UDP_ASSOCIATE -> {
                             logger.error(
-                                    "UDP_ASSOCIATE socks5 request still not support, clientChannelId={}",
-                                    clientChannelId)
+                                "UDP_ASSOCIATE socks5 request still not support, clientChannelId={}",
+                                clientChannelId)
                             remove(this@SocksV5Handler)
                             agentChannelContext.close()
                             return@channelRead0
                         }
                         else -> {
                             logger.error(
-                                    "Unknown command type[{}] clientChannelId={}", socksRequest.type(),
-                                    clientChannelId)
+                                "Unknown command type[{}] clientChannelId={}", socksRequest.type(),
+                                clientChannelId)
                             remove(this@SocksV5Handler)
                             agentChannelContext.close()
                             return@channelRead0
@@ -67,7 +72,7 @@ class SocksV5Handler(private val agentConfiguration: AgentConfiguration) : Simpl
                 }
                 else -> {
                     logger.error(
-                            "Current request type of socks5 still do not support, socks5 message: {}", socksRequest)
+                        "Current request type of socks5 still do not support, socks5 message: {}", socksRequest)
                     remove(this@SocksV5Handler)
                     agentChannelContext.close()
                     return@channelRead0

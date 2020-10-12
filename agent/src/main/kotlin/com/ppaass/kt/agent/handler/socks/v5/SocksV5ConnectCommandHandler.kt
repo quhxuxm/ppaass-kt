@@ -8,7 +8,12 @@ import com.ppaass.kt.common.netty.codec.AgentMessageEncoder
 import com.ppaass.kt.common.netty.codec.ProxyMessageDecoder
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.PooledByteBufAllocator
-import io.netty.channel.*
+import io.netty.channel.Channel
+import io.netty.channel.ChannelHandler
+import io.netty.channel.ChannelHandlerContext
+import io.netty.channel.ChannelInitializer
+import io.netty.channel.ChannelOption
+import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder
@@ -19,7 +24,7 @@ import mu.KotlinLogging
 
 @ChannelHandler.Sharable
 internal class SocksV5ConnectCommandHandler(private val agentConfiguration: AgentConfiguration) :
-        SimpleChannelInboundHandler<Socks5CommandRequest>() {
+    SimpleChannelInboundHandler<Socks5CommandRequest>() {
     companion object {
         private val logger = KotlinLogging.logger {}
     }
@@ -37,7 +42,7 @@ internal class SocksV5ConnectCommandHandler(private val agentConfiguration: Agen
             group(proxyServerBootstrapIoEventLoopGroup)
             channel(NioSocketChannel::class.java)
             option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
-                    agentConfiguration.staticAgentConfiguration.proxyConnectionTimeout)
+                agentConfiguration.staticAgentConfiguration.proxyConnectionTimeout)
             option(ChannelOption.SO_KEEPALIVE, true)
             option(ChannelOption.AUTO_READ, true)
             option(ChannelOption.AUTO_CLOSE, true)
@@ -52,21 +57,21 @@ internal class SocksV5ConnectCommandHandler(private val agentConfiguration: Agen
                 with(proxyChannel.pipeline()) {
                     addLast(Lz4FrameDecoder())
                     addLast(LengthFieldBasedFrameDecoder(Int.MAX_VALUE,
-                            0, 4, 0,
-                            4))
+                        0, 4, 0,
+                        4))
                     addLast(ProxyMessageDecoder(
-                            agentPrivateKeyString = agentConfiguration.staticAgentConfiguration.agentPrivateKey))
+                        agentPrivateKeyString = agentConfiguration.staticAgentConfiguration.agentPrivateKey))
                     addLast(discardProxyHeartbeatHandler)
                     addLast(proxyServerBootstrapIoEventLoopGroup,
-                            SocksV5ProxyToAgentHandler(
-                                    agentChannel = agentChannelContext.channel(),
-                                    agentConfiguration = agentConfiguration,
-                                    socks5CommandRequest = socks5CommandRequest))
+                        SocksV5ProxyToAgentHandler(
+                            agentChannel = agentChannelContext.channel(),
+                            agentConfiguration = agentConfiguration,
+                            socks5CommandRequest = socks5CommandRequest))
                     addLast(resourceClearHandler)
                     addLast(Lz4FrameEncoder())
                     addLast(lengthFieldPrepender)
                     addLast(AgentMessageEncoder(
-                            proxyPublicKeyString = agentConfiguration.staticAgentConfiguration.proxyPublicKey))
+                        proxyPublicKeyString = agentConfiguration.staticAgentConfiguration.proxyPublicKey))
                 }
             }
         })

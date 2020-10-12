@@ -1,6 +1,11 @@
 package com.ppaass.kt.proxy.handler
 
-import com.ppaass.kt.common.protocol.*
+import com.ppaass.kt.common.protocol.AgentMessage
+import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
+import com.ppaass.kt.common.protocol.ProxyMessage
+import com.ppaass.kt.common.protocol.ProxyMessageBody
+import com.ppaass.kt.common.protocol.ProxyMessageBodyType
+import com.ppaass.kt.common.protocol.generateUid
 import com.ppaass.kt.proxy.ProxyConfiguration
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
@@ -8,10 +13,10 @@ import io.netty.channel.SimpleChannelInboundHandler
 import mu.KotlinLogging
 
 internal class TargetToProxyHandler(
-        private val proxyChannelHandlerContext: ChannelHandlerContext,
-        private val proxyConfiguration: ProxyConfiguration,
-        private val agentMessage: AgentMessage) :
-        SimpleChannelInboundHandler<ByteBuf>() {
+    private val proxyChannelHandlerContext: ChannelHandlerContext,
+    private val proxyConfiguration: ProxyConfiguration,
+    private val agentMessage: AgentMessage) :
+    SimpleChannelInboundHandler<ByteBuf>() {
     private companion object {
         private val logger = KotlinLogging.logger {}
     }
@@ -23,9 +28,9 @@ internal class TargetToProxyHandler(
                 remove(SetupTargetConnectionHandler::class.java)
             }
             addLast(targetChannelContext.executor(),
-                    ProxyToTargetHandler(
-                            proxyConfiguration = proxyConfiguration,
-                            targetChannel = targetChannel))
+                ProxyToTargetHandler(
+                    proxyConfiguration = proxyConfiguration,
+                    targetChannel = targetChannel))
         }
         proxyChannelHandlerContext.fireChannelRead(agentMessage)
         if (!proxyConfiguration.targetAutoRead) {
@@ -41,7 +46,7 @@ internal class TargetToProxyHandler(
         proxyMessageBody.targetPort = agentMessage.body.targetPort
         proxyMessageBody.originalData = originalDataByteArray
         val proxyMessage =
-                ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
+            ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
         logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
         proxyChannelHandlerContext.channel().writeAndFlush(proxyMessage).addListener {
             if (!proxyConfiguration.targetAutoRead) {

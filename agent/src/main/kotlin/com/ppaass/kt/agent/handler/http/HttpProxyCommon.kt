@@ -3,7 +3,11 @@ package com.ppaass.kt.agent.handler.http
 import com.ppaass.kt.agent.handler.http.bo.ChannelInfo
 import com.ppaass.kt.agent.handler.http.bo.HttpConnectionInfo
 import com.ppaass.kt.common.exception.PpaassException
-import com.ppaass.kt.common.protocol.*
+import com.ppaass.kt.common.protocol.AgentMessage
+import com.ppaass.kt.common.protocol.AgentMessageBody
+import com.ppaass.kt.common.protocol.AgentMessageBodyType
+import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
+import com.ppaass.kt.common.protocol.generateUid
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufUtil
 import io.netty.channel.Channel
@@ -64,7 +68,7 @@ internal fun parseHttpConnectionInfo(uri: String): HttpConnectionInfo {
             port = DEFAULT_HTTP_PORT
         }
         return HttpConnectionInfo(uriComponents.host ?: "",
-                port)
+            port)
     }
     if (uri.startsWith(HTTPS_SCHEMA)) {
         val uriComponentsBuilder = UriComponentsBuilder.fromUriString(uri)
@@ -72,27 +76,27 @@ internal fun parseHttpConnectionInfo(uri: String): HttpConnectionInfo {
         var port: Int = uriComponents.getPort()
         if (port < 0) {
             port =
-                    DEFAULT_HTTPS_PORT
+                DEFAULT_HTTPS_PORT
         }
         return HttpConnectionInfo(uriComponents.host ?: "",
-                port)
+            port)
     }
     //For CONNECT method, only HTTPS will do this method.
     val schemaAndHostNameSepIndex = uri.indexOf(
-            SCHEMA_AND_HOST_SEP)
+        SCHEMA_AND_HOST_SEP)
     var hostNameAndPort = uri
     if (schemaAndHostNameSepIndex >= 0) {
         hostNameAndPort = uri.substring(
-                schemaAndHostNameSepIndex + SCHEMA_AND_HOST_SEP.length)
+            schemaAndHostNameSepIndex + SCHEMA_AND_HOST_SEP.length)
     }
     if (hostNameAndPort.contains(
-                    SLASH)) {
+            SLASH)) {
         logger.error("Can not parse host name from uri: {}", uri)
         throw PpaassException("Can not parse host name from uri: $uri")
     }
     val hostNameAndPortParts =
-            hostNameAndPort.split(
-                    HOST_NAME_AND_PORT_SEP).toTypedArray()
+        hostNameAndPort.split(
+            HOST_NAME_AND_PORT_SEP).toTypedArray()
     val hostName = hostNameAndPortParts[0]
     var port = DEFAULT_HTTPS_PORT
     if (hostNameAndPortParts.size > 1) {
@@ -123,7 +127,7 @@ fun writeAgentMessageToProxy(bodyType: AgentMessageBodyType, secureToken: String
     agentMessageBody.targetAddress = host
     agentMessageBody.targetPort = port
     val agentMessage =
-            AgentMessage(generateUid(), messageBodyEncryptionType, agentMessageBody)
+        AgentMessage(generateUid(), messageBodyEncryptionType, agentMessageBody)
     proxyChannel.eventLoop().execute {
         proxyChannel.writeAndFlush(agentMessage).addListener(ChannelFutureListener {
             afterWriteCallback(it)

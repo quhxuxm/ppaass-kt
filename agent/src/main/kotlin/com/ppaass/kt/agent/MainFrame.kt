@@ -7,12 +7,27 @@ import org.springframework.context.ApplicationContext
 import org.springframework.context.MessageSource
 import org.springframework.stereotype.Service
 import org.springframework.util.StringUtils
-import java.awt.*
+import java.awt.CardLayout
+import java.awt.Color
+import java.awt.Dimension
+import java.awt.FlowLayout
+import java.awt.Frame
+import java.awt.GridLayout
+import java.awt.SystemTray
+import java.awt.Toolkit
+import java.awt.TrayIcon
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.WindowEvent
 import java.util.*
-import javax.swing.*
+import javax.swing.BoxLayout
+import javax.swing.JButton
+import javax.swing.JFrame
+import javax.swing.JLabel
+import javax.swing.JPanel
+import javax.swing.JScrollPane
+import javax.swing.JTextArea
+import javax.swing.JTextField
 import javax.swing.border.EmptyBorder
 
 @Service
@@ -32,7 +47,7 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
         private const val STATUS_TOKEN_VALIDATION_FAIL_MESSAGE_KEY = "mainFrame.status.tokenValidationFail"
         private const val STATUS_PORT_VALIDATION_FAIL_MESSAGE_KEY = "mainFrame.status.portValidationFail"
         private const val STATUS_PROXY_PORT_VALIDATION_FAIL_MESSAGE_KEY =
-                "mainFrame.status.proxyPortValidationFail"
+            "mainFrame.status.proxyPortValidationFail"
         private const val STATUS_HTTP_PROXY_IS_RUNNING_MESSAGE_KEY = "mainFrame.status.httpProxyIsRunning"
         private const val STATUS_AGENT_START_FAIL_MESSAGE_KEY = "mainFrame.status.agentStartFail"
         private const val STATUS_SOCKS5_PROXY_IS_RUNNING_MESSAGE_KEY = "mainFrame.status.socks5ProxyIsRunning"
@@ -48,7 +63,7 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
         this.contentPane = contentPanel
         defaultCloseOperation = EXIT_ON_CLOSE
         this.iconImage = Toolkit.getDefaultToolkit()
-                .getImage(MainFrame::class.java.classLoader.getResource(LOGO_BLACK))
+            .getImage(MainFrame::class.java.classLoader.getResource(LOGO_BLACK))
         addWindowStateListener { e: WindowEvent ->
             if (e.newState == Frame.ICONIFIED || e.newState == 7) {
                 this@MainFrame.isVisible = false
@@ -58,9 +73,9 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
         if (SystemTray.isSupported()) {
             val tray = SystemTray.getSystemTray()
             val image = Toolkit.getDefaultToolkit()
-                    .getImage(MainFrame::class.java.classLoader.getResource(LOGO_WHITE))
+                .getImage(MainFrame::class.java.classLoader.getResource(LOGO_WHITE))
             val trayIcon = TrayIcon(image,
-                    getMessage(SYSTEM_TRAY_TOOLTIP_MESSAGE_KEY))
+                getMessage(SYSTEM_TRAY_TOOLTIP_MESSAGE_KEY))
             trayIcon.isImageAutoSize = true
             trayIcon.addMouseListener(object : MouseAdapter() {
                 override fun mouseClicked(e: MouseEvent) {
@@ -169,9 +184,9 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
         val statusLabel = JLabel(getMessage(STATUS_LABEL_DEFAULT_MESSAGE_KEY))
         val stopAllProxyBtn = JButton(getMessage(BUTTON_STOP_PROXY_MESSAGE_KEY))
         val startHttpProxyBtn = JButton(
-                getMessage(BUTTON_START_HTTP_PROXY_MESSAGE_KEY))
+            getMessage(BUTTON_START_HTTP_PROXY_MESSAGE_KEY))
         val startSocks5ProxyBtn = JButton(
-                getMessage(BUTTON_START_SOCKS5_PROXY_MESSAGE_KEY))
+            getMessage(BUTTON_START_SOCKS5_PROXY_MESSAGE_KEY))
         stopAllProxyBtn.isEnabled = false
 
         stopAllProxyBtn.addActionListener {
@@ -321,7 +336,7 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
             locale = this.agentConfiguration.staticAgentConfiguration.defaultLocale
         }
         return this.messageSource
-                .getMessage(statusTokenValidationFailMessageKey, null, locale)
+            .getMessage(statusTokenValidationFailMessageKey, null, locale)
     }
 
     fun start() {

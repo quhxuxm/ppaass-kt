@@ -27,7 +27,7 @@ internal class SocksAgent(private val agentConfiguration: AgentConfiguration) : 
             override fun initChannel(socketChannel: SocketChannel) {
                 with(socketChannel.pipeline()) {
                     addLast(IdleStateHandler(0, 0,
-                            agentConfiguration.staticAgentConfiguration.clientConnectionIdleSeconds))
+                        agentConfiguration.staticAgentConfiguration.clientConnectionIdleSeconds))
                     addLast(heartbeatHandler)
                     addLast(SocksPortUnificationServerHandler())
                     addLast(resourceClearHandler)

@@ -11,7 +11,7 @@ import mu.KotlinLogging
 
 @ChannelHandler.Sharable
 internal class DiscardProxyHeartbeatHandler() :
-        SimpleChannelInboundHandler<ProxyMessage>(false) {
+    SimpleChannelInboundHandler<ProxyMessage>(false) {
     private companion object {
         private val logger = KotlinLogging.logger {}
     }
@@ -27,8 +27,8 @@ internal class DiscardProxyHeartbeatHandler() :
         }
         val utcDataTimeString = String(originalData, Charsets.UTF_8)
         logger.debug("Receive heartbeat form proxy channel: {}, heartbeat time: {}",
-                proxyChannelContext.channel().id().asLongText(),
-                utcDataTimeString)
+            proxyChannelContext.channel().id().asLongText(),
+            utcDataTimeString)
         ReferenceCountUtil.release(proxyMessage)
     }
 }

@@ -9,14 +9,12 @@ import java.security.spec.X509EncodedKeySpec
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 
-
 private val logger = KotlinLogging.logger {}
 private const val ALGORITHM_RSA = "RSA"
 private const val ALGORITHM_AES = "AES"
 private const val ALGORITHM_BLOWFISH = "Blowfish"
 private const val AES_CIPHER = "AES/ECB/PKCS5Padding"
 private const val BLOWFISH_CIPHER = "Blowfish/ECB/PKCS5Padding"
-
 
 fun aesEncrypt(messageBodyEncryptionToken: String, data: ByteArray): ByteArray {
     val key = SecretKeySpec(messageBodyEncryptionToken.toByteArray(Charsets.UTF_8), ALGORITHM_AES)

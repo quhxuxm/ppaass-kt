@@ -19,7 +19,7 @@ import org.springframework.stereotype.Service
 @Service
 @ChannelHandler.Sharable
 internal class ProxyChannelInitializer(private val proxyConfiguration: ProxyConfiguration) :
-        ChannelInitializer<SocketChannel>() {
+    ChannelInitializer<SocketChannel>() {
     private val setupTargetConnectionHandler = SetupTargetConnectionHandler(proxyConfiguration)
 
     private companion object {
@@ -36,13 +36,13 @@ internal class ProxyChannelInitializer(private val proxyConfiguration: ProxyConf
             addLast(Lz4FrameDecoder())
             addLast(LengthFieldBasedFrameDecoder(Int.MAX_VALUE, 0, 4, 0, 4))
             addLast(AgentMessageDecoder(
-                    proxyPrivateKeyString = proxyConfiguration.proxyPrivateKey))
+                proxyPrivateKeyString = proxyConfiguration.proxyPrivateKey))
             addLast(setupTargetConnectionHandler)
             //Outbound
             addLast(Lz4FrameEncoder())
             addLast(lengthFieldPrepender)
             addLast(ProxyMessageEncoder(
-                    agentPublicKeyString = proxyConfiguration.agentPublicKey))
+                agentPublicKeyString = proxyConfiguration.agentPublicKey))
         }
     }
 }

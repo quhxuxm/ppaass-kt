@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service
  */
 @Service
 internal class DefaultProxy(private val proxyConfiguration: ProxyConfiguration) :
-        IProxy {
+    IProxy {
     private companion object {
         private val logger = KotlinLogging.logger {}
     }
@@ -42,7 +42,7 @@ internal class DefaultProxy(private val proxyConfiguration: ProxyConfiguration) 
             childOption(ChannelOption.SO_SNDBUF, proxyConfiguration.soSndbuf)
             childOption(ChannelOption.SO_SNDBUF, proxyConfiguration.writeSpinCount)
             childOption(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator(proxyConfiguration.receiveDataAverageBufferMinSize, proxyConfiguration
-                    .receiveDataAverageBufferInitialSize, proxyConfiguration.receiveDataAverageBufferMaxSize))
+                .receiveDataAverageBufferInitialSize, proxyConfiguration.receiveDataAverageBufferMaxSize))
             childHandler(proxyChannelInitializer)
         }
     }

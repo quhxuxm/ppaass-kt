@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service
 import java.io.File
 import java.io.IOException
 import java.nio.file.Path
-import java.util.*
 
 @Service
 class AgentConfiguration(val staticAgentConfiguration: StaticAgentConfiguration) {
@@ -39,7 +38,7 @@ class AgentConfiguration(val staticAgentConfiguration: StaticAgentConfiguration)
         val file = File(configurationFilePath.toUri())
         if (file.exists()) {
             val savedAgentConfiguration: StoredAgentConfiguration =
-                    objectMapper.readValue(file, StoredAgentConfiguration::class.java)
+                objectMapper.readValue(file, StoredAgentConfiguration::class.java)
             this.port = savedAgentConfiguration.port ?: this.port
             this.proxyAddress = savedAgentConfiguration.proxyAddress ?: this.proxyAddress
             this.proxyPort = savedAgentConfiguration.proxyPort ?: this.proxyPort
@@ -50,24 +49,24 @@ class AgentConfiguration(val staticAgentConfiguration: StaticAgentConfiguration)
     fun save() {
         val userDirectory = System.getProperty(USER_HOME_PROPERTY)
         val configurationFilePath =
-                Path.of(userDirectory, USER_CONFIGURATION_FILE_NAME)
+            Path.of(userDirectory, USER_CONFIGURATION_FILE_NAME)
         val file = File(configurationFilePath.toUri())
         if (file.exists()) {
             if (!file.delete()) {
                 logger.error(
-                        "Fail to save configuration because of can not delete previous configuration file.")
+                    "Fail to save configuration because of can not delete previous configuration file.")
                 return
             }
         }
         try {
             if (!file.createNewFile()) {
                 logger.error(
-                        "Fail to save configuration because of can not create configuration file.")
+                    "Fail to save configuration because of can not create configuration file.")
                 return
             }
         } catch (e: IOException) {
             logger.error("Fail to save configuration because of can not create configuration file.",
-                    e)
+                e)
         }
         try {
             val storedAgentConfiguration = storedAgentConfiguration {

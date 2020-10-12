@@ -10,8 +10,8 @@ import io.netty.channel.SimpleChannelInboundHandler
 import mu.KotlinLogging
 
 internal class ProxyToTargetHandler(
-        private val targetChannel: Channel,
-        private val proxyConfiguration: ProxyConfiguration
+    private val targetChannel: Channel,
+    private val proxyConfiguration: ProxyConfiguration
 ) : SimpleChannelInboundHandler<AgentMessage>() {
     private companion object {
         private val logger = KotlinLogging.logger {}

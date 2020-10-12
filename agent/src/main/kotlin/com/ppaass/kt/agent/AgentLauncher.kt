@@ -20,7 +20,7 @@ class AgentLauncher {
     fun launch(vararg arguments: String) {
         logger.info("Begin to launch agent.")
         val context = SpringApplicationBuilder(AgentLauncher::class.java)
-                .headless(false).run(*arguments)
+            .headless(false).run(*arguments)
         EventQueue.invokeLater {
             val mainFrame = context.getBean(MainFrame::class.java)
             mainFrame.start()
