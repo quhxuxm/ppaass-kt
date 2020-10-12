@@ -26,6 +26,9 @@ class ProxyLauncher {
             logger.error("Fail to stat proxy server because of exception", e)
             proxy.stop();
         }
+        Runtime.getRuntime().addShutdownHook(Thread {
+            proxy.stop()
+        })
     }
 }
 
