@@ -17,18 +17,22 @@ import org.springframework.stereotype.Service
 internal class DefaultProxy(private val proxyConfiguration: ProxyConfiguration) :
     IProxy {
     private companion object {
+        @JvmStatic
         private val logger = KotlinLogging.logger {}
     }
 
     private val masterThreadGroup: NioEventLoopGroup
     private val workerThreadGroup: NioEventLoopGroup
+    private val targetBootstrapIoEventLoopGroup: NioEventLoopGroup
     private val serverBootstrap: ServerBootstrap
     private var serverChannel: Channel? = null
-    private val proxyChannelInitializer = ProxyChannelInitializer(proxyConfiguration)
+    private val proxyChannelInitializer: ProxyChannelInitializer
 
     init {
         this.masterThreadGroup = NioEventLoopGroup(this.proxyConfiguration.masterIoEventThreadNumber)
         this.workerThreadGroup = NioEventLoopGroup(this.proxyConfiguration.workerIoEventThreadNumber)
+        this.targetBootstrapIoEventLoopGroup = NioEventLoopGroup(proxyConfiguration.dataTransferIoEventThreadNumber)
+        this.proxyChannelInitializer = ProxyChannelInitializer(proxyConfiguration, this.targetBootstrapIoEventLoopGroup)
         this.serverBootstrap = ServerBootstrap()
         this.serverBootstrap.apply {
             group(masterThreadGroup, workerThreadGroup)
@@ -41,8 +45,9 @@ internal class DefaultProxy(private val proxyConfiguration: ProxyConfiguration) 
             childOption(ChannelOption.SO_RCVBUF, proxyConfiguration.soRcvbuf)
             childOption(ChannelOption.SO_SNDBUF, proxyConfiguration.soSndbuf)
             childOption(ChannelOption.SO_SNDBUF, proxyConfiguration.writeSpinCount)
-            childOption(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator(proxyConfiguration.receiveDataAverageBufferMinSize, proxyConfiguration
-                .receiveDataAverageBufferInitialSize, proxyConfiguration.receiveDataAverageBufferMaxSize))
+            childOption(ChannelOption.RCVBUF_ALLOCATOR,
+                AdaptiveRecvByteBufAllocator(proxyConfiguration.receiveDataAverageBufferMinSize, proxyConfiguration
+                    .receiveDataAverageBufferInitialSize, proxyConfiguration.receiveDataAverageBufferMaxSize))
             childHandler(proxyChannelInitializer)
         }
     }

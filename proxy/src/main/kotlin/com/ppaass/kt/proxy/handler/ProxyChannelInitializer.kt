@@ -5,24 +5,23 @@ import com.ppaass.kt.common.netty.codec.ProxyMessageEncoder
 import com.ppaass.kt.proxy.ProxyConfiguration
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelInitializer
+import io.netty.channel.EventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder
 import io.netty.handler.codec.compression.Lz4FrameDecoder
 import io.netty.handler.codec.compression.Lz4FrameEncoder
 import io.netty.handler.timeout.IdleStateHandler
 import mu.KotlinLogging
-import org.springframework.stereotype.Service
 
 /**
  * The channel initializer for proxy
  */
-@Service
 @ChannelHandler.Sharable
-internal class ProxyChannelInitializer(private val proxyConfiguration: ProxyConfiguration) :
+internal class ProxyChannelInitializer(private val proxyConfiguration: ProxyConfiguration,
+                                       private val targetBootstrapIoEventLoopGroup: EventLoopGroup) :
     ChannelInitializer<SocketChannel>() {
-    private val setupTargetConnectionHandler = SetupTargetConnectionHandler(proxyConfiguration)
-
     private companion object {
+        @JvmStatic
         private val logger = KotlinLogging.logger {}
     }
 
@@ -37,7 +36,7 @@ internal class ProxyChannelInitializer(private val proxyConfiguration: ProxyConf
             addLast(LengthFieldBasedFrameDecoder(Int.MAX_VALUE, 0, 4, 0, 4))
             addLast(AgentMessageDecoder(
                 proxyPrivateKeyString = proxyConfiguration.proxyPrivateKey))
-            addLast(setupTargetConnectionHandler)
+            addLast(SetupTargetConnectionHandler(proxyConfiguration, targetBootstrapIoEventLoopGroup))
             //Outbound
             addLast(Lz4FrameEncoder())
             addLast(lengthFieldPrepender)

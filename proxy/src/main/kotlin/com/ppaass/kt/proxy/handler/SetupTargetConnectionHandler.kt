@@ -12,24 +12,22 @@ import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.AdaptiveRecvByteBufAllocator
 import io.netty.channel.ChannelFutureListener
-import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.ChannelOption
+import io.netty.channel.EventLoopGroup
 import io.netty.channel.SimpleChannelInboundHandler
-import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import mu.KotlinLogging
 
-@ChannelHandler.Sharable
-internal class SetupTargetConnectionHandler(private val proxyConfiguration: ProxyConfiguration) :
+internal class SetupTargetConnectionHandler(private val proxyConfiguration: ProxyConfiguration,
+                                            private val targetBootstrapIoEventLoopGroup: EventLoopGroup) :
     SimpleChannelInboundHandler<AgentMessage>() {
     private companion object {
+        @JvmStatic
         private val logger = KotlinLogging.logger {}
     }
-
-    private val targetBootstrapIoEventLoopGroup = NioEventLoopGroup(proxyConfiguration.dataTransferIoEventThreadNumber)
 
     override fun channelRead0(proxyChannelContext: ChannelHandlerContext, agentMessage: AgentMessage) {
         val targetAddress = agentMessage.body.targetAddress
@@ -58,7 +56,8 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
         }
     }
 
-    private fun createTargetBootstrap(proxyChannelHandlerContext: ChannelHandlerContext, targetAddress: String, targetPort: Int, agentMessage: AgentMessage): Bootstrap {
+    private fun createTargetBootstrap(proxyChannelHandlerContext: ChannelHandlerContext, targetAddress: String,
+                                      targetPort: Int, agentMessage: AgentMessage): Bootstrap {
         val targetBootstrap = Bootstrap()
         targetBootstrap.apply {
             group(targetBootstrapIoEventLoopGroup)
@@ -74,8 +73,11 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
             option(ChannelOption.SO_RCVBUF, proxyConfiguration.targetSoRcvbuf)
             option(ChannelOption.SO_SNDBUF, proxyConfiguration.targetSoSndbuf)
             option(ChannelOption.WRITE_SPIN_COUNT, proxyConfiguration.targetWriteSpinCount)
-            option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator(proxyConfiguration.targetReceiveDataAverageBufferMinSize, proxyConfiguration
-                .targetReceiveDataAverageBufferInitialSize, proxyConfiguration.targetReceiveDataAverageBufferMaxSize))
+            option(ChannelOption.RCVBUF_ALLOCATOR,
+                AdaptiveRecvByteBufAllocator(proxyConfiguration.targetReceiveDataAverageBufferMinSize,
+                    proxyConfiguration
+                        .targetReceiveDataAverageBufferInitialSize,
+                    proxyConfiguration.targetReceiveDataAverageBufferMaxSize))
             handler(object : ChannelInitializer<SocketChannel>() {
                 override fun initChannel(targetChannel: SocketChannel) {
                     with(targetChannel.pipeline()) {
