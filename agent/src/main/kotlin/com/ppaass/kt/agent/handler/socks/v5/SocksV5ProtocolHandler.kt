@@ -1,8 +1,8 @@
 package com.ppaass.kt.agent.handler.socks.v5
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
-import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
+import io.netty.channel.EventLoopGroup
 import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.handler.codec.socksx.SocksMessage
 import io.netty.handler.codec.socksx.v5.DefaultSocks5InitialResponse
@@ -13,13 +13,12 @@ import io.netty.handler.codec.socksx.v5.Socks5CommandType
 import io.netty.handler.codec.socksx.v5.Socks5InitialRequest
 import mu.KotlinLogging
 
-@ChannelHandler.Sharable
-class SocksV5ProtocolHandler(private val agentConfiguration: AgentConfiguration) : SimpleChannelInboundHandler<SocksMessage>() {
+class SocksV5ProtocolHandler(private val agentConfiguration: AgentConfiguration,
+                             private val proxyServerBootstrapIoEventLoopGroup: EventLoopGroup) :
+    SimpleChannelInboundHandler<SocksMessage>() {
     companion object {
         private val logger = KotlinLogging.logger {}
     }
-
-    private val socksV5ConnectHandler = SocksV5ConnectCommandHandler(this.agentConfiguration)
 
     override fun channelRead0(agentChannelContext: ChannelHandlerContext, socksRequest: SocksMessage) {
         val channelPipeline = agentChannelContext.pipeline()
@@ -40,7 +39,8 @@ class SocksV5ProtocolHandler(private val agentConfiguration: AgentConfiguration)
                     when (socksRequest.type()) {
                         Socks5CommandType.CONNECT -> {
                             addLast(SocksV5ConnectCommandHandler::class.java.name,
-                                this@SocksV5ProtocolHandler.socksV5ConnectHandler)
+                                SocksV5ConnectCommandHandler(agentConfiguration,
+                                    proxyServerBootstrapIoEventLoopGroup))
                             agentChannelContext.fireChannelRead(socksRequest)
                             return@channelRead0
                         }
