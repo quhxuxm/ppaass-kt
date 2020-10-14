@@ -29,6 +29,11 @@ internal class SocksV5ConnectCommandHandler(private val agentConfiguration: Agen
     }
 
     override fun channelRead0(agentChannelContext: ChannelHandlerContext, socks5CommandRequest: Socks5CommandRequest) {
+        logger.debug {
+            "Create new connection to proxy server, agentChannelId=${
+                agentChannelContext.channel().id().asLongText()
+            }"
+        }
         val proxyBootstrap = createProxyServerBootstrap(agentChannelContext, socks5CommandRequest)
         proxyBootstrap.connect(agentConfiguration.proxyAddress, agentConfiguration.proxyPort)
     }
