@@ -35,8 +35,10 @@ internal class ProxyToTargetHandler(
     override fun channelWritabilityChanged(proxyContext: ChannelHandlerContext) {
         if (!proxyConfiguration.readTargetAfterMessageSendToAgent) {
             if (proxyContext.channel().isWritable) {
+                logger.info { "Recover auto read on target channel: ${targetChannel.id().asLongText()}" }
                 targetChannel.config().setAutoRead(true)
             } else {
+                logger.info { "Close auto read on target channel: ${targetChannel.id().asLongText()}" }
                 targetChannel.config().setAutoRead(false)
             }
         }

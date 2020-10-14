@@ -60,6 +60,11 @@ internal class TargetToProxyHandler(
         logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
         if (!proxyConfiguration.readTargetAfterMessageSendToAgent) {
             if (!proxyChannelHandlerContext.channel().isWritable) {
+                logger.info {
+                    "Close auto read on target channel before write message to agent: ${
+                        targetChannelContext.channel().id().asLongText()
+                    }"
+                }
                 targetChannelContext.channel().config().setAutoRead(false)
             }
         }
