@@ -58,6 +58,11 @@ internal class TargetToProxyHandler(
         val proxyMessage =
             ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
         logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
+        if (!proxyConfiguration.readTargetAfterMessageSendToAgent) {
+            if (!proxyChannelHandlerContext.channel().isWritable) {
+                targetChannelContext.channel().config().setAutoRead(false)
+            }
+        }
         proxyChannelHandlerContext.channel().writeAndFlush(proxyMessage).addListener {
             if (proxyConfiguration.readTargetAfterMessageSendToAgent) {
                 targetChannelContext.channel().read()

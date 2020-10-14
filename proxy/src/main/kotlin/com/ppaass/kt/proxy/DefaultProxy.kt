@@ -5,6 +5,7 @@ import io.netty.bootstrap.ServerBootstrap
 import io.netty.channel.AdaptiveRecvByteBufAllocator
 import io.netty.channel.Channel
 import io.netty.channel.ChannelOption
+import io.netty.channel.WriteBufferWaterMark
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import mu.KotlinLogging
@@ -45,6 +46,9 @@ internal class DefaultProxy(private val proxyConfiguration: ProxyConfiguration) 
             childOption(ChannelOption.SO_RCVBUF, proxyConfiguration.soRcvbuf)
             childOption(ChannelOption.SO_SNDBUF, proxyConfiguration.soSndbuf)
             childOption(ChannelOption.SO_SNDBUF, proxyConfiguration.writeSpinCount)
+            childOption(ChannelOption.WRITE_BUFFER_WATER_MARK,
+                WriteBufferWaterMark(proxyConfiguration.agentWriteBufferWaterMarkLow,
+                    proxyConfiguration.agentWriteBufferWaterMarkHigh))
             childOption(ChannelOption.RCVBUF_ALLOCATOR,
                 AdaptiveRecvByteBufAllocator(proxyConfiguration.receiveDataAverageBufferMinSize, proxyConfiguration
                     .receiveDataAverageBufferInitialSize, proxyConfiguration.receiveDataAverageBufferMaxSize))

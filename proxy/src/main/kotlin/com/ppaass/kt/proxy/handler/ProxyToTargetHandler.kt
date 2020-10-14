@@ -31,4 +31,14 @@ internal class ProxyToTargetHandler(
             }
         }
     }
+
+    override fun channelWritabilityChanged(proxyContext: ChannelHandlerContext) {
+        if (!proxyConfiguration.readTargetAfterMessageSendToAgent) {
+            if (proxyContext.channel().isWritable) {
+                targetChannel.config().setAutoRead(true)
+            } else {
+                targetChannel.config().setAutoRead(false)
+            }
+        }
+    }
 }
