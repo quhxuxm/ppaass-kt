@@ -66,7 +66,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
                 proxyConfiguration.targetConnectionTimeout)
             option(ChannelOption.SO_KEEPALIVE, proxyConfiguration.targetConnectionKeepAlive)
             option(ChannelOption.AUTO_CLOSE, true)
-            option(ChannelOption.AUTO_READ, proxyConfiguration.targetAutoRead)
+            option(ChannelOption.AUTO_READ, !proxyConfiguration.readTargetAfterMessageSendToAgent)
             option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
             option(ChannelOption.TCP_NODELAY, true)
             option(ChannelOption.SO_REUSEADDR, true)

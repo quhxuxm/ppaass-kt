@@ -34,7 +34,7 @@ internal class TargetToProxyHandler(
                     targetChannel = targetChannel))
         }
         proxyChannelHandlerContext.fireChannelRead(agentMessage)
-        if (!proxyConfiguration.targetAutoRead) {
+        if (proxyConfiguration.readTargetAfterMessageSendToAgent) {
             targetChannel.read()
         }
     }
@@ -59,7 +59,7 @@ internal class TargetToProxyHandler(
             ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
         logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
         proxyChannelHandlerContext.channel().writeAndFlush(proxyMessage).addListener {
-            if (!proxyConfiguration.targetAutoRead) {
+            if (proxyConfiguration.readTargetAfterMessageSendToAgent) {
                 targetChannelContext.channel().read()
             }
         }

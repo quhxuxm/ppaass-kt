@@ -17,7 +17,7 @@ class ProxyConfiguration(
     val targetReceiveDataAverageBufferMinSize: Int = 0,
     val targetReceiveDataAverageBufferInitialSize: Int = 0,
     val targetReceiveDataAverageBufferMaxSize: Int = 0,
-    val targetAutoRead: Boolean = false,
+    val readTargetAfterMessageSendToAgent: Boolean = false,
     val receiveDataAverageBufferMinSize: Int = 0,
     val receiveDataAverageBufferInitialSize: Int = 0,
     val receiveDataAverageBufferMaxSize: Int = 0,

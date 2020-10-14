@@ -20,13 +20,13 @@ internal class ProxyToTargetHandler(
     override fun channelRead0(proxyContext: ChannelHandlerContext, agentMessage: AgentMessage) {
         if (AgentMessageBodyType.CONNECT === agentMessage.body.bodyType) {
             logger.debug("Discard CONNECT message from agent.")
-            if (!proxyConfiguration.targetAutoRead) {
+            if (proxyConfiguration.readTargetAfterMessageSendToAgent) {
                 targetChannel.read()
             }
             return
         }
         targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData)).addListener {
-            if (!proxyConfiguration.targetAutoRead) {
+            if (proxyConfiguration.readTargetAfterMessageSendToAgent) {
                 targetChannel.read()
             }
         }
