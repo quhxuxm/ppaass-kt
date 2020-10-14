@@ -8,6 +8,7 @@ import com.ppaass.kt.common.protocol.ProxyMessageBodyType
 import com.ppaass.kt.common.protocol.generateUid
 import com.ppaass.kt.proxy.ProxyConfiguration
 import io.netty.buffer.ByteBuf
+import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
 import mu.KotlinLogging
@@ -36,6 +37,15 @@ internal class TargetToProxyHandler(
         if (!proxyConfiguration.targetAutoRead) {
             targetChannel.read()
         }
+    }
+
+    override fun channelInactive(targetChannelContext: ChannelHandlerContext) {
+        val proxyMessageBody = ProxyMessageBody(ProxyMessageBodyType.TARGET_CHANNEL_CLOSE, generateUid())
+        proxyMessageBody.targetAddress = agentMessage.body.targetAddress
+        proxyMessageBody.targetPort = agentMessage.body.targetPort
+        val proxyMessage =
+            ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
+        proxyChannelHandlerContext.channel().writeAndFlush(proxyMessage).addListener(ChannelFutureListener.CLOSE)
     }
 
     override fun channelRead0(targetChannelContext: ChannelHandlerContext, targetMessage: ByteBuf) {

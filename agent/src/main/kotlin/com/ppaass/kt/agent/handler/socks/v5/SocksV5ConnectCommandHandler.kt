@@ -1,7 +1,7 @@
 package com.ppaass.kt.agent.handler.socks.v5
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
-import com.ppaass.kt.agent.handler.discardProxyHeartbeatHandler
+import com.ppaass.kt.agent.handler.PreForwardProxyMessageHandler
 import com.ppaass.kt.agent.handler.lengthFieldPrepender
 import com.ppaass.kt.agent.handler.resourceClearHandler
 import com.ppaass.kt.common.netty.codec.AgentMessageEncoder
@@ -64,7 +64,7 @@ internal class SocksV5ConnectCommandHandler(private val agentConfiguration: Agen
                         4))
                     addLast(ProxyMessageDecoder(
                         agentPrivateKeyString = agentConfiguration.staticAgentConfiguration.agentPrivateKey))
-                    addLast(discardProxyHeartbeatHandler)
+                    addLast(PreForwardProxyMessageHandler(agentChannelContext))
                     addLast(proxyServerBootstrapIoEventLoopGroup,
                         SocksV5ProxyToAgentHandler(
                             agentChannel = agentChannelContext.channel(),
