@@ -67,9 +67,6 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
             option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
                 proxyConfiguration.targetConnectionTimeout)
             option(ChannelOption.SO_KEEPALIVE, proxyConfiguration.targetConnectionKeepAlive)
-            option(ChannelOption.AUTO_CLOSE, true)
-            option(ChannelOption.AUTO_READ, true)
-            option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
             option(ChannelOption.TCP_NODELAY, true)
             option(ChannelOption.SO_REUSEADDR, true)
             option(ChannelOption.SO_RCVBUF, proxyConfiguration.targetSoRcvbuf)

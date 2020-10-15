@@ -22,16 +22,23 @@ internal class ProxyToTargetHandler(
         }
         targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData));
         if (!targetChannel.isWritable) {
+            if (logger.isDebugEnabled) {
+                logger.debug { "Close auto read on proxy channel: ${proxyContext.channel().id().asLongText()}" }
+            }
             proxyContext.channel().config().isAutoRead = false
         }
     }
 
     override fun channelWritabilityChanged(proxyContext: ChannelHandlerContext) {
         if (proxyContext.channel().isWritable) {
-            logger.info { "Recover auto read on target channel: ${targetChannel.id().asLongText()}" }
+            if (logger.isDebugEnabled) {
+                logger.debug { "Recover auto read on target channel: ${targetChannel.id().asLongText()}" }
+            }
             targetChannel.config().isAutoRead = true
         } else {
-            logger.info { "Close auto read on target channel: ${targetChannel.id().asLongText()}" }
+            if (logger.isDebugEnabled) {
+                logger.debug { "Close auto read on target channel: ${targetChannel.id().asLongText()}" }
+            }
             targetChannel.config().isAutoRead = false
         }
     }

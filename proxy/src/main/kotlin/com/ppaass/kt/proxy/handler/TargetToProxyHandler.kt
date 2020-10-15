@@ -54,10 +54,12 @@ internal class TargetToProxyHandler(
         logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
         proxyChannelHandlerContext.channel().writeAndFlush(proxyMessage)
         if (!proxyChannelHandlerContext.channel().isWritable) {
-            logger.info {
-                "Close auto read on target channel before write message to agent: ${
-                    targetChannelContext.channel().id().asLongText()
-                }"
+            if (logger.isDebugEnabled) {
+                logger.debug {
+                    "Close auto read on target channel before write message to agent: ${
+                        targetChannelContext.channel().id().asLongText()
+                    }"
+                }
             }
             targetChannelContext.channel().config().isAutoRead = false
         }
@@ -65,17 +67,21 @@ internal class TargetToProxyHandler(
 
     override fun channelWritabilityChanged(targetChannelContext: ChannelHandlerContext) {
         if (targetChannelContext.channel().isWritable) {
-            logger.info {
-                "Recover auto read on proxy channel: ${
-                    proxyChannelHandlerContext.channel().id().asLongText()
-                }"
+            if (logger.isDebugEnabled) {
+                logger.debug {
+                    "Recover auto read on proxy channel: ${
+                        proxyChannelHandlerContext.channel().id().asLongText()
+                    }"
+                }
             }
             proxyChannelHandlerContext.channel().config().isAutoRead = true
         } else {
-            logger.info {
-                "Close auto read on proxy channel: ${
-                    proxyChannelHandlerContext.channel().id().asLongText()
-                }"
+            if (logger.isDebugEnabled) {
+                logger.debug {
+                    "Close auto read on proxy channel: ${
+                        proxyChannelHandlerContext.channel().id().asLongText()
+                    }"
+                }
             }
             proxyChannelHandlerContext.channel().config().isAutoRead = false
         }
