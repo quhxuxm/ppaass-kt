@@ -32,7 +32,8 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
         proxyConfiguration.targetWriteGlobalLimit,
         proxyConfiguration.targetReadGlobalLimit,
         proxyConfiguration.targetWriteChannelLimit,
-        proxyConfiguration.targetReadChannelLimit
+        proxyConfiguration.targetReadChannelLimit,
+        proxyConfiguration.targetTrafficShapingCheckInterval
     )
 
     private companion object {

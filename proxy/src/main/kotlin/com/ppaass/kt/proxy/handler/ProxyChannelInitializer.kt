@@ -31,7 +31,8 @@ internal class ProxyChannelInitializer(private val proxyConfiguration: ProxyConf
         proxyConfiguration.writeGlobalLimit,
         proxyConfiguration.readGlobalLimit,
         proxyConfiguration.writeChannelLimit,
-        proxyConfiguration.readChannelLimit
+        proxyConfiguration.readChannelLimit,
+        proxyConfiguration.trafficShapingCheckInterval
     )
 
     override fun initChannel(proxyChannel: SocketChannel) {
