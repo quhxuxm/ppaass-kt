@@ -17,19 +17,11 @@ class ProxyConfiguration(
     val targetReceiveDataAverageBufferMinSize: Int = 0,
     val targetReceiveDataAverageBufferInitialSize: Int = 0,
     val targetReceiveDataAverageBufferMaxSize: Int = 0,
-    /**
-     * True: Disable auto read on target channel.
-     * False: Enable auto read on target channel.
-     */
-    val readTargetAfterMessageSendToAgent: Boolean = true,
     val receiveDataAverageBufferMinSize: Int = 0,
     val receiveDataAverageBufferInitialSize: Int = 0,
     val receiveDataAverageBufferMaxSize: Int = 0,
-
     val agentWriteBufferWaterMarkLow: Int = 0,
     val agentWriteBufferWaterMarkHigh: Int = 0,
-
-
     val connectionKeepAlive: Boolean = true,
     val targetSoRcvbuf: Int = 0,
     val targetSoSndbuf: Int = 0,

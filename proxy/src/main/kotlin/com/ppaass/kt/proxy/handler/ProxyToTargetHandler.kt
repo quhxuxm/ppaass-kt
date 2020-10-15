@@ -20,27 +20,18 @@ internal class ProxyToTargetHandler(
     override fun channelRead0(proxyContext: ChannelHandlerContext, agentMessage: AgentMessage) {
         if (AgentMessageBodyType.CONNECT === agentMessage.body.bodyType) {
             logger.debug("Discard CONNECT message from agent.")
-            if (proxyConfiguration.readTargetAfterMessageSendToAgent) {
-                targetChannel.read()
-            }
             return
         }
-        targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData)).addListener {
-            if (proxyConfiguration.readTargetAfterMessageSendToAgent) {
-                targetChannel.read()
-            }
-        }
+        targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData));
     }
 
     override fun channelWritabilityChanged(proxyContext: ChannelHandlerContext) {
-        if (!proxyConfiguration.readTargetAfterMessageSendToAgent) {
-            if (proxyContext.channel().isWritable) {
-                logger.info { "Recover auto read on target channel: ${targetChannel.id().asLongText()}" }
-                targetChannel.config().setAutoRead(true)
-            } else {
-                logger.info { "Close auto read on target channel: ${targetChannel.id().asLongText()}" }
-                targetChannel.config().setAutoRead(false)
-            }
+        if (proxyContext.channel().isWritable) {
+            logger.info { "Recover auto read on target channel: ${targetChannel.id().asLongText()}" }
+            targetChannel.config().setAutoRead(true)
+        } else {
+            logger.info { "Close auto read on target channel: ${targetChannel.id().asLongText()}" }
+            targetChannel.config().setAutoRead(false)
         }
     }
 }
