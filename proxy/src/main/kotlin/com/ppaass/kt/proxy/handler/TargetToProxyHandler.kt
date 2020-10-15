@@ -6,7 +6,6 @@ import com.ppaass.kt.common.protocol.ProxyMessage
 import com.ppaass.kt.common.protocol.ProxyMessageBody
 import com.ppaass.kt.common.protocol.ProxyMessageBodyType
 import com.ppaass.kt.common.protocol.generateUid
-import com.ppaass.kt.proxy.ProxyConfiguration
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandlerContext
@@ -15,7 +14,6 @@ import mu.KotlinLogging
 
 internal class TargetToProxyHandler(
     private val proxyChannelHandlerContext: ChannelHandlerContext,
-    private val proxyConfiguration: ProxyConfiguration,
     private val agentMessage: AgentMessage) :
     SimpleChannelInboundHandler<ByteBuf>() {
     private companion object {
@@ -30,7 +28,6 @@ internal class TargetToProxyHandler(
             }
             addLast(targetChannelContext.executor(),
                 ProxyToTargetHandler(
-                    proxyConfiguration = proxyConfiguration,
                     targetChannel = targetChannel))
         }
         proxyChannelHandlerContext.fireChannelRead(agentMessage)
@@ -62,7 +59,25 @@ internal class TargetToProxyHandler(
                     targetChannelContext.channel().id().asLongText()
                 }"
             }
-            targetChannelContext.channel().config().setAutoRead(false)
+            targetChannelContext.channel().config().isAutoRead = false
+        }
+    }
+
+    override fun channelWritabilityChanged(targetChannelContext: ChannelHandlerContext) {
+        if (targetChannelContext.channel().isWritable) {
+            logger.info {
+                "Recover auto read on proxy channel: ${
+                    proxyChannelHandlerContext.channel().id().asLongText()
+                }"
+            }
+            proxyChannelHandlerContext.channel().config().isAutoRead = true
+        } else {
+            logger.info {
+                "Close auto read on proxy channel: ${
+                    proxyChannelHandlerContext.channel().id().asLongText()
+                }"
+            }
+            proxyChannelHandlerContext.channel().config().isAutoRead = false
         }
     }
 }

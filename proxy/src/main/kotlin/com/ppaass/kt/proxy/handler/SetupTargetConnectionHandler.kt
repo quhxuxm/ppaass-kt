@@ -17,6 +17,7 @@ import io.netty.channel.ChannelInitializer
 import io.netty.channel.ChannelOption
 import io.netty.channel.EventLoopGroup
 import io.netty.channel.SimpleChannelInboundHandler
+import io.netty.channel.WriteBufferWaterMark
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import mu.KotlinLogging
@@ -72,6 +73,9 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
             option(ChannelOption.SO_RCVBUF, proxyConfiguration.targetSoRcvbuf)
             option(ChannelOption.SO_SNDBUF, proxyConfiguration.targetSoSndbuf)
             option(ChannelOption.WRITE_SPIN_COUNT, proxyConfiguration.targetWriteSpinCount)
+            option(ChannelOption.WRITE_BUFFER_WATER_MARK,
+                WriteBufferWaterMark(proxyConfiguration.targetWriteBufferWaterMarkLow,
+                    proxyConfiguration.targetWriteBufferWaterMarkHigh))
             option(ChannelOption.RCVBUF_ALLOCATOR,
                 AdaptiveRecvByteBufAllocator(proxyConfiguration.targetReceiveDataAverageBufferMinSize,
                     proxyConfiguration
@@ -84,7 +88,6 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
                         addLast(
                             TargetToProxyHandler(
                                 proxyChannelHandlerContext = proxyChannelHandlerContext,
-                                proxyConfiguration = proxyConfiguration,
                                 agentMessage = agentMessage
                             ))
                         addLast(resourceClearHandler)

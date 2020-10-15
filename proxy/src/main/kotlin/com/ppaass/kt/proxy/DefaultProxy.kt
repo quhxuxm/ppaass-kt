@@ -47,8 +47,8 @@ internal class DefaultProxy(private val proxyConfiguration: ProxyConfiguration) 
             childOption(ChannelOption.SO_SNDBUF, proxyConfiguration.soSndbuf)
             childOption(ChannelOption.SO_SNDBUF, proxyConfiguration.writeSpinCount)
             childOption(ChannelOption.WRITE_BUFFER_WATER_MARK,
-                WriteBufferWaterMark(proxyConfiguration.agentWriteBufferWaterMarkLow,
-                    proxyConfiguration.agentWriteBufferWaterMarkHigh))
+                WriteBufferWaterMark(proxyConfiguration.writeBufferWaterMarkLow,
+                    proxyConfiguration.writeBufferWaterMarkHigh))
             childOption(ChannelOption.RCVBUF_ALLOCATOR,
                 AdaptiveRecvByteBufAllocator(proxyConfiguration.receiveDataAverageBufferMinSize, proxyConfiguration
                     .receiveDataAverageBufferInitialSize, proxyConfiguration.receiveDataAverageBufferMaxSize))
