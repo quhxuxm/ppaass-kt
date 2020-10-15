@@ -20,11 +20,21 @@ import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.channel.WriteBufferWaterMark
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
+import io.netty.handler.traffic.GlobalChannelTrafficShapingHandler
 import mu.KotlinLogging
+import java.util.concurrent.Executors
 
 internal class SetupTargetConnectionHandler(private val proxyConfiguration: ProxyConfiguration,
                                             private val targetBootstrapIoEventLoopGroup: EventLoopGroup) :
     SimpleChannelInboundHandler<AgentMessage>() {
+    private val globalChannelTrafficShapingHandler = GlobalChannelTrafficShapingHandler(
+        Executors.newSingleThreadScheduledExecutor(),
+        proxyConfiguration.targetWriteGlobalLimit,
+        proxyConfiguration.targetReadGlobalLimit,
+        proxyConfiguration.targetWriteChannelLimit,
+        proxyConfiguration.targetReadChannelLimit
+    )
+
     private companion object {
         private val logger = KotlinLogging.logger {}
     }
@@ -85,6 +95,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
                 override fun initChannel(targetChannel: SocketChannel) {
                     with(targetChannel.pipeline()) {
                         logger.debug { "Initializing channel for $targetAddress:$targetPort" }
+                        addLast(globalChannelTrafficShapingHandler)
                         addLast(
                             TargetToProxyHandler(
                                 proxyChannelHandlerContext = proxyChannelHandlerContext,

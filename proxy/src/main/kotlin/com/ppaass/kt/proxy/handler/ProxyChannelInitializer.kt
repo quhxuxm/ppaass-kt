@@ -11,7 +11,9 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder
 import io.netty.handler.codec.compression.Lz4FrameDecoder
 import io.netty.handler.codec.compression.Lz4FrameEncoder
 import io.netty.handler.timeout.IdleStateHandler
+import io.netty.handler.traffic.GlobalChannelTrafficShapingHandler
 import mu.KotlinLogging
+import java.util.concurrent.Executors
 
 /**
  * The channel initializer for proxy
@@ -24,9 +26,18 @@ internal class ProxyChannelInitializer(private val proxyConfiguration: ProxyConf
         private val logger = KotlinLogging.logger {}
     }
 
+    private val globalChannelTrafficShapingHandler = GlobalChannelTrafficShapingHandler(
+        Executors.newSingleThreadScheduledExecutor(),
+        proxyConfiguration.writeGlobalLimit,
+        proxyConfiguration.readGlobalLimit,
+        proxyConfiguration.writeChannelLimit,
+        proxyConfiguration.readChannelLimit
+    )
+
     override fun initChannel(proxyChannel: SocketChannel) {
         proxyChannel.pipeline().apply {
             logger.debug { "Begin to initialize proxy channel ${proxyChannel.id().asLongText()}" }
+            addLast(globalChannelTrafficShapingHandler)
             addLast(IdleStateHandler(0, 0, proxyConfiguration.agentConnectionIdleSeconds))
             addLast(heartbeatHandler)
             addLast(resourceClearHandler)
