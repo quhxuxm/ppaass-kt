@@ -21,7 +21,6 @@ internal class ProxyChannelInitializer(private val proxyConfiguration: ProxyConf
                                        private val targetBootstrapIoEventLoopGroup: EventLoopGroup) :
     ChannelInitializer<SocketChannel>() {
     private companion object {
-        @JvmStatic
         private val logger = KotlinLogging.logger {}
     }
 

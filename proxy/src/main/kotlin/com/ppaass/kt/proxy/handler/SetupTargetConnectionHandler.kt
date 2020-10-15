@@ -25,7 +25,6 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
                                             private val targetBootstrapIoEventLoopGroup: EventLoopGroup) :
     SimpleChannelInboundHandler<AgentMessage>() {
     private companion object {
-        @JvmStatic
         private val logger = KotlinLogging.logger {}
     }
 
