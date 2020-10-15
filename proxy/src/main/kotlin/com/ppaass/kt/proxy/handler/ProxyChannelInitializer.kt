@@ -53,15 +53,13 @@ internal class ProxyChannelInitializer(private val proxyConfiguration: ProxyConf
             //Inbound
             addLast(Lz4FrameDecoder())
             addLast(LengthFieldBasedFrameDecoder(Int.MAX_VALUE, 0, 4, 0, 4))
-            addLast(AgentMessageDecoder(
-                proxyPrivateKeyString = proxyConfiguration.proxyPrivateKey))
+            addLast(AgentMessageDecoder(proxyConfiguration.proxyPrivateKey))
             addLast(SetupTargetConnectionHandler(proxyConfiguration, targetBootstrapIoEventLoopGroup,
                 targetGlobalChannelTrafficShapingHandler))
             //Outbound
             addLast(Lz4FrameEncoder())
             addLast(lengthFieldPrepender)
-            addLast(ProxyMessageEncoder(
-                agentPublicKeyString = proxyConfiguration.agentPublicKey))
+            addLast(ProxyMessageEncoder(proxyConfiguration.agentPublicKey))
         }
     }
 }
