@@ -22,20 +22,11 @@ import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.handler.traffic.GlobalChannelTrafficShapingHandler
 import mu.KotlinLogging
-import java.util.concurrent.Executors
 
 internal class SetupTargetConnectionHandler(private val proxyConfiguration: ProxyConfiguration,
-                                            private val targetBootstrapIoEventLoopGroup: EventLoopGroup) :
+                                            private val targetBootstrapIoEventLoopGroup: EventLoopGroup,
+                                            private val globalChannelTrafficShapingHandler: GlobalChannelTrafficShapingHandler) :
     SimpleChannelInboundHandler<AgentMessage>() {
-    private val globalChannelTrafficShapingHandler = GlobalChannelTrafficShapingHandler(
-        Executors.newSingleThreadScheduledExecutor(),
-        proxyConfiguration.targetWriteGlobalLimit,
-        proxyConfiguration.targetReadGlobalLimit,
-        proxyConfiguration.targetWriteChannelLimit,
-        proxyConfiguration.targetReadChannelLimit,
-        proxyConfiguration.targetTrafficShapingCheckInterval
-    )
-
     private companion object {
         private val logger = KotlinLogging.logger {}
     }

@@ -34,6 +34,14 @@ internal class ProxyChannelInitializer(private val proxyConfiguration: ProxyConf
         proxyConfiguration.readChannelLimit,
         proxyConfiguration.trafficShapingCheckInterval
     )
+    private val targetGlobalChannelTrafficShapingHandler = GlobalChannelTrafficShapingHandler(
+        Executors.newSingleThreadScheduledExecutor(),
+        proxyConfiguration.targetWriteGlobalLimit,
+        proxyConfiguration.targetReadGlobalLimit,
+        proxyConfiguration.targetWriteChannelLimit,
+        proxyConfiguration.targetReadChannelLimit,
+        proxyConfiguration.targetTrafficShapingCheckInterval
+    )
 
     override fun initChannel(proxyChannel: SocketChannel) {
         proxyChannel.pipeline().apply {
@@ -47,7 +55,8 @@ internal class ProxyChannelInitializer(private val proxyConfiguration: ProxyConf
             addLast(LengthFieldBasedFrameDecoder(Int.MAX_VALUE, 0, 4, 0, 4))
             addLast(AgentMessageDecoder(
                 proxyPrivateKeyString = proxyConfiguration.proxyPrivateKey))
-            addLast(SetupTargetConnectionHandler(proxyConfiguration, targetBootstrapIoEventLoopGroup))
+            addLast(SetupTargetConnectionHandler(proxyConfiguration, targetBootstrapIoEventLoopGroup,
+                targetGlobalChannelTrafficShapingHandler))
             //Outbound
             addLast(Lz4FrameEncoder())
             addLast(lengthFieldPrepender)
