@@ -61,6 +61,7 @@ internal class TargetToProxyHandler(
                 }
             }
             targetChannelContext.channel().config().isAutoRead = false
+            return
         }
         proxyChannelHandlerContext.channel().writeAndFlush(proxyMessage)
     }
