@@ -46,5 +46,6 @@ internal class SocksV5AgentToProxyHandler(private val proxyChannel: Channel,
 
     override fun channelReadComplete(agentChannelContext: ChannelHandlerContext) {
         this.proxyChannel.flush()
+        agentChannelContext.flush()
     }
 }
