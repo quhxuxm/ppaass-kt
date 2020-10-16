@@ -9,7 +9,6 @@ import com.ppaass.kt.common.protocol.ProxyMessageBodyType
 import com.ppaass.kt.common.protocol.generateUid
 import com.ppaass.kt.proxy.ProxyConfiguration
 import io.netty.bootstrap.Bootstrap
-import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.AdaptiveRecvByteBufAllocator
 import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandlerContext
@@ -56,6 +55,10 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
                 throw PpaassException("Fail connect to ${targetAddress}:${targetPort}.", it.cause())
             }
         }
+    }
+
+    override fun channelReadComplete(proxyChannelContext: ChannelHandlerContext) {
+        proxyChannelContext.flush()
     }
 
     private fun createTargetBootstrap(proxyChannelHandlerContext: ChannelHandlerContext, targetAddress: String,
