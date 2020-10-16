@@ -45,6 +45,5 @@ internal class ProxyToTargetHandler(
 
     override fun channelReadComplete(proxyContext: ChannelHandlerContext) {
         proxyContext.flush()
-        targetChannel.flush()
     }
 }
