@@ -42,8 +42,4 @@ internal class ProxyToTargetHandler(
             targetChannel.config().isAutoRead = false
         }
     }
-
-    override fun channelReadComplete(proxyContext: ChannelHandlerContext) {
-        proxyContext.flush()
-    }
 }
