@@ -35,12 +35,12 @@
         </logger>
         <logger name="io.netty"
                 additivity="false"
-                level="info">
+                level="error">
             <appender-ref ref="FILE_APPENDER"/>
         </logger>
         <logger name="com.ppaass.kt"
                 additivity="false"
-                level="info">
+                level="error">
             <appender-ref ref="FILE_APPENDER"/>
         </logger>
         <Root level="error">
