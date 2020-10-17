@@ -4,6 +4,7 @@ import com.ppaass.kt.common.protocol.AgentMessage
 import com.ppaass.kt.common.protocol.AgentMessageBodyType
 import io.netty.buffer.Unpooled
 import io.netty.channel.Channel
+import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
 import mu.KotlinLogging
@@ -20,7 +21,8 @@ internal class ProxyToTargetHandler(
             logger.debug("Discard CONNECT message from agent.")
             return
         }
-        targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData))
+        targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData)).addListener(
+            ChannelFutureListener.CLOSE_ON_FAILURE)
     }
 
     override fun channelWritabilityChanged(proxyContext: ChannelHandlerContext) {

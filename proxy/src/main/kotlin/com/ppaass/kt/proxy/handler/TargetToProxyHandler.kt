@@ -53,6 +53,7 @@ internal class TargetToProxyHandler(
             ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
         logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
         proxyChannelHandlerContext.channel().writeAndFlush(proxyMessage)
+            .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
     }
 
     override fun channelWritabilityChanged(targetChannelContext: ChannelHandlerContext) {
