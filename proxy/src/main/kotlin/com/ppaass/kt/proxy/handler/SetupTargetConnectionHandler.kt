@@ -43,7 +43,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
         }
         val targetBootstrap = createTargetBootstrap(proxyChannelContext, targetAddress, targetPort, agentMessage)
         logger.debug("Begin to connect ${targetAddress}:${targetPort}, message id=${agentMessage.body.id}")
-        targetBootstrap.connect(targetAddress, targetPort).addListener {
+        targetBootstrap.connect(targetAddress, targetPort).addListener((ChannelFutureListener {
             if (!it.isSuccess) {
                 logger.error("Fail connect to ${targetAddress}:${targetPort}.", it.cause())
                 val proxyMessageBody = ProxyMessageBody(ProxyMessageBodyType.CONNECT_FAIL, agentMessage.body.id)
@@ -52,13 +52,10 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
                 val failProxyMessage =
                     ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
                 proxyChannelContext.channel().writeAndFlush(failProxyMessage).addListener(ChannelFutureListener.CLOSE)
+                it.channel().close()
                 throw PpaassException("Fail connect to ${targetAddress}:${targetPort}.", it.cause())
             }
-        }
-    }
-
-    override fun channelReadComplete(proxyChannelContext: ChannelHandlerContext) {
-        proxyChannelContext.flush()
+        }))
     }
 
     private fun createTargetBootstrap(proxyChannelHandlerContext: ChannelHandlerContext, targetAddress: String,
@@ -93,7 +90,6 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
                                 proxyChannelHandlerContext = proxyChannelHandlerContext,
                                 agentMessage = agentMessage
                             ))
-                        addLast(resourceClearHandler)
                     }
                 }
             })

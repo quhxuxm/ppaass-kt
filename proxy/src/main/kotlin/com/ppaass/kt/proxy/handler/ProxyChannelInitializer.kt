@@ -49,7 +49,6 @@ internal class ProxyChannelInitializer(private val proxyConfiguration: ProxyConf
             addLast(globalChannelTrafficShapingHandler)
             addLast(IdleStateHandler(0, 0, proxyConfiguration.agentConnectionIdleSeconds))
             addLast(heartbeatHandler)
-            addLast(resourceClearHandler)
             //Inbound
             addLast(Lz4FrameDecoder())
             addLast(LengthFieldBasedFrameDecoder(Int.MAX_VALUE, 0, 4, 0, 4))
