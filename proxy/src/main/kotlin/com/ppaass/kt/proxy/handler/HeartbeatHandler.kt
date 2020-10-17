@@ -1,5 +1,7 @@
 package com.ppaass.kt.proxy.handler
 
+import io.netty.buffer.Unpooled
+import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
@@ -21,7 +23,6 @@ internal class HeartbeatHandler : ChannelInboundHandlerAdapter() {
         if (IdleState.ALL_IDLE !== evt.state()) {
             return
         }
-        logger.info { "Close channel ${proxyContext.channel().id().asLongText()} because of no I/O event happen." }
-        proxyContext.close()
+        proxyContext.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
     }
 }
