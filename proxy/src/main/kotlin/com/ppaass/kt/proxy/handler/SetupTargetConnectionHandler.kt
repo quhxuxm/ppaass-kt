@@ -53,7 +53,10 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
                     ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
                 proxyChannelContext.channel().writeAndFlush(failProxyMessage).addListener(ChannelFutureListener.CLOSE)
                 it.channel().close()
-                throw PpaassException("Fail connect to ${targetAddress}:${targetPort}.", it.cause())
+                return@ChannelFutureListener
+            }
+            if (proxyChannelContext.channel().isWritable) {
+                it.channel().read()
             }
         }))
     }
