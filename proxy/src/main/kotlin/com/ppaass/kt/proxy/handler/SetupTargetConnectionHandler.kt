@@ -69,6 +69,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
             option(ChannelOption.SO_KEEPALIVE, proxyConfiguration.targetConnectionKeepAlive)
             option(ChannelOption.TCP_NODELAY, true)
             option(ChannelOption.SO_REUSEADDR, true)
+            option(ChannelOption.AUTO_READ, false)
             option(ChannelOption.SO_RCVBUF, proxyConfiguration.targetSoRcvbuf)
             option(ChannelOption.SO_SNDBUF, proxyConfiguration.targetSoSndbuf)
             option(ChannelOption.WRITE_SPIN_COUNT, proxyConfiguration.targetWriteSpinCount)

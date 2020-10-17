@@ -53,7 +53,11 @@ internal class TargetToProxyHandler(
             ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
         logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
         proxyChannelHandlerContext.channel().writeAndFlush(proxyMessage)
-            .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
+            .addListener {
+                if (proxyChannelHandlerContext.channel().isWritable) {
+                    targetChannelContext.channel().read()
+                }
+            }
     }
 
     override fun channelWritabilityChanged(targetChannelContext: ChannelHandlerContext) {
@@ -65,16 +69,7 @@ internal class TargetToProxyHandler(
                     }"
                 }
             }
-            proxyChannelHandlerContext.channel().config().isAutoRead = true
-        } else {
-            if (logger.isDebugEnabled) {
-                logger.debug {
-                    "Close auto read on proxy channel: ${
-                        proxyChannelHandlerContext.channel().id().asLongText()
-                    }"
-                }
-            }
-            proxyChannelHandlerContext.channel().config().isAutoRead = false
+            proxyChannelHandlerContext.channel().read()
         }
     }
 }

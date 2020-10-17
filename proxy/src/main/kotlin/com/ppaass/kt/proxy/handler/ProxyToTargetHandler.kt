@@ -4,7 +4,6 @@ import com.ppaass.kt.common.protocol.AgentMessage
 import com.ppaass.kt.common.protocol.AgentMessageBodyType
 import io.netty.buffer.Unpooled
 import io.netty.channel.Channel
-import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
 import mu.KotlinLogging
@@ -21,8 +20,11 @@ internal class ProxyToTargetHandler(
             logger.debug("Discard CONNECT message from agent.")
             return
         }
-        targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData)).addListener(
-            ChannelFutureListener.CLOSE_ON_FAILURE)
+        targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData)).addListener {
+            if (targetChannel.isWritable) {
+                proxyContext.channel().read()
+            }
+        }
     }
 
     override fun channelWritabilityChanged(proxyContext: ChannelHandlerContext) {
@@ -30,12 +32,7 @@ internal class ProxyToTargetHandler(
             if (logger.isDebugEnabled) {
                 logger.debug { "Recover auto read on target channel: ${targetChannel.id().asLongText()}" }
             }
-            targetChannel.config().isAutoRead = true
-        } else {
-            if (logger.isDebugEnabled) {
-                logger.debug { "Close auto read on target channel: ${targetChannel.id().asLongText()}" }
-            }
-            targetChannel.config().isAutoRead = false
+            targetChannel.read()
         }
     }
 }
