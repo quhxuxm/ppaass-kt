@@ -20,14 +20,7 @@ internal class ProxyToTargetHandler(
             logger.debug("Discard CONNECT message from agent.")
             return
         }
-        targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData)).addListener {
-            if (!targetChannel.isWritable) {
-                if (logger.isDebugEnabled) {
-                    logger.debug { "Close auto read on proxy channel: ${proxyContext.channel().id().asLongText()}" }
-                }
-                proxyContext.channel().config().isAutoRead = false
-            }
-        };
+        targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData))
     }
 
     override fun channelWritabilityChanged(proxyContext: ChannelHandlerContext) {
