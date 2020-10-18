@@ -57,10 +57,10 @@ internal class TargetToProxyHandler(
                 if (proxyChannelHandlerContext.channel().isWritable) {
                     targetChannelContext.channel().read()
                 } else {
-                    proxyChannelHandlerContext.flush()
+                    proxyChannelHandlerContext.channel().flush()
                 }
             }
-        proxyChannelHandlerContext.flush()
+        proxyChannelHandlerContext.channel().flush()
     }
 
     override fun channelWritabilityChanged(targetChannelContext: ChannelHandlerContext) {
@@ -74,7 +74,7 @@ internal class TargetToProxyHandler(
             }
             proxyChannelHandlerContext.channel().read()
         } else {
-            targetChannelContext.flush()
+            targetChannelContext.channel().flush()
         }
     }
 }
