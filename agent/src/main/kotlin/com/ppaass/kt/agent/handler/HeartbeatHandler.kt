@@ -1,11 +1,12 @@
 package com.ppaass.kt.agent.handler
 
+import io.netty.buffer.Unpooled
+import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
 import io.netty.handler.timeout.IdleState
 import io.netty.handler.timeout.IdleStateEvent
-import io.netty.util.ReferenceCountUtil
 import mu.KotlinLogging
 
 @ChannelHandler.Sharable
@@ -22,9 +23,6 @@ internal class HeartbeatHandler : ChannelInboundHandlerAdapter() {
         if (IdleState.ALL_IDLE !== evt.state()) {
             return
         }
-        if (!agentContext.channel().isActive) {
-            agentContext.close()
-        }
-        ReferenceCountUtil.release(evt)
+        agentContext.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
     }
 }
