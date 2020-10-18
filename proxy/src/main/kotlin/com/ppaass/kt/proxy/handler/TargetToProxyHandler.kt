@@ -75,6 +75,7 @@ internal class TargetToProxyHandler(
             proxyChannelHandlerContext.channel().read()
         } else {
             targetChannelContext.channel().flush()
+            proxyChannelHandlerContext.channel().flush()
         }
     }
 }
