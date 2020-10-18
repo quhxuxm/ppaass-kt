@@ -51,7 +51,9 @@ internal class TargetToProxyHandler(
         proxyMessageBody.originalData = originalDataByteArray
         val proxyMessage =
             ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
-        logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
+        if (logger.isDebugEnabled) {
+            logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
+        }
         proxyChannelHandlerContext.channel().write(proxyMessage)
             .addListener {
                 if (proxyChannelHandlerContext.channel().isWritable) {
