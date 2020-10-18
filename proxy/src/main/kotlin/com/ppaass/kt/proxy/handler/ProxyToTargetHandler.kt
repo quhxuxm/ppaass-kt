@@ -36,6 +36,8 @@ internal class ProxyToTargetHandler(
                 logger.debug { "Recover auto read on target channel: ${targetChannel.id().asLongText()}" }
             }
             targetChannel.read()
+        } else {
+            proxyContext.flush()
         }
     }
 }
