@@ -20,11 +20,14 @@ internal class ProxyToTargetHandler(
             logger.debug("Discard CONNECT message from agent.")
             return
         }
-        targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData)).addListener {
+        targetChannel.write(Unpooled.wrappedBuffer(agentMessage.body.originalData)).addListener {
             if (targetChannel.isWritable) {
                 proxyContext.channel().read()
+            } else {
+                targetChannel.flush()
             }
         }
+        targetChannel.flush()
     }
 
     override fun channelWritabilityChanged(proxyContext: ChannelHandlerContext) {
