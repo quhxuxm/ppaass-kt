@@ -174,7 +174,7 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
         proxyBootstrap.handler(object : ChannelInitializer<SocketChannel>() {
             override fun initChannel(httpProxyChannel: SocketChannel) {
                 httpProxyChannel.pipeline().apply {
-                    addLast(Lz4FrameDecoder())
+//                    addLast(Lz4FrameDecoder())
                     addLast(LengthFieldBasedFrameDecoder(Integer.MAX_VALUE,
                         0, 4, 0,
                         4))
@@ -190,7 +190,7 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
                             clientChannelId,
                             agentConfiguration, initOnChannelActivate))
                     addLast(resourceClearHandler)
-                    addLast(Lz4FrameEncoder())
+//                    addLast(Lz4FrameEncoder())
                     addLast(lengthFieldPrepender)
                     addLast(AgentMessageEncoder(
                         proxyPublicKeyString = agentConfiguration.staticAgentConfiguration.proxyPublicKey))
@@ -221,7 +221,7 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
             handler(object : ChannelInitializer<SocketChannel>() {
                 override fun initChannel(httpsProxyChannel: SocketChannel) {
                     with(httpsProxyChannel.pipeline()) {
-                        addLast(Lz4FrameDecoder())
+//                        addLast(Lz4FrameDecoder())
                         addLast(LengthFieldBasedFrameDecoder(Integer.MAX_VALUE,
                             0, 4, 0,
                             4))
@@ -235,7 +235,7 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
                                 clientChannelId,
                                 agentConfiguration, initOnChannelActivate))
                         addLast(resourceClearHandler)
-                        addLast(Lz4FrameEncoder())
+//                        addLast(Lz4FrameEncoder())
                         addLast(lengthFieldPrepender)
                         addLast(AgentMessageEncoder(
                             proxyPublicKeyString = agentConfiguration.staticAgentConfiguration.proxyPublicKey))
