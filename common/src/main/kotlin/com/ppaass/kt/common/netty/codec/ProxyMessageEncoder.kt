@@ -13,7 +13,9 @@ class ProxyMessageEncoder(private val agentPublicKeyString: String) : MessageToB
     }
 
     override fun encode(ctx: ChannelHandlerContext, msg: ProxyMessage, out: ByteBuf) {
-        logger.debug("Begin to encode message:\n{}\n", msg)
+        if (logger.isDebugEnabled) {
+            logger.debug("Begin to encode message:\n{}\n", msg)
+        }
         encodeProxyMessage(message = msg, agentPublicKeyString = agentPublicKeyString, output = out)
     }
 }

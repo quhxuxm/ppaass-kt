@@ -21,7 +21,9 @@ class AgentMessageDecoder(private val proxyPrivateKeyString: String) : ByteToMes
             input = input,
             proxyPrivateKeyString = proxyPrivateKeyString
         )
-        logger.debug("Decode result:\n{}\n", message)
+        if (logger.isDebugEnabled) {
+            logger.debug("Decode result:\n{}\n", message)
+        }
         out.add(message)
     }
 }

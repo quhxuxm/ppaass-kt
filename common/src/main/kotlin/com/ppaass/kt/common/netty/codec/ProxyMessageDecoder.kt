@@ -18,7 +18,9 @@ class ProxyMessageDecoder(private val agentPrivateKeyString: String) : ByteToMes
                 ByteBufUtil.prettyHexDump(input))
         }
         val message = decodeProxyMessage(input = input, agentPrivateKeyString = agentPrivateKeyString)
-        logger.debug("Decode result:\n{}\n", message)
+        if (logger.isDebugEnabled) {
+            logger.debug("Decode result:\n{}\n", message)
+        }
         out.add(message)
     }
 }
