@@ -17,14 +17,17 @@ internal class HeartbeatHandler : ChannelInboundHandlerAdapter() {
         private val logger = KotlinLogging.logger {}
     }
 
-    override fun userEventTriggered(proxyContext: ChannelHandlerContext, evt: Any) {
+    override fun userEventTriggered(proxyChannelContext: ChannelHandlerContext, evt: Any) {
         if (evt !is IdleStateEvent) {
-            super.userEventTriggered(proxyContext, evt)
+            logger.debug { "Ignore the event because it is not a idle event: $evt" }
+            super.userEventTriggered(proxyChannelContext, evt)
             return
         }
         if (IdleState.ALL_IDLE !== evt.state()) {
+            logger.debug { "Ignore the idle event because it is not a valid status: ${evt.state()}" }
             return
         }
-        proxyContext.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
+        logger.debug { "Do heartbeat." }
+        proxyChannelContext.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
     }
 }
