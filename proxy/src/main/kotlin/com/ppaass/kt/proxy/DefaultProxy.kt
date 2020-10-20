@@ -7,7 +7,6 @@ import io.netty.channel.Channel
 import io.netty.channel.ChannelOption
 import io.netty.channel.EventLoopGroup
 import io.netty.channel.WriteBufferWaterMark
-import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
@@ -27,12 +26,10 @@ internal class DefaultProxy(
         private val logger = KotlinLogging.logger {}
     }
 
-    private val targetBootstrapIoEventLoopGroup: NioEventLoopGroup
     private val serverBootstrap: ServerBootstrap
     private var serverChannel: Channel? = null
 
     init {
-        this.targetBootstrapIoEventLoopGroup = NioEventLoopGroup(proxyConfiguration.dataTransferIoEventThreadNumber)
         this.serverBootstrap = ServerBootstrap()
         this.serverBootstrap.apply {
             group(masterIoEventLoopGroup, workerIoEventLoopGroup)
