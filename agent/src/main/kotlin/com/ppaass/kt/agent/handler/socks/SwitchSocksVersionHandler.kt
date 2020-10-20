@@ -1,16 +1,18 @@
 package com.ppaass.kt.agent.handler.socks
 
-import com.ppaass.kt.agent.configuration.AgentConfiguration
 import com.ppaass.kt.agent.handler.socks.v5.SocksV5ProtocolHandler
+import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
-import io.netty.channel.EventLoopGroup
 import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.handler.codec.socksx.SocksMessage
 import io.netty.handler.codec.socksx.SocksVersion
 import mu.KotlinLogging
+import org.springframework.stereotype.Service
 
-internal class SwitchSocksVersionHandler(private val agentConfiguration: AgentConfiguration,
-                                         private val proxyServerBootstrapIoEventLoopGroup: EventLoopGroup) :
+@ChannelHandler.Sharable
+@Service
+internal class SwitchSocksVersionHandler(
+    private val socksV5ProtocolHandler: SocksV5ProtocolHandler) :
     SimpleChannelInboundHandler<SocksMessage>() {
     private companion object {
         private val logger = KotlinLogging.logger {}
@@ -34,7 +36,7 @@ internal class SwitchSocksVersionHandler(private val agentConfiguration: AgentCo
         agentChannelPipeline.apply {
             logger.debug("Incoming request socks5, clientChannelId={}", clientChannelId)
             addLast(SocksV5ProtocolHandler::class.java.name,
-                SocksV5ProtocolHandler(agentConfiguration, proxyServerBootstrapIoEventLoopGroup))
+                socksV5ProtocolHandler)
             remove(this@SwitchSocksVersionHandler)
         }
         agentChannelContext.fireChannelRead(socksRequest)

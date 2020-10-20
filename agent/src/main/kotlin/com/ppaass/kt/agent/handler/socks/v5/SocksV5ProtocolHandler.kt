@@ -1,8 +1,7 @@
 package com.ppaass.kt.agent.handler.socks.v5
 
-import com.ppaass.kt.agent.configuration.AgentConfiguration
+import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
-import io.netty.channel.EventLoopGroup
 import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.handler.codec.socksx.SocksMessage
 import io.netty.handler.codec.socksx.v5.DefaultSocks5InitialResponse
@@ -12,9 +11,13 @@ import io.netty.handler.codec.socksx.v5.Socks5CommandRequestDecoder
 import io.netty.handler.codec.socksx.v5.Socks5CommandType
 import io.netty.handler.codec.socksx.v5.Socks5InitialRequest
 import mu.KotlinLogging
+import org.springframework.stereotype.Service
 
-class SocksV5ProtocolHandler(private val agentConfiguration: AgentConfiguration,
-                             private val proxyServerBootstrapIoEventLoopGroup: EventLoopGroup) :
+@ChannelHandler.Sharable
+@Service
+internal class SocksV5ProtocolHandler(
+    private val socksV5ConnectCommandHandler: SocksV5ConnectCommandHandler
+) :
     SimpleChannelInboundHandler<SocksMessage>() {
     companion object {
         private val logger = KotlinLogging.logger {}
@@ -30,7 +33,7 @@ class SocksV5ProtocolHandler(private val agentConfiguration: AgentConfiguration,
                         "Socks5 initial request coming always NO_AUTH ...")
                     addBefore(SocksV5ProtocolHandler::class.java.name, Socks5CommandRequestDecoder::class.java.name,
                         Socks5CommandRequestDecoder())
-                    agentChannelContext.write(DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH))
+                    agentChannelContext.writeAndFlush(DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH))
                     return@channelRead0
                 }
                 is Socks5CommandRequest -> {
@@ -38,9 +41,7 @@ class SocksV5ProtocolHandler(private val agentConfiguration: AgentConfiguration,
                         "Socks5 command request with {} command coming ...", socksRequest.type())
                     when (socksRequest.type()) {
                         Socks5CommandType.CONNECT -> {
-                            addLast(SocksV5ConnectCommandHandler::class.java.name,
-                                SocksV5ConnectCommandHandler(agentConfiguration,
-                                    proxyServerBootstrapIoEventLoopGroup))
+                            addLast(SocksV5ConnectCommandHandler::class.java.name, socksV5ConnectCommandHandler)
                             agentChannelContext.fireChannelRead(socksRequest)
                             return@channelRead0
                         }

@@ -10,6 +10,7 @@ import java.util.*
 class StaticAgentConfiguration(
     val masterIoEventThreadNumber: Int = 0,
     val workerIoEventThreadNumber: Int = 0,
+    val proxyBootstrapIoEventThreadNumber: Int = 0,
     val dataTransferIoEventThreadNumber: Int = 0,
     val soBacklog: Int = 0,
     val soRcvbuf: Int = 0,
