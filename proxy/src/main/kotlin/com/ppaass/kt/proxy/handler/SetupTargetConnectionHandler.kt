@@ -13,14 +13,11 @@ import io.netty.channel.AdaptiveRecvByteBufAllocator
 import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
-import io.netty.channel.ChannelInitializer
 import io.netty.channel.ChannelOption
 import io.netty.channel.EventLoopGroup
 import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.channel.WriteBufferWaterMark
-import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
-import io.netty.handler.traffic.GlobalChannelTrafficShapingHandler
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 
@@ -29,9 +26,8 @@ import org.springframework.stereotype.Service
 internal class SetupTargetConnectionHandler(
     private val proxyConfiguration: ProxyConfiguration,
     private val targetBootstrapIoEventLoopGroup: EventLoopGroup,
-    private val dataTransferIoEventLoopGroup: EventLoopGroup,
-    private val globalChannelTrafficShapingHandler: GlobalChannelTrafficShapingHandler,
-    private val targetToProxyHandler: TargetToProxyHandler) :
+    private val targetChannelInitializer: TargetChannelInitializer
+) :
     SimpleChannelInboundHandler<AgentMessage>() {
     private companion object {
         private val logger = KotlinLogging.logger {}
@@ -93,15 +89,7 @@ internal class SetupTargetConnectionHandler(
                     proxyConfiguration.targetReceiveDataAverageBufferMaxSize))
             attr(PROXY_CHANNEL_CONTEXT, proxyChannelContext)
             attr(AGENT_CONNECT_MESSAGE, agentMessage)
-            handler(object : ChannelInitializer<SocketChannel>() {
-                override fun initChannel(targetChannel: SocketChannel) {
-                    with(targetChannel.pipeline()) {
-                        logger.debug { "Initializing channel for $targetAddress:$targetPort" }
-                        addLast(globalChannelTrafficShapingHandler)
-                        addLast(dataTransferIoEventLoopGroup, targetToProxyHandler)
-                    }
-                }
-            })
+            handler(targetChannelInitializer)
         }
         return targetBootstrap
     }
