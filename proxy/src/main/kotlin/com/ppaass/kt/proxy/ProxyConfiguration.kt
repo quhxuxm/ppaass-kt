@@ -10,6 +10,7 @@ class ProxyConfiguration(
     val masterIoEventThreadNumber: Int = 0,
     val workerIoEventThreadNumber: Int = 0,
     val dataTransferIoEventThreadNumber: Int = 0,
+    val targetIoEventThreadNumber: Int = 0,
     val soBacklog: Int = 0,
     val port: Int = 0,
     val targetConnectionTimeout: Int = 0,

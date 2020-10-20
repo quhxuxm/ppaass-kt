@@ -5,6 +5,7 @@ import io.netty.bootstrap.ServerBootstrap
 import io.netty.channel.AdaptiveRecvByteBufAllocator
 import io.netty.channel.Channel
 import io.netty.channel.ChannelOption
+import io.netty.channel.EventLoopGroup
 import io.netty.channel.WriteBufferWaterMark
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
@@ -15,28 +16,26 @@ import org.springframework.stereotype.Service
  * The proxy implementation
  */
 @Service
-internal class DefaultProxy(private val proxyConfiguration: ProxyConfiguration) :
+internal class DefaultProxy(
+    private val proxyConfiguration: ProxyConfiguration,
+    private val masterIoEventLoopGroup: EventLoopGroup,
+    private val workerIoEventLoopGroup: EventLoopGroup,
+    private val proxyChannelInitializer: ProxyChannelInitializer) :
     IProxy {
     private companion object {
         @JvmStatic
         private val logger = KotlinLogging.logger {}
     }
 
-    private val masterThreadGroup: NioEventLoopGroup
-    private val workerThreadGroup: NioEventLoopGroup
     private val targetBootstrapIoEventLoopGroup: NioEventLoopGroup
     private val serverBootstrap: ServerBootstrap
     private var serverChannel: Channel? = null
-    private val proxyChannelInitializer: ProxyChannelInitializer
 
     init {
-        this.masterThreadGroup = NioEventLoopGroup(this.proxyConfiguration.masterIoEventThreadNumber)
-        this.workerThreadGroup = NioEventLoopGroup(this.proxyConfiguration.workerIoEventThreadNumber)
         this.targetBootstrapIoEventLoopGroup = NioEventLoopGroup(proxyConfiguration.dataTransferIoEventThreadNumber)
-        this.proxyChannelInitializer = ProxyChannelInitializer(proxyConfiguration, this.targetBootstrapIoEventLoopGroup)
         this.serverBootstrap = ServerBootstrap()
         this.serverBootstrap.apply {
-            group(masterThreadGroup, workerThreadGroup)
+            group(masterIoEventLoopGroup, workerIoEventLoopGroup)
             channel(NioServerSocketChannel::class.java)
             option(ChannelOption.SO_BACKLOG, proxyConfiguration.soBacklog)
             option(ChannelOption.TCP_NODELAY, true)
@@ -64,8 +63,8 @@ internal class DefaultProxy(private val proxyConfiguration: ProxyConfiguration) 
 
     override fun stop() {
         logger.debug("Stop proxy ...")
-        this.masterThreadGroup.shutdownGracefully()
-        this.workerThreadGroup.shutdownGracefully()
+        this.masterIoEventLoopGroup.shutdownGracefully()
+        this.workerIoEventLoopGroup.shutdownGracefully()
         this.serverChannel?.close()
     }
 }

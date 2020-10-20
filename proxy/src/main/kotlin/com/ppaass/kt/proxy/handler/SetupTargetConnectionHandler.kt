@@ -11,6 +11,7 @@ import com.ppaass.kt.proxy.ProxyConfiguration
 import io.netty.bootstrap.Bootstrap
 import io.netty.channel.AdaptiveRecvByteBufAllocator
 import io.netty.channel.ChannelFutureListener
+import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.ChannelOption
@@ -21,10 +22,16 @@ import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.handler.traffic.GlobalChannelTrafficShapingHandler
 import mu.KotlinLogging
+import org.springframework.stereotype.Service
 
-internal class SetupTargetConnectionHandler(private val proxyConfiguration: ProxyConfiguration,
-                                            private val targetBootstrapIoEventLoopGroup: EventLoopGroup,
-                                            private val globalChannelTrafficShapingHandler: GlobalChannelTrafficShapingHandler) :
+@ChannelHandler.Sharable
+@Service
+internal class SetupTargetConnectionHandler(
+    private val proxyConfiguration: ProxyConfiguration,
+    private val targetBootstrapIoEventLoopGroup: EventLoopGroup,
+    private val dataTransferIoEventLoopGroup: EventLoopGroup,
+    private val globalChannelTrafficShapingHandler: GlobalChannelTrafficShapingHandler,
+    private val targetToProxyHandler: TargetToProxyHandler) :
     SimpleChannelInboundHandler<AgentMessage>() {
     private companion object {
         private val logger = KotlinLogging.logger {}
@@ -61,7 +68,7 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
         }))
     }
 
-    private fun createTargetBootstrap(proxyChannelHandlerContext: ChannelHandlerContext, targetAddress: String,
+    private fun createTargetBootstrap(proxyChannelContext: ChannelHandlerContext, targetAddress: String,
                                       targetPort: Int, agentMessage: AgentMessage): Bootstrap {
         val targetBootstrap = Bootstrap()
         targetBootstrap.apply {
@@ -84,16 +91,14 @@ internal class SetupTargetConnectionHandler(private val proxyConfiguration: Prox
                     proxyConfiguration
                         .targetReceiveDataAverageBufferInitialSize,
                     proxyConfiguration.targetReceiveDataAverageBufferMaxSize))
+            attr(PROXY_CHANNEL_CONTEXT, proxyChannelContext)
+            attr(AGENT_CONNECT_MESSAGE, agentMessage)
             handler(object : ChannelInitializer<SocketChannel>() {
                 override fun initChannel(targetChannel: SocketChannel) {
                     with(targetChannel.pipeline()) {
                         logger.debug { "Initializing channel for $targetAddress:$targetPort" }
                         addLast(globalChannelTrafficShapingHandler)
-                        addLast(
-                            TargetToProxyHandler(
-                                proxyChannelHandlerContext = proxyChannelHandlerContext,
-                                agentMessage = agentMessage
-                            ))
+                        addLast(dataTransferIoEventLoopGroup, targetToProxyHandler)
                     }
                 }
             })

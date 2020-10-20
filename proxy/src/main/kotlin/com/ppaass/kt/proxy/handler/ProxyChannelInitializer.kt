@@ -5,43 +5,28 @@ import com.ppaass.kt.common.netty.codec.ProxyMessageEncoder
 import com.ppaass.kt.proxy.ProxyConfiguration
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelInitializer
-import io.netty.channel.EventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder
-import io.netty.handler.codec.compression.Lz4FrameDecoder
-import io.netty.handler.codec.compression.Lz4FrameEncoder
+import io.netty.handler.codec.LengthFieldPrepender
 import io.netty.handler.timeout.IdleStateHandler
 import io.netty.handler.traffic.GlobalChannelTrafficShapingHandler
 import mu.KotlinLogging
-import java.util.concurrent.Executors
+import org.springframework.stereotype.Service
 
 /**
  * The channel initializer for proxy
  */
 @ChannelHandler.Sharable
-internal class ProxyChannelInitializer(private val proxyConfiguration: ProxyConfiguration,
-                                       private val targetBootstrapIoEventLoopGroup: EventLoopGroup) :
+@Service
+internal class ProxyChannelInitializer(
+    private val proxyConfiguration: ProxyConfiguration,
+    private val globalChannelTrafficShapingHandler: GlobalChannelTrafficShapingHandler,
+    private val setupTargetConnectionHandler: SetupTargetConnectionHandler,
+    private val heartbeatHandler: HeartbeatHandler) :
     ChannelInitializer<SocketChannel>() {
     private companion object {
         private val logger = KotlinLogging.logger {}
     }
-
-    private val globalChannelTrafficShapingHandler = GlobalChannelTrafficShapingHandler(
-        Executors.newSingleThreadScheduledExecutor(),
-        proxyConfiguration.writeGlobalLimit,
-        proxyConfiguration.readGlobalLimit,
-        proxyConfiguration.writeChannelLimit,
-        proxyConfiguration.readChannelLimit,
-        proxyConfiguration.trafficShapingCheckInterval
-    )
-    private val targetGlobalChannelTrafficShapingHandler = GlobalChannelTrafficShapingHandler(
-        Executors.newSingleThreadScheduledExecutor(),
-        proxyConfiguration.targetWriteGlobalLimit,
-        proxyConfiguration.targetReadGlobalLimit,
-        proxyConfiguration.targetWriteChannelLimit,
-        proxyConfiguration.targetReadChannelLimit,
-        proxyConfiguration.targetTrafficShapingCheckInterval
-    )
 
     override fun initChannel(proxyChannel: SocketChannel) {
         proxyChannel.pipeline().apply {
@@ -53,11 +38,10 @@ internal class ProxyChannelInitializer(private val proxyConfiguration: ProxyConf
 //            addLast(Lz4FrameDecoder())
             addLast(LengthFieldBasedFrameDecoder(Int.MAX_VALUE, 0, 4, 0, 4))
             addLast(AgentMessageDecoder(proxyConfiguration.proxyPrivateKey))
-            addLast(SetupTargetConnectionHandler(proxyConfiguration, targetBootstrapIoEventLoopGroup,
-                targetGlobalChannelTrafficShapingHandler))
+            addLast(setupTargetConnectionHandler)
             //Outbound
 //            addLast(Lz4FrameEncoder())
-            addLast(lengthFieldPrepender)
+            addLast(LengthFieldPrepender(4))
             addLast(ProxyMessageEncoder(proxyConfiguration.agentPublicKey))
         }
     }
