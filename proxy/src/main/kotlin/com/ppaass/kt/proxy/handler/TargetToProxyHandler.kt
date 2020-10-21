@@ -29,7 +29,7 @@ internal class TargetToProxyHandler(
         val proxyChannelContext = targetChannel.attr(PROXY_CHANNEL_CONTEXT).get()
         val agentConnectMessage = targetChannel.attr(AGENT_CONNECT_MESSAGE).get()
         val proxyChannel = proxyChannelContext.channel()
-        proxyChannel.attr(TARGET_CHANNEL_CONTEXT).set(targetChannelContext)
+        proxyChannel.attr(TARGET_CHANNEL_CONTEXT).setIfAbsent(targetChannelContext)
         proxyChannelContext.pipeline().apply {
             if (this[SetupTargetConnectionHandler::class.java] != null) {
                 remove(SetupTargetConnectionHandler::class.java)

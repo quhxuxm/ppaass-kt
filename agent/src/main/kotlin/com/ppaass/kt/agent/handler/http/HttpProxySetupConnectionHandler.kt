@@ -67,9 +67,9 @@ internal class HttpProxySetupConnectionHandler(
                             it.cause())
                         return@ChannelFutureListener
                     }
-                    it.channel().attr(AGENT_CHANNEL_CONTEXT).set(agentChannelContext)
-                    it.channel().attr(HTTP_CONNECTION_INFO).set(httpConnectionInfo)
-                    it.channel().attr(PROXY_CHANNEL_ACTIVE_CALLBACK).set {
+                    it.channel().attr(AGENT_CHANNEL_CONTEXT).setIfAbsent(agentChannelContext)
+                    it.channel().attr(HTTP_CONNECTION_INFO).setIfAbsent(httpConnectionInfo)
+                    it.channel().attr(PROXY_CHANNEL_ACTIVE_CALLBACK).setIfAbsent {
                         val okResponse = DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
                         agentChannelContext.channel().writeAndFlush(okResponse)
                             .addListener(ChannelFutureListener { okResponseFuture ->
@@ -120,9 +120,9 @@ internal class HttpProxySetupConnectionHandler(
                         it.cause())
                     return@ChannelFutureListener
                 }
-                it.channel().attr(AGENT_CHANNEL_CONTEXT).set(agentChannelContext)
-                it.channel().attr(HTTP_CONNECTION_INFO).set(httpConnectionInfo)
-                it.channel().attr(PROXY_CHANNEL_ACTIVE_CALLBACK).set { proxyChannelContext ->
+                it.channel().attr(AGENT_CHANNEL_CONTEXT).setIfAbsent(agentChannelContext)
+                it.channel().attr(HTTP_CONNECTION_INFO).setIfAbsent(httpConnectionInfo)
+                it.channel().attr(PROXY_CHANNEL_ACTIVE_CALLBACK).setIfAbsent { proxyChannelContext ->
                     writeAgentMessageToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
                         proxyChannelContext.channel(), httpConnectionInfo.host, httpConnectionInfo.port,
                         msg, clientChannelId, MessageBodyEncryptionType.random()) {

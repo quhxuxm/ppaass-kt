@@ -32,8 +32,8 @@ internal class SocksV5ConnectCommandHandler(
                 if (!proxyChannelFuture.isSuccess) {
                     return@ChannelFutureListener
                 }
-                proxyChannel.attr(AGENT_CHANNEL_CONTEXT).set(agentChannelContext)
-                proxyChannel.attr(SOCKS_V5_COMMAND_REQUEST).set(socks5CommandRequest)
+                proxyChannel.attr(AGENT_CHANNEL_CONTEXT).setIfAbsent(agentChannelContext)
+                proxyChannel.attr(SOCKS_V5_COMMAND_REQUEST).setIfAbsent(socks5CommandRequest)
             }))
     }
 }

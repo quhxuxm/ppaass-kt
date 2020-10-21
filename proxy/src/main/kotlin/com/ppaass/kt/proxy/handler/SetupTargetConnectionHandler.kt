@@ -50,8 +50,8 @@ internal class SetupTargetConnectionHandler(private val targetBootstrap: Bootstr
                     targetChannel.close()
                     return@ChannelFutureListener
                 }
-                targetChannel.attr(PROXY_CHANNEL_CONTEXT).set(proxyChannelContext)
-                targetChannel.attr(AGENT_CONNECT_MESSAGE).set(agentMessage)
+                targetChannel.attr(PROXY_CHANNEL_CONTEXT).setIfAbsent(proxyChannelContext)
+                targetChannel.attr(AGENT_CONNECT_MESSAGE).setIfAbsent(agentMessage)
                 if (proxyChannel.isWritable) {
                     targetChannel.read()
                 }

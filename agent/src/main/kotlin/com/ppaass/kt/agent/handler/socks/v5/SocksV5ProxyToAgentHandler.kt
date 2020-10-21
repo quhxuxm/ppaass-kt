@@ -43,8 +43,8 @@ internal class SocksV5ProxyToAgentHandler(
             encryptionToken = generateUid(),
             messageBodyEncryptionType = MessageBodyEncryptionType.random(),
             body = agentMessageBody)
-        agentChannel.attr(PROXY_CHANNEL_CONTEXT).set(proxyChannelContext)
-        agentChannel.attr(SOCKS_V5_COMMAND_REQUEST).set(socks5CommandRequest)
+        agentChannel.attr(PROXY_CHANNEL_CONTEXT).setIfAbsent(proxyChannelContext)
+        agentChannel.attr(SOCKS_V5_COMMAND_REQUEST).setIfAbsent(socks5CommandRequest)
         agentChannel.pipeline().apply {
             if (this[SocksV5ConnectCommandHandler::class.java] != null) {
                 remove(SocksV5ConnectCommandHandler::class.java)
