@@ -76,10 +76,6 @@ internal class TargetToProxyHandler(
             ArrayDeque()
         }
         unWritableDataQueue.addLast(proxyMessage)
-        if (!proxyChannelContext.channel().isWritable) {
-            unWritableDataQueue.addLast(proxyMessage)
-            return;
-        }
         writeQueuedMessageToProxy(proxyChannelContext, targetChannelContext) {
             targetChannelContext.channel().read()
         }
@@ -95,19 +91,20 @@ internal class TargetToProxyHandler(
         if (!proxyChannelContext.channel().isWritable) {
             return
         }
-        var proxyMessageToWrite = unWritableDataQueue.removeFirstOrNull()
-        while (proxyMessageToWrite != null) {
-            proxyChannelContext.channel().writeAndFlush(proxyMessageToWrite).addListener {
-                if (!it.isSuccess) {
-                    return@addListener
-                }
-                afterWriteCallback()
-            }
-            if (!proxyChannelContext.channel().isWritable) {
-                return
-            }
-            proxyMessageToWrite = unWritableDataQueue.removeFirstOrNull()
+        val proxyMessageToWrite = unWritableDataQueue.removeFirstOrNull()
+        if (proxyMessageToWrite == null) {
+            afterWriteCallback()
+            return
         }
+        proxyChannelContext.channel().writeAndFlush(proxyMessageToWrite)
+            .addListener((ChannelFutureListener { channelFuture ->
+                if (!channelFuture.isSuccess) {
+                    proxyChannelContext.close()
+                    targetChannelContext.close()
+                    throw PpaassException("Fail to write message to agent.")
+                }
+                this.writeQueuedMessageToProxy(proxyChannelContext, targetChannelContext, afterWriteCallback)
+            }))
     }
 
     override fun channelWritabilityChanged(targetChannelContext: ChannelHandlerContext) {
