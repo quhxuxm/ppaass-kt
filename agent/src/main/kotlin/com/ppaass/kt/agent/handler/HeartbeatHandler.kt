@@ -8,8 +8,10 @@ import io.netty.channel.ChannelInboundHandlerAdapter
 import io.netty.handler.timeout.IdleState
 import io.netty.handler.timeout.IdleStateEvent
 import mu.KotlinLogging
+import org.springframework.stereotype.Service
 
 @ChannelHandler.Sharable
+@Service
 internal class HeartbeatHandler : ChannelInboundHandlerAdapter() {
     private companion object {
         private val logger = KotlinLogging.logger {}

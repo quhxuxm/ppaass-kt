@@ -4,74 +4,91 @@ import com.ppaass.kt.agent.configuration.AgentConfiguration
 import com.ppaass.kt.agent.handler.http.bo.ChannelInfo
 import com.ppaass.kt.common.protocol.AgentMessageBodyType
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
-import io.netty.channel.Channel
+import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
 import mu.KotlinLogging
+import org.springframework.stereotype.Service
 
-internal class TransferDataFromProxyToAgentHandler(private val agentChannel: Channel, private val targetHost: String,
-                                                   private val targetPort: Int,
-                                                   private val clientChannelId: String,
-                                                   private val agentConfiguration: AgentConfiguration,
-                                                   private val initOnChannelActivate: (proxyChannelContext: ChannelHandlerContext) -> Unit) :
+@ChannelHandler.Sharable
+@Service
+internal class TransferDataFromProxyToAgentHandler(
+    private val agentConfiguration: AgentConfiguration) :
     ChannelInboundHandlerAdapter() {
     private companion object {
         private val logger = KotlinLogging.logger {}
     }
 
     override fun channelActive(proxyChannelContext: ChannelHandlerContext) {
+        val proxyChannel = proxyChannelContext.channel();
+        val agentChannelContext = proxyChannel.attr(AGENT_CHANNEL_CONTEXT).get()
+        val agentChannel = agentChannelContext.channel()
+        val agentChannelId = agentChannel.id().asLongText()
+        val httpConnectionInfo = proxyChannel.attr(HTTP_CONNECTION_INFO).get()
+        val initOnChannelActivateCallback = proxyChannel.attr(PROXY_CHANNEL_ACTIVE_CALLBACK).get()
         writeAgentMessageToProxy(
             bodyType = AgentMessageBodyType.CONNECT,
             secureToken = agentConfiguration.userToken,
             proxyChannel = proxyChannelContext.channel(),
-            host = this.targetHost,
-            port = this.targetPort,
+            host = httpConnectionInfo.host,
+            port = httpConnectionInfo.port,
             input = null,
-            clientChannelId = clientChannelId,
+            clientChannelId = agentChannelId,
             messageBodyEncryptionType = MessageBodyEncryptionType.random()) {
             if (!it.isSuccess) {
-                ChannelInfoCache.removeChannelInfo(clientChannelId)
+                ChannelInfoCache.removeChannelInfo(agentChannelId)
                 proxyChannelContext.close()
                 agentChannel.close()
                 logger.debug(
-                    "Fail to send connect message from agent to proxy, clientChannelId=$clientChannelId, " +
-                        "targetHost=$targetHost, targetPort =$targetPort",
+                    "Fail to send connect message from agent to proxy, clientChannelId=$agentChannelId, " +
+                        "targetHost=${httpConnectionInfo.host}, targetPort =${httpConnectionInfo.port}",
                     it.cause())
                 return@writeAgentMessageToProxy
             }
             val channelCacheInfo =
                 ChannelInfo(
-                    clientChannelId = clientChannelId,
+                    clientChannelId = agentChannelId,
                     agentChannel = agentChannel,
                     proxyChannel = proxyChannelContext.channel(),
-                    targetHost = this.targetHost,
-                    targetPort = this.targetPort)
+                    targetHost = httpConnectionInfo.host,
+                    targetPort = httpConnectionInfo.port)
             channelCacheInfo.proxyConnectionActivated = true
-            ChannelInfoCache.saveChannelInfo(clientChannelId, channelCacheInfo)
-            this.initOnChannelActivate(proxyChannelContext)
+            ChannelInfoCache.saveChannelInfo(agentChannelId, channelCacheInfo)
+            initOnChannelActivateCallback(proxyChannelContext)
         }
     }
 
     override fun channelRead(proxyChannelContext: ChannelHandlerContext, msg: Any) {
-        if (!this.agentChannel.isActive) {
+        val proxyChannel = proxyChannelContext.channel();
+        val agentChannelContext = proxyChannel.attr(AGENT_CHANNEL_CONTEXT).get()
+        val agentChannel = agentChannelContext.channel()
+        val agentChannelId = agentChannel.id().asLongText()
+
+        if (!agentChannel.isActive) {
             proxyChannelContext.close()
-            this.agentChannel.close()
-            ChannelInfoCache.removeChannelInfo(clientChannelId)
+            agentChannel.close()
+            ChannelInfoCache.removeChannelInfo(agentChannelId)
             logger.debug(
                 "Fail to send message from proxy to agent because of agent channel not active.")
             return
         }
-        this.agentChannel.writeAndFlush(msg)
+        agentChannel.writeAndFlush(msg)
     }
 
     override fun channelInactive(proxyChannelContext: ChannelHandlerContext) {
-        this.agentChannel.close()
+        val proxyChannel = proxyChannelContext.channel();
+        val agentChannelContext = proxyChannel.attr(AGENT_CHANNEL_CONTEXT).get()
+        val agentChannel = agentChannelContext.channel()
+        agentChannel.close()
     }
 
-    override fun channelReadComplete(ctx: ChannelHandlerContext) {
+    override fun channelReadComplete(proxyChannelContext: ChannelHandlerContext) {
+        val proxyChannel = proxyChannelContext.channel();
+        val agentChannelContext = proxyChannel.attr(AGENT_CHANNEL_CONTEXT).get()
+        val agentChannel = agentChannelContext.channel()
+        val agentChannelId = agentChannel.id().asLongText()
         logger.debug(
-            "Current client channel to receive the proxy response (read complete), clientChannelId={}",
-            this.clientChannelId)
-        this.agentChannel.flush()
+            "Current client channel to receive the proxy response (read complete), clientChannelId=$agentChannelId")
+        agentChannel.flush()
     }
 }

@@ -2,8 +2,8 @@ package com.ppaass.kt.agent
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
 import com.ppaass.kt.agent.handler.HeartbeatHandler
-import com.ppaass.kt.agent.handler.resourceClearHandler
 import com.ppaass.kt.agent.handler.socks.SwitchSocksVersionHandler
+import com.ppaass.kt.common.netty.handler.ResourceClearHandler
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler
@@ -14,9 +14,10 @@ import org.springframework.stereotype.Service
 @Service
 internal class SocksAgent(
     private val agentConfiguration: AgentConfiguration,
-    private val switchSocksVersionHandler: SwitchSocksVersionHandler) : Agent(agentConfiguration) {
+    private val switchSocksVersionHandler: SwitchSocksVersionHandler,
+    private val heartbeatHandler: HeartbeatHandler,
+    private val resourceClearHandler: ResourceClearHandler) : Agent(agentConfiguration) {
     final override val channelInitializer: ChannelInitializer<SocketChannel>
-    private val heartbeatHandler = HeartbeatHandler()
 
     private companion object {
         private val logger = KotlinLogging.logger {}

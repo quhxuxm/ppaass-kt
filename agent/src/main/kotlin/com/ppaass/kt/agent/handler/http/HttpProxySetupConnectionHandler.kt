@@ -3,10 +3,9 @@ package com.ppaass.kt.agent.handler.http
 import com.ppaass.kt.agent.configuration.AgentConfiguration
 import com.ppaass.kt.agent.handler.PreForwardProxyMessageHandler
 import com.ppaass.kt.agent.handler.http.bo.HttpConnectionInfo
-import com.ppaass.kt.agent.handler.lengthFieldPrepender
-import com.ppaass.kt.agent.handler.resourceClearHandler
 import com.ppaass.kt.common.netty.codec.AgentMessageEncoder
 import com.ppaass.kt.common.netty.codec.ProxyMessageDecoder
+import com.ppaass.kt.common.netty.handler.ResourceClearHandler
 import com.ppaass.kt.common.protocol.AgentMessageBodyType
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import io.netty.bootstrap.Bootstrap
@@ -16,13 +15,12 @@ import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.ChannelOption
+import io.netty.channel.EventLoopGroup
 import io.netty.channel.SimpleChannelInboundHandler
-import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder
-import io.netty.handler.codec.compression.Lz4FrameDecoder
-import io.netty.handler.codec.compression.Lz4FrameEncoder
+import io.netty.handler.codec.LengthFieldPrepender
 import io.netty.handler.codec.http.DefaultFullHttpResponse
 import io.netty.handler.codec.http.FullHttpRequest
 import io.netty.handler.codec.http.HttpMethod
@@ -33,16 +31,21 @@ import io.netty.handler.codec.http.HttpServerCodec
 import io.netty.handler.codec.http.HttpVersion
 import io.netty.util.ReferenceCountUtil
 import mu.KotlinLogging
+import org.springframework.stereotype.Service
 
 @ChannelHandler.Sharable
-internal class SetupProxyConnectionHandler(private val agentConfiguration: AgentConfiguration) :
+@Service
+internal class HttpProxySetupConnectionHandler(
+    private val agentConfiguration: AgentConfiguration,
+    private val preForwardProxyMessageHandler: PreForwardProxyMessageHandler,
+    private val transferDataFromProxyToAgentHandler: TransferDataFromProxyToAgentHandler,
+    private val resourceClearHandler: ResourceClearHandler,
+    private val proxyBootstrapIoEventLoopGroup: EventLoopGroup,
+    private val dataTransferIoEventLoopGroup: EventLoopGroup) :
     SimpleChannelInboundHandler<Any>() {
     private companion object {
         private val logger = KotlinLogging.logger {}
     }
-
-    private val proxyServerBootstrapIoEventLoopGroup =
-        NioEventLoopGroup(agentConfiguration.staticAgentConfiguration.dataTransferIoEventThreadNumber)
 
     override fun channelRead0(agentChannelContext: ChannelHandlerContext, msg: Any) {
         val clientChannelId = agentChannelContext.channel().id().asLongText()
@@ -73,7 +76,7 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
             logger.debug("Incoming request is https protocol to setup connection, clientChannelId={}", clientChannelId)
             val httpConnectionInfo = parseHttpConnectionInfo(msg.uri())
             val proxyBootstrapForHttps =
-                createProxyBootstrapForHttps(agentChannelContext, httpConnectionInfo, clientChannelId) {
+                createProxyBootstrapForHttps(agentChannelContext, httpConnectionInfo) {
                     val okResponse = DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
                     agentChannelContext.channel().writeAndFlush(okResponse)
                         .addListener(ChannelFutureListener { okResponseFuture ->
@@ -122,23 +125,23 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
             }
         }
         val httpConnectionInfo = parseHttpConnectionInfo(msg.uri())
-        val proxyBootstrap = createProxyBootstrapForHttp(agentChannelContext, httpConnectionInfo,
-            clientChannelId) { proxyChannelContext ->
-            writeAgentMessageToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
-                proxyChannelContext.channel(), httpConnectionInfo.host, httpConnectionInfo.port,
-                msg, clientChannelId, MessageBodyEncryptionType.random()) {
-                if (!it.isSuccess) {
-                    ChannelInfoCache.removeChannelInfo(clientChannelId)
-                    agentChannelContext.close()
-                    proxyChannelContext.close()
-                    logger.debug(
-                        "Fail to send connect message from agent to proxy, clientChannelId=$clientChannelId, " +
-                            "targetHost=${httpConnectionInfo.host}, targetPort =${httpConnectionInfo.port}",
-                        it.cause())
-                    return@writeAgentMessageToProxy
+        val proxyBootstrap =
+            createProxyBootstrapForHttp(agentChannelContext, httpConnectionInfo) { proxyChannelContext ->
+                writeAgentMessageToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
+                    proxyChannelContext.channel(), httpConnectionInfo.host, httpConnectionInfo.port,
+                    msg, clientChannelId, MessageBodyEncryptionType.random()) {
+                    if (!it.isSuccess) {
+                        ChannelInfoCache.removeChannelInfo(clientChannelId)
+                        agentChannelContext.close()
+                        proxyChannelContext.close()
+                        logger.debug(
+                            "Fail to send connect message from agent to proxy, clientChannelId=$clientChannelId, " +
+                                "targetHost=${httpConnectionInfo.host}, targetPort =${httpConnectionInfo.port}",
+                            it.cause())
+                        return@writeAgentMessageToProxy
+                    }
                 }
             }
-        }
         proxyBootstrap.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort)
             .addListener(ChannelFutureListener {
                 if (!it.isSuccess) {
@@ -154,11 +157,10 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
 
     private fun createProxyBootstrapForHttp(agentChannelContext: ChannelHandlerContext,
                                             httpConnectionInfo: HttpConnectionInfo,
-                                            clientChannelId: String,
                                             initOnChannelActivate: (proxyChannelContext: ChannelHandlerContext) -> Unit = {}): Bootstrap {
         val proxyBootstrap = Bootstrap()
         proxyBootstrap.apply {
-            group(proxyServerBootstrapIoEventLoopGroup)
+            group(proxyBootstrapIoEventLoopGroup)
             channel(NioSocketChannel::class.java)
             option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
                 agentConfiguration.staticAgentConfiguration.proxyConnectionTimeout)
@@ -170,43 +172,39 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
             option(ChannelOption.TCP_NODELAY, true)
             option(ChannelOption.SO_RCVBUF, agentConfiguration.staticAgentConfiguration.proxyServerSoRcvbuf)
             option(ChannelOption.SO_SNDBUF, agentConfiguration.staticAgentConfiguration.proxyServerSoSndbuf)
-        }
-        proxyBootstrap.handler(object : ChannelInitializer<SocketChannel>() {
-            override fun initChannel(httpProxyChannel: SocketChannel) {
-                httpProxyChannel.pipeline().apply {
+            attr(AGENT_CHANNEL_CONTEXT, agentChannelContext)
+            attr(HTTP_CONNECTION_INFO, httpConnectionInfo)
+            attr(PROXY_CHANNEL_ACTIVE_CALLBACK, initOnChannelActivate)
+            handler(object : ChannelInitializer<SocketChannel>() {
+                override fun initChannel(httpProxyChannel: SocketChannel) {
+                    httpProxyChannel.pipeline().apply {
 //                    addLast(Lz4FrameDecoder())
-                    addLast(LengthFieldBasedFrameDecoder(Integer.MAX_VALUE,
-                        0, 4, 0,
-                        4))
-                    addLast(ProxyMessageDecoder(
-                        agentPrivateKeyString = agentConfiguration.staticAgentConfiguration.agentPrivateKey))
-                    addLast(PreForwardProxyMessageHandler(agentChannelContext))
-                    addLast(ExtractProxyMessageOriginalDataDecoder())
-                    addLast(HttpResponseDecoder())
-                    addLast(HttpObjectAggregator(Int.MAX_VALUE, true))
-                    addLast(proxyServerBootstrapIoEventLoopGroup,
-                        TransferDataFromProxyToAgentHandler(agentChannelContext.channel(),
-                            httpConnectionInfo.host, httpConnectionInfo.port,
-                            clientChannelId,
-                            agentConfiguration, initOnChannelActivate))
-                    addLast(resourceClearHandler)
+                        addLast(LengthFieldBasedFrameDecoder(Integer.MAX_VALUE,
+                            0, 4, 0,
+                            4))
+                        addLast(ProxyMessageDecoder(agentConfiguration.staticAgentConfiguration.agentPrivateKey))
+                        addLast(preForwardProxyMessageHandler)
+                        addLast(ExtractProxyMessageOriginalDataDecoder())
+                        addLast(HttpResponseDecoder())
+                        addLast(HttpObjectAggregator(Int.MAX_VALUE, true))
+                        addLast(dataTransferIoEventLoopGroup, transferDataFromProxyToAgentHandler)
+                        addLast(resourceClearHandler)
 //                    addLast(Lz4FrameEncoder())
-                    addLast(lengthFieldPrepender)
-                    addLast(AgentMessageEncoder(
-                        proxyPublicKeyString = agentConfiguration.staticAgentConfiguration.proxyPublicKey))
+                        addLast(LengthFieldPrepender(4))
+                        addLast(AgentMessageEncoder(agentConfiguration.staticAgentConfiguration.proxyPublicKey))
+                    }
                 }
-            }
-        })
+            })
+        }
         return proxyBootstrap
     }
 
     private fun createProxyBootstrapForHttps(agentChannelContext: ChannelHandlerContext,
                                              httpConnectionInfo: HttpConnectionInfo,
-                                             clientChannelId: String,
                                              initOnChannelActivate: (proxyChannelContext: ChannelHandlerContext) -> Unit = {}): Bootstrap {
         val proxyBootstrap = Bootstrap()
         proxyBootstrap.apply {
-            group(proxyServerBootstrapIoEventLoopGroup)
+            group(proxyBootstrapIoEventLoopGroup)
             channel(NioSocketChannel::class.java)
             option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
                 agentConfiguration.staticAgentConfiguration.proxyConnectionTimeout)
@@ -218,6 +216,9 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
             option(ChannelOption.TCP_NODELAY, true)
             option(ChannelOption.SO_RCVBUF, agentConfiguration.staticAgentConfiguration.proxyServerSoRcvbuf)
             option(ChannelOption.SO_SNDBUF, agentConfiguration.staticAgentConfiguration.proxyServerSoSndbuf)
+            attr(AGENT_CHANNEL_CONTEXT, agentChannelContext)
+            attr(HTTP_CONNECTION_INFO, httpConnectionInfo)
+            attr(PROXY_CHANNEL_ACTIVE_CALLBACK, initOnChannelActivate)
             handler(object : ChannelInitializer<SocketChannel>() {
                 override fun initChannel(httpsProxyChannel: SocketChannel) {
                     with(httpsProxyChannel.pipeline()) {
@@ -225,20 +226,14 @@ internal class SetupProxyConnectionHandler(private val agentConfiguration: Agent
                         addLast(LengthFieldBasedFrameDecoder(Integer.MAX_VALUE,
                             0, 4, 0,
                             4))
-                        addLast(ProxyMessageDecoder(
-                            agentPrivateKeyString = agentConfiguration.staticAgentConfiguration.agentPrivateKey))
-                        addLast(PreForwardProxyMessageHandler(agentChannelContext))
+                        addLast(ProxyMessageDecoder(agentConfiguration.staticAgentConfiguration.agentPrivateKey))
+                        addLast(preForwardProxyMessageHandler)
                         addLast(ExtractProxyMessageOriginalDataDecoder())
-                        addLast(proxyServerBootstrapIoEventLoopGroup,
-                            TransferDataFromProxyToAgentHandler(agentChannelContext.channel(),
-                                httpConnectionInfo.host, httpConnectionInfo.port,
-                                clientChannelId,
-                                agentConfiguration, initOnChannelActivate))
+                        addLast(dataTransferIoEventLoopGroup, transferDataFromProxyToAgentHandler)
                         addLast(resourceClearHandler)
 //                        addLast(Lz4FrameEncoder())
-                        addLast(lengthFieldPrepender)
-                        addLast(AgentMessageEncoder(
-                            proxyPublicKeyString = agentConfiguration.staticAgentConfiguration.proxyPublicKey))
+                        addLast(LengthFieldPrepender(4))
+                        addLast(AgentMessageEncoder(agentConfiguration.staticAgentConfiguration.proxyPublicKey))
                     }
                 }
             })

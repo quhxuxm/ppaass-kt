@@ -1,6 +1,5 @@
 package com.ppaass.kt.proxy
 
-import io.netty.channel.EventLoopGroup
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.handler.traffic.GlobalChannelTrafficShapingHandler
 import org.springframework.context.annotation.Bean
@@ -10,28 +9,24 @@ import java.util.concurrent.Executors
 @Configuration
 internal class ProxyConfigure(private val proxyConfiguration: ProxyConfiguration) {
     @Bean
-    fun targetBootstrapIoEventLoopGroup(): EventLoopGroup {
-        return NioEventLoopGroup(this.proxyConfiguration.targetIoEventThreadNumber)
-    }
+    fun targetBootstrapIoEventLoopGroup() =
+        NioEventLoopGroup(this.proxyConfiguration.targetIoEventThreadNumber)
 
     @Bean
-    fun dataTransferIoEventLoopGroup(): EventLoopGroup {
-        return NioEventLoopGroup(this.proxyConfiguration.dataTransferIoEventThreadNumber)
-    }
+    fun dataTransferIoEventLoopGroup() =
+        NioEventLoopGroup(this.proxyConfiguration.dataTransferIoEventThreadNumber)
 
     @Bean
-    fun masterIoEventLoopGroup(): EventLoopGroup {
-        return NioEventLoopGroup(this.proxyConfiguration.masterIoEventThreadNumber)
-    }
+    fun masterIoEventLoopGroup() =
+        NioEventLoopGroup(this.proxyConfiguration.masterIoEventThreadNumber)
 
     @Bean
-    fun workerIoEventLoopGroup(): EventLoopGroup {
-        return NioEventLoopGroup(this.proxyConfiguration.workerIoEventThreadNumber)
-    }
+    fun workerIoEventLoopGroup() =
+        NioEventLoopGroup(this.proxyConfiguration.workerIoEventThreadNumber)
 
     @Bean
-    fun globalChannelTrafficShapingHandler(): GlobalChannelTrafficShapingHandler {
-        return GlobalChannelTrafficShapingHandler(
+    fun globalChannelTrafficShapingHandler() =
+        GlobalChannelTrafficShapingHandler(
             Executors.newSingleThreadScheduledExecutor(),
             proxyConfiguration.writeGlobalLimit,
             proxyConfiguration.readGlobalLimit,
@@ -39,11 +34,10 @@ internal class ProxyConfigure(private val proxyConfiguration: ProxyConfiguration
             proxyConfiguration.readChannelLimit,
             proxyConfiguration.trafficShapingCheckInterval
         )
-    }
 
     @Bean
-    fun targetGlobalChannelTrafficShapingHandler(): GlobalChannelTrafficShapingHandler {
-        return GlobalChannelTrafficShapingHandler(
+    fun targetGlobalChannelTrafficShapingHandler() =
+        GlobalChannelTrafficShapingHandler(
             Executors.newSingleThreadScheduledExecutor(),
             proxyConfiguration.targetWriteGlobalLimit,
             proxyConfiguration.targetReadGlobalLimit,
@@ -51,5 +45,4 @@ internal class ProxyConfigure(private val proxyConfiguration: ProxyConfiguration
             proxyConfiguration.targetReadChannelLimit,
             proxyConfiguration.targetTrafficShapingCheckInterval
         )
-    }
 }
