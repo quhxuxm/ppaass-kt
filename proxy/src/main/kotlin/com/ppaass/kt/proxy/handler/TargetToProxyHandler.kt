@@ -118,7 +118,9 @@ internal class TargetToProxyHandler(
                     }"
                 }
             }
-            writeQueuedMessageToProxy(proxyChannelContext, targetChannelContext)
+            writeQueuedMessageToProxy(proxyChannelContext, targetChannelContext) {
+                targetChannel.read()
+            }
         } else {
             targetChannelContext.channel().flush()
             proxyChannelContext.channel().flush()
