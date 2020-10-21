@@ -35,12 +35,12 @@ internal class SocksV5ProxyChannelInitializer(
             addLast(ProxyMessageDecoder(agentConfiguration.staticAgentConfiguration.agentPrivateKey))
             addLast(preForwardProxyMessageHandler)
             addLast(dataTransferIoEventLoopGroup, socksV5ProxyToAgentHandler)
-            addLast(resourceClearHandler)
             if (agentConfiguration.staticAgentConfiguration.compressingEnable) {
                 addLast(Lz4FrameEncoder())
             }
             addLast(LengthFieldPrepender(4))
             addLast(AgentMessageEncoder(agentConfiguration.staticAgentConfiguration.proxyPublicKey))
+            addLast(resourceClearHandler)
         }
     }
 }

@@ -2,6 +2,7 @@ package com.ppaass.kt.proxy.handler
 
 import com.ppaass.kt.common.netty.codec.AgentMessageDecoder
 import com.ppaass.kt.common.netty.codec.ProxyMessageEncoder
+import com.ppaass.kt.common.netty.handler.ResourceClearHandler
 import com.ppaass.kt.proxy.ProxyConfiguration
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelInitializer
@@ -24,7 +25,8 @@ internal class ProxyChannelInitializer(
     private val proxyConfiguration: ProxyConfiguration,
     private val globalChannelTrafficShapingHandler: GlobalChannelTrafficShapingHandler,
     private val setupTargetConnectionHandler: SetupTargetConnectionHandler,
-    private val heartbeatHandler: HeartbeatHandler) :
+    private val heartbeatHandler: HeartbeatHandler,
+    private val resourceClearHandler: ResourceClearHandler) :
     ChannelInitializer<SocketChannel>() {
     private companion object {
         private val logger = KotlinLogging.logger {}
@@ -49,6 +51,7 @@ internal class ProxyChannelInitializer(
             }
             addLast(LengthFieldPrepender(4))
             addLast(ProxyMessageEncoder(proxyConfiguration.agentPublicKey))
+            addLast(resourceClearHandler)
         }
     }
 }

@@ -1,7 +1,6 @@
 package com.ppaass.kt.proxy
 
-import com.ppaass.kt.proxy.handler.AGENT_CONNECT_MESSAGE
-import com.ppaass.kt.proxy.handler.PROXY_CHANNEL_CONTEXT
+import com.ppaass.kt.common.netty.handler.ResourceClearHandler
 import com.ppaass.kt.proxy.handler.TargetChannelInitializer
 import io.netty.bootstrap.Bootstrap
 import io.netty.channel.AdaptiveRecvByteBufAllocator
@@ -34,6 +33,9 @@ internal class ProxyConfigure(private val proxyConfiguration: ProxyConfiguration
         NioEventLoopGroup(this.proxyConfiguration.workerIoEventThreadNumber)
 
     @Bean
+    fun resourceClearHandler() = ResourceClearHandler()
+
+    @Bean
     fun globalChannelTrafficShapingHandler() =
         GlobalChannelTrafficShapingHandler(
             Executors.newSingleThreadScheduledExecutor(),
@@ -56,7 +58,8 @@ internal class ProxyConfigure(private val proxyConfiguration: ProxyConfiguration
         )
 
     @Bean
-    fun targetBootstrap(targetBootstrapIoEventLoopGroup: EventLoopGroup, targetChannelInitializer: TargetChannelInitializer) : Bootstrap{
+    fun targetBootstrap(targetBootstrapIoEventLoopGroup: EventLoopGroup,
+                        targetChannelInitializer: TargetChannelInitializer): Bootstrap {
         val targetBootstrap = Bootstrap()
         targetBootstrap.apply {
             group(targetBootstrapIoEventLoopGroup)

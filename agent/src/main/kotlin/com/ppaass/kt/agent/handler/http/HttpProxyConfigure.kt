@@ -59,12 +59,12 @@ internal class HttpProxyConfigure {
                         addLast(HttpResponseDecoder())
                         addLast(HttpObjectAggregator(Int.MAX_VALUE, true))
                         addLast(dataTransferIoEventLoopGroup, transferDataFromProxyToAgentHandler)
-                        addLast(resourceClearHandler)
                         if (agentConfiguration.staticAgentConfiguration.compressingEnable) {
                             addLast(Lz4FrameEncoder())
                         }
                         addLast(LengthFieldPrepender(4))
                         addLast(AgentMessageEncoder(agentConfiguration.staticAgentConfiguration.proxyPublicKey))
+                        addLast(resourceClearHandler)
                     }
                 }
             })
@@ -108,12 +108,12 @@ internal class HttpProxyConfigure {
                         addLast(preForwardProxyMessageHandler)
                         addLast(ExtractProxyMessageOriginalDataDecoder())
                         addLast(dataTransferIoEventLoopGroup, transferDataFromProxyToAgentHandler)
-                        addLast(resourceClearHandler)
                         if (agentConfiguration.staticAgentConfiguration.compressingEnable) {
                             addLast(Lz4FrameEncoder())
                         }
                         addLast(LengthFieldPrepender(4))
                         addLast(AgentMessageEncoder(agentConfiguration.staticAgentConfiguration.proxyPublicKey))
+                        addLast(resourceClearHandler)
                     }
                 }
             })
