@@ -24,6 +24,8 @@ internal class TargetToProxyHandler(
         private val logger = KotlinLogging.logger {}
     }
 
+    private val unWritableDataQueueMap = mapOf<ChannelHandlerContext, ArrayDeque<ProxyMessage>>()
+
     override fun channelActive(targetChannelContext: ChannelHandlerContext) {
         val targetChannel = targetChannelContext.channel()
         val proxyChannelContext = targetChannel.attr(PROXY_CHANNEL_CONTEXT).get()
@@ -68,7 +70,14 @@ internal class TargetToProxyHandler(
         if (logger.isDebugEnabled) {
             logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
         }
-        proxyChannelContext.channel().write(proxyMessage)
+        val unWritableDataQueue = unWritableDataQueueMap.getOrDefault(targetChannelContext, ArrayDeque())
+        unWritableDataQueue.addLast(proxyMessage)
+        if (!proxyChannelContext.channel().isWritable) {
+            unWritableDataQueue.addLast(proxyMessage)
+            return;
+        }
+        val proxyMessageToWrite = unWritableDataQueue.removeFirst()
+        proxyChannelContext.channel().write(proxyMessageToWrite)
             .addListener {
                 if (proxyChannelContext.channel().isWritable) {
                     targetChannelContext.channel().read()
