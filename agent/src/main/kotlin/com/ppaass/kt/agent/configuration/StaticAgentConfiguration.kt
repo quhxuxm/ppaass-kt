@@ -25,7 +25,8 @@ class StaticAgentConfiguration(
     val proxyServerReceiveDataAverageBufferInitialSize: Int = 0,
     val proxyServerReceiveDataAverageBufferMaxSize: Int = 0,
     val proxyServerSoRcvbuf: Int = 0,
-    val proxyServerSoSndbuf: Int = 0
+    val proxyServerSoSndbuf: Int = 0,
+    val compressingEnable: Boolean = true
 ) {
     val proxyPublicKey: String by lazy {
         val lines = IOUtils.readLines(

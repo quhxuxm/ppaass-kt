@@ -43,6 +43,7 @@ class ProxyConfiguration(
     val soRcvbuf: Int = 0,
     val soSndbuf: Int = 0,
     val writeSpinCount: Int = 0,
+    val compressingEnable: Boolean = true
 ) {
     val agentPublicKey: String by lazy {
         val lines = IOUtils.readLines(

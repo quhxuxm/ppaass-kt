@@ -14,6 +14,8 @@ import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder
 import io.netty.handler.codec.LengthFieldPrepender
+import io.netty.handler.codec.compression.Lz4FrameDecoder
+import io.netty.handler.codec.compression.Lz4FrameEncoder
 import io.netty.handler.codec.http.HttpObjectAggregator
 import io.netty.handler.codec.http.HttpResponseDecoder
 import org.springframework.context.annotation.Bean
@@ -45,7 +47,9 @@ internal class HttpProxyConfigure {
             handler(object : ChannelInitializer<SocketChannel>() {
                 override fun initChannel(httpProxyChannel: SocketChannel) {
                     httpProxyChannel.pipeline().apply {
-//                    addLast(Lz4FrameDecoder())
+                        if (agentConfiguration.staticAgentConfiguration.compressingEnable) {
+                            addLast(Lz4FrameDecoder())
+                        }
                         addLast(LengthFieldBasedFrameDecoder(Integer.MAX_VALUE,
                             0, 4, 0,
                             4))
@@ -56,7 +60,9 @@ internal class HttpProxyConfigure {
                         addLast(HttpObjectAggregator(Int.MAX_VALUE, true))
                         addLast(dataTransferIoEventLoopGroup, transferDataFromProxyToAgentHandler)
                         addLast(resourceClearHandler)
-//                    addLast(Lz4FrameEncoder())
+                        if (agentConfiguration.staticAgentConfiguration.compressingEnable) {
+                            addLast(Lz4FrameEncoder())
+                        }
                         addLast(LengthFieldPrepender(4))
                         addLast(AgentMessageEncoder(agentConfiguration.staticAgentConfiguration.proxyPublicKey))
                     }
@@ -91,7 +97,10 @@ internal class HttpProxyConfigure {
             handler(object : ChannelInitializer<SocketChannel>() {
                 override fun initChannel(httpsProxyChannel: SocketChannel) {
                     with(httpsProxyChannel.pipeline()) {
-//                        addLast(Lz4FrameDecoder())
+                        if (agentConfiguration.staticAgentConfiguration.compressingEnable) {
+                            addLast(Lz4FrameDecoder())
+                        }
+
                         addLast(LengthFieldBasedFrameDecoder(Integer.MAX_VALUE,
                             0, 4, 0,
                             4))
@@ -100,7 +109,9 @@ internal class HttpProxyConfigure {
                         addLast(ExtractProxyMessageOriginalDataDecoder())
                         addLast(dataTransferIoEventLoopGroup, transferDataFromProxyToAgentHandler)
                         addLast(resourceClearHandler)
-//                        addLast(Lz4FrameEncoder())
+                        if (agentConfiguration.staticAgentConfiguration.compressingEnable) {
+                            addLast(Lz4FrameEncoder())
+                        }
                         addLast(LengthFieldPrepender(4))
                         addLast(AgentMessageEncoder(agentConfiguration.staticAgentConfiguration.proxyPublicKey))
                     }

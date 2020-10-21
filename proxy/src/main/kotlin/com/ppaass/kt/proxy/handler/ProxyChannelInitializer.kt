@@ -8,6 +8,8 @@ import io.netty.channel.ChannelInitializer
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder
 import io.netty.handler.codec.LengthFieldPrepender
+import io.netty.handler.codec.compression.Lz4FrameDecoder
+import io.netty.handler.codec.compression.Lz4FrameEncoder
 import io.netty.handler.timeout.IdleStateHandler
 import io.netty.handler.traffic.GlobalChannelTrafficShapingHandler
 import mu.KotlinLogging
@@ -35,12 +37,16 @@ internal class ProxyChannelInitializer(
             addLast(IdleStateHandler(0, 0, proxyConfiguration.agentConnectionIdleSeconds))
             addLast(heartbeatHandler)
             //Inbound
-//            addLast(Lz4FrameDecoder())
+            if (proxyConfiguration.compressingEnable) {
+                addLast(Lz4FrameDecoder())
+            }
             addLast(LengthFieldBasedFrameDecoder(Int.MAX_VALUE, 0, 4, 0, 4))
             addLast(AgentMessageDecoder(proxyConfiguration.proxyPrivateKey))
             addLast(setupTargetConnectionHandler)
             //Outbound
-//            addLast(Lz4FrameEncoder())
+            if (proxyConfiguration.compressingEnable) {
+                addLast(Lz4FrameEncoder())
+            }
             addLast(LengthFieldPrepender(4))
             addLast(ProxyMessageEncoder(proxyConfiguration.agentPublicKey))
         }

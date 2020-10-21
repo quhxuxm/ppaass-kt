@@ -11,6 +11,8 @@ import io.netty.channel.EventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder
 import io.netty.handler.codec.LengthFieldPrepender
+import io.netty.handler.codec.compression.Lz4FrameDecoder
+import io.netty.handler.codec.compression.Lz4FrameEncoder
 import org.springframework.stereotype.Service
 
 @ChannelHandler.Sharable
@@ -24,7 +26,9 @@ internal class SocksV5ProxyChannelInitializer(
 ) : ChannelInitializer<SocketChannel>() {
     override fun initChannel(proxyChannel: SocketChannel) {
         with(proxyChannel.pipeline()) {
-//                    addLast(Lz4FrameDecoder())
+            if (agentConfiguration.staticAgentConfiguration.compressingEnable) {
+                addLast(Lz4FrameDecoder())
+            }
             addLast(LengthFieldBasedFrameDecoder(Int.MAX_VALUE,
                 0, 4, 0,
                 4))
@@ -32,7 +36,9 @@ internal class SocksV5ProxyChannelInitializer(
             addLast(preForwardProxyMessageHandler)
             addLast(dataTransferIoEventLoopGroup, socksV5ProxyToAgentHandler)
             addLast(resourceClearHandler)
-//                    addLast(Lz4FrameEncoder())
+            if (agentConfiguration.staticAgentConfiguration.compressingEnable) {
+                addLast(Lz4FrameEncoder())
+            }
             addLast(LengthFieldPrepender(4))
             addLast(AgentMessageEncoder(agentConfiguration.staticAgentConfiguration.proxyPublicKey))
         }
