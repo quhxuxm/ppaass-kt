@@ -72,7 +72,7 @@ internal class SocksV5ProxyToAgentHandler(
                 Socks5CommandStatus.SUCCESS,
                 socks5CommandRequest.dstAddrType(),
                 socks5CommandRequest.dstAddr(),
-                socks5CommandRequest.dstPort()))
+                socks5CommandRequest.dstPort())).addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
         }
     }
 

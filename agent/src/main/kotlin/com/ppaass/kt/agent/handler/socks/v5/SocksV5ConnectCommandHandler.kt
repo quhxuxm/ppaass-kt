@@ -6,9 +6,7 @@ import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
-import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandResponse
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest
-import io.netty.handler.codec.socksx.v5.Socks5CommandStatus
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 
@@ -29,16 +27,13 @@ internal class SocksV5ConnectCommandHandler(
             }"
         }
         this.socksV5ProxyServerBootstrap.connect(agentConfiguration.proxyAddress, agentConfiguration.proxyPort)
-            .addListener((ChannelFutureListener {
-                if (!it.isSuccess) {
-                    agentChannelContext.channel().writeAndFlush(
-                        DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE,
-                            socks5CommandRequest.dstAddrType()))
-                        .addListener(ChannelFutureListener.CLOSE)
+            .addListener((ChannelFutureListener { proxyChannelFuture ->
+                val proxyChannel = proxyChannelFuture.channel()
+                if (!proxyChannelFuture.isSuccess) {
                     return@ChannelFutureListener
                 }
-                it.channel().attr(AGENT_CHANNEL_CONTEXT).set(agentChannelContext)
-                it.channel().attr(SOCKS_V5_COMMAND_REQUEST).set(socks5CommandRequest)
+                proxyChannel.attr(AGENT_CHANNEL_CONTEXT).set(agentChannelContext)
+                proxyChannel.attr(SOCKS_V5_COMMAND_REQUEST).set(socks5CommandRequest)
             }))
     }
 }
