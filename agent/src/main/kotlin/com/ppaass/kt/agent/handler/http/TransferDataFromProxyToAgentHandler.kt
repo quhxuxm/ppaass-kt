@@ -63,7 +63,6 @@ internal class TransferDataFromProxyToAgentHandler(
         val agentChannelContext = proxyChannel.attr(AGENT_CHANNEL_CONTEXT).get()
         val agentChannel = agentChannelContext.channel()
         val agentChannelId = agentChannel.id().asLongText()
-
         if (!agentChannel.isActive) {
             proxyChannelContext.close()
             agentChannel.close()
@@ -80,6 +79,7 @@ internal class TransferDataFromProxyToAgentHandler(
         val agentChannelContext = proxyChannel.attr(AGENT_CHANNEL_CONTEXT).get()
         val agentChannel = agentChannelContext.channel()
         agentChannel.close()
+        proxyChannel.attr(AGENT_CHANNEL_CONTEXT).set(null)
     }
 
     override fun channelReadComplete(proxyChannelContext: ChannelHandlerContext) {

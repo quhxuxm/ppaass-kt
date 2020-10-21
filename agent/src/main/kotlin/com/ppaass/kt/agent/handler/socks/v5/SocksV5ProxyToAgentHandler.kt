@@ -76,6 +76,12 @@ internal class SocksV5ProxyToAgentHandler(
         }
     }
 
+    override fun channelInactive(proxyChannelContext: ChannelHandlerContext) {
+        val proxyChannel = proxyChannelContext.channel();
+        proxyChannel.attr(AGENT_CHANNEL_CONTEXT).set(null)
+        proxyChannel.attr(SOCKS_V5_COMMAND_REQUEST).set(null)
+    }
+
     override fun channelRead0(proxyChannelContext: ChannelHandlerContext, msg: ProxyMessage) {
         val proxyChannel = proxyChannelContext.channel();
         val agentChannelContext = proxyChannel.attr(AGENT_CHANNEL_CONTEXT).get()

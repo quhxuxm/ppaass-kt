@@ -61,15 +61,16 @@ internal class HttpProxySetupConnectionHandler(
             val httpConnectionInfo = parseHttpConnectionInfo(msg.uri())
             this.proxyBootstrapForHttps.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort)
                 .addListener(ChannelFutureListener {
-                    if (!it.isSuccess) {
+                    proxyChannelFuture->
+                    if (!proxyChannelFuture.isSuccess) {
                         agentChannelContext.close()
                         logger.debug("Fail to connect to proxy server because of exception.",
-                            it.cause())
+                            proxyChannelFuture.cause())
                         return@ChannelFutureListener
                     }
-                    it.channel().attr(AGENT_CHANNEL_CONTEXT).setIfAbsent(agentChannelContext)
-                    it.channel().attr(HTTP_CONNECTION_INFO).setIfAbsent(httpConnectionInfo)
-                    it.channel().attr(PROXY_CHANNEL_ACTIVE_CALLBACK).setIfAbsent {
+                    proxyChannelFuture.channel().attr(AGENT_CHANNEL_CONTEXT).setIfAbsent(agentChannelContext)
+                    proxyChannelFuture.channel().attr(HTTP_CONNECTION_INFO).setIfAbsent(httpConnectionInfo)
+                    proxyChannelFuture.channel().attr(PROXY_CHANNEL_ACTIVE_CALLBACK).setIfAbsent {
                         val okResponse = DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
                         agentChannelContext.channel().writeAndFlush(okResponse)
                             .addListener(ChannelFutureListener { okResponseFuture ->
@@ -112,17 +113,18 @@ internal class HttpProxySetupConnectionHandler(
         val httpConnectionInfo = parseHttpConnectionInfo(msg.uri())
         this.proxyBootstrapForHttp.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort)
             .addListener(ChannelFutureListener {
-                if (!it.isSuccess) {
+                proxyChannelFuture->
+                if (!proxyChannelFuture.isSuccess) {
                     ChannelInfoCache.removeChannelInfo(clientChannelId)
                     agentChannelContext.close()
-                    it.channel().close()
+                    proxyChannelFuture.channel().close()
                     logger.error("Fail to connect to proxy server because of exception.",
-                        it.cause())
+                        proxyChannelFuture.cause())
                     return@ChannelFutureListener
                 }
-                it.channel().attr(AGENT_CHANNEL_CONTEXT).setIfAbsent(agentChannelContext)
-                it.channel().attr(HTTP_CONNECTION_INFO).setIfAbsent(httpConnectionInfo)
-                it.channel().attr(PROXY_CHANNEL_ACTIVE_CALLBACK).setIfAbsent { proxyChannelContext ->
+                proxyChannelFuture.channel().attr(AGENT_CHANNEL_CONTEXT).setIfAbsent(agentChannelContext)
+                proxyChannelFuture.channel().attr(HTTP_CONNECTION_INFO).setIfAbsent(httpConnectionInfo)
+                proxyChannelFuture.channel().attr(PROXY_CHANNEL_ACTIVE_CALLBACK).setIfAbsent { proxyChannelContext ->
                     writeAgentMessageToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
                         proxyChannelContext.channel(), httpConnectionInfo.host, httpConnectionInfo.port,
                         msg, clientChannelId, MessageBodyEncryptionType.random()) {
@@ -144,6 +146,7 @@ internal class HttpProxySetupConnectionHandler(
     override fun channelInactive(agentChannelContext: ChannelHandlerContext) {
         ChannelInfoCache.removeChannelInfo(
             agentChannelContext.channel().id().asLongText())
+
     }
 
     override fun channelReadComplete(agentChannelContext: ChannelHandlerContext) {
