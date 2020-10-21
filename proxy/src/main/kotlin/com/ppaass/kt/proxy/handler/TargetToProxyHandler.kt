@@ -24,7 +24,7 @@ internal class TargetToProxyHandler(
         private val logger = KotlinLogging.logger {}
     }
 
-    private val unWritableDataQueueMap = mapOf<ChannelHandlerContext, ArrayDeque<ProxyMessage>>()
+    private val unWritableDataQueueMap = mutableMapOf<ChannelHandlerContext, ArrayDeque<ProxyMessage>>()
 
     override fun channelActive(targetChannelContext: ChannelHandlerContext) {
         val targetChannel = targetChannelContext.channel()
@@ -53,6 +53,7 @@ internal class TargetToProxyHandler(
         val proxyMessage =
             ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
         proxyChannelContext.channel().writeAndFlush(proxyMessage).addListener(ChannelFutureListener.CLOSE)
+        unWritableDataQueueMap.remove(targetChannelContext)
     }
 
     override fun channelRead0(targetChannelContext: ChannelHandlerContext, targetMessage: ByteBuf) {
@@ -70,39 +71,20 @@ internal class TargetToProxyHandler(
         if (logger.isDebugEnabled) {
             logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
         }
-        val unWritableDataQueue = unWritableDataQueueMap.getOrDefault(targetChannelContext, ArrayDeque())
+        val unWritableDataQueue = unWritableDataQueueMap.computeIfAbsent(targetChannelContext) {
+            ArrayDeque()
+        }
         unWritableDataQueue.addLast(proxyMessage)
         if (!proxyChannelContext.channel().isWritable) {
             unWritableDataQueue.addLast(proxyMessage)
             return;
         }
         val proxyMessageToWrite = unWritableDataQueue.removeFirst()
-        proxyChannelContext.channel().write(proxyMessageToWrite)
-            .addListener {
-                if (proxyChannelContext.channel().isWritable) {
-                    targetChannelContext.channel().read()
-                } else {
-                    proxyChannelContext.channel().flush()
-                }
+        proxyChannelContext.channel().writeAndFlush(proxyMessageToWrite).addListener {
+            if (!it.isSuccess) {
+                return@addListener
             }
-        proxyChannelContext.channel().flush()
-    }
-
-    override fun channelWritabilityChanged(targetChannelContext: ChannelHandlerContext) {
-        val targetChannel = targetChannelContext.channel()
-        val proxyChannelContext = targetChannel.attr(PROXY_CHANNEL_CONTEXT).get()
-        if (targetChannelContext.channel().isWritable) {
-            if (logger.isDebugEnabled) {
-                logger.debug {
-                    "Recover auto read on proxy channel: ${
-                        proxyChannelContext.channel().id().asLongText()
-                    }"
-                }
-            }
-            proxyChannelContext.channel().read()
-        } else {
-            targetChannelContext.channel().flush()
-            proxyChannelContext.channel().flush()
+            targetChannelContext.channel().read()
         }
     }
 }
