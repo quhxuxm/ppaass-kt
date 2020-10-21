@@ -1,5 +1,6 @@
 package com.ppaass.kt.proxy.handler
 
+import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import com.ppaass.kt.common.protocol.ProxyMessage
 import com.ppaass.kt.common.protocol.ProxyMessageBody
@@ -79,12 +80,51 @@ internal class TargetToProxyHandler(
             unWritableDataQueue.addLast(proxyMessage)
             return;
         }
-        val proxyMessageToWrite = unWritableDataQueue.removeFirst()
-        proxyChannelContext.channel().writeAndFlush(proxyMessageToWrite).addListener {
-            if (!it.isSuccess) {
-                return@addListener
-            }
+        writeQueuedMessageToProxy(proxyChannelContext, targetChannelContext) {
             targetChannelContext.channel().read()
+        }
+    }
+
+    private fun writeQueuedMessageToProxy(
+        proxyChannelContext: ChannelHandlerContext,
+        targetChannelContext: ChannelHandlerContext, afterWriteCallback: () -> Unit = {}) {
+        val unWritableDataQueue = this.unWritableDataQueueMap[targetChannelContext]
+        if (unWritableDataQueue == null) {
+            throw PpaassException("Un-writable data queue is missing in channel.")
+        }
+        if (!proxyChannelContext.channel().isWritable) {
+            return
+        }
+        var proxyMessageToWrite = unWritableDataQueue.removeFirstOrNull()
+        while (proxyMessageToWrite != null) {
+            proxyChannelContext.channel().writeAndFlush(proxyMessageToWrite).addListener {
+                if (!it.isSuccess) {
+                    return@addListener
+                }
+                afterWriteCallback()
+            }
+            if (!proxyChannelContext.channel().isWritable) {
+                return
+            }
+            proxyMessageToWrite = unWritableDataQueue.removeFirstOrNull()
+        }
+    }
+
+    override fun channelWritabilityChanged(targetChannelContext: ChannelHandlerContext) {
+        val targetChannel = targetChannelContext.channel()
+        val proxyChannelContext = targetChannel.attr(PROXY_CHANNEL_CONTEXT).get()
+        if (targetChannelContext.channel().isWritable) {
+            if (logger.isDebugEnabled) {
+                logger.debug {
+                    "Recover auto read on proxy channel: ${
+                        proxyChannelContext.channel().id().asLongText()
+                    }"
+                }
+            }
+            writeQueuedMessageToProxy(proxyChannelContext, targetChannelContext)
+        } else {
+            targetChannelContext.channel().flush()
+            proxyChannelContext.channel().flush()
         }
     }
 }
