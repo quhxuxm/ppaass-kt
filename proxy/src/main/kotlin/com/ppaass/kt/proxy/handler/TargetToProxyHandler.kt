@@ -21,7 +21,8 @@ import org.springframework.stereotype.Service
 @Service
 internal class TargetToProxyHandler(
     private val dataTransferIoEventLoopGroup: EventLoopGroup,
-    private val proxyToTargetHandler: ProxyToTargetHandler
+    private val proxyToTargetHandler: ProxyToTargetHandler,
+    private val setupTargetConnectionHandler: SetupTargetConnectionHandler
 ) : SimpleChannelInboundHandler<ByteBuf>() {
     private companion object {
         private val logger = KotlinLogging.logger {}
@@ -56,9 +57,7 @@ internal class TargetToProxyHandler(
 //            }
         }
         proxyChannelContext.pipeline().apply {
-            if (this[SetupTargetConnectionHandler::class.java] != null) {
-                remove(SetupTargetConnectionHandler::class.java)
-            }
+            remove(setupTargetConnectionHandler)
             addLast(dataTransferIoEventLoopGroup, proxyToTargetHandler)
         }
     }
