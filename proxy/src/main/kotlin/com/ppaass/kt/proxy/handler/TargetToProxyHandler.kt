@@ -50,9 +50,6 @@ internal class TargetToProxyHandler(
                     proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
                 }
                 this.setupProxyChannelPipelineForConnectMessage(proxyChannelContext, targetChannel)
-                if (proxyChannel.isWritable) {
-                    targetChannel.read()
-                }
             }
             AgentMessageBodyType.CONNECT_WITH_KEEP_ALIVE -> {
                 if (targetChannel.isOpen) {
@@ -62,15 +59,15 @@ internal class TargetToProxyHandler(
                     proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, true)
                 }
                 this.setupProxyChannelPipelineForConnectMessage(proxyChannelContext, targetChannel)
-                if (proxyChannel.isWritable) {
-                    targetChannel.read()
-                }
             }
             else -> {
                 logger.debug { "Nothing to do , because of incoming agent connect message is not a CONNECT message: $agentConnectMessage" }
             }
         }
         proxyChannelContext.fireChannelRead(agentConnectMessage)
+        if (proxyChannel.isWritable) {
+            targetChannel.read()
+        }
     }
 
     private fun setupProxyChannelPipelineForConnectMessage(proxyChannelContext: ChannelHandlerContext,
