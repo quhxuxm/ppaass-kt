@@ -55,7 +55,7 @@ internal class SocksV5ProxyToAgentHandler(
         agentChannel.attr(SOCKS_V5_COMMAND_REQUEST).setIfAbsent(socks5CommandRequest)
         agentChannel.pipeline().apply {
             val handlersToRemove = agentChannel.attr(HANDLERS_TO_REMOVE_AFTER_PROXY_ACTIVE).get()
-            handlersToRemove.forEach {
+            handlersToRemove?.forEach {
                 try {
                     remove(it)
                 } catch (e: NoSuchElementException) {
