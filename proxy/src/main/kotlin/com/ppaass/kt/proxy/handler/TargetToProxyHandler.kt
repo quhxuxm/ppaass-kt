@@ -1,5 +1,6 @@
 package com.ppaass.kt.proxy.handler
 
+import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.protocol.AgentMessageBodyType
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import com.ppaass.kt.common.protocol.ProxyMessage
@@ -50,6 +51,8 @@ internal class TargetToProxyHandler(
                 }
             }
             else -> {
+                logger.error { "Incoming agent connect message do not have a suitable type: $agentConnectMessage" }
+                throw PpaassException("Incoming agent connect message do not have a suitable type.")
             }
         }
         proxyChannelContext.pipeline().apply {
@@ -58,12 +61,16 @@ internal class TargetToProxyHandler(
             }
             addLast(dataTransferIoEventLoopGroup, proxyToTargetHandler)
         }
+        if (proxyChannel.isWritable) {
+            targetChannel.read()
+        }
         proxyChannelContext.fireChannelRead(agentConnectMessage)
     }
 
     override fun channelInactive(targetChannelContext: ChannelHandlerContext) {
         val targetChannel = targetChannelContext.channel()
         val proxyChannelContext = targetChannel.attr(PROXY_CHANNEL_CONTEXT).get()
+        val proxyChannel = proxyChannelContext.channel()
         targetChannel.attr(PROXY_CHANNEL_CONTEXT).set(null)
         val agentConnectMessage = targetChannel.attr(AGENT_CONNECT_MESSAGE).get()
         targetChannel.attr(AGENT_CONNECT_MESSAGE).set(null)
@@ -73,7 +80,7 @@ internal class TargetToProxyHandler(
             proxyMessageBody.targetPort = agentConnectMessage.body.targetPort
             val proxyMessage =
                 ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
-            proxyChannelContext.channel().writeAndFlush(proxyMessage).addListener(ChannelFutureListener.CLOSE)
+            proxyChannel.writeAndFlush(proxyMessage).addListener(ChannelFutureListener.CLOSE)
         } else {
             if (proxyChannelContext != null) {
                 proxyChannelContext.close()
@@ -84,6 +91,7 @@ internal class TargetToProxyHandler(
     override fun channelRead0(targetChannelContext: ChannelHandlerContext, targetMessage: ByteBuf) {
         val targetChannel = targetChannelContext.channel()
         val proxyChannelContext = targetChannel.attr(PROXY_CHANNEL_CONTEXT).get()
+        val proxyChannel = proxyChannelContext.channel()
         val agentConnectMessage = targetChannel.attr(AGENT_CONNECT_MESSAGE).get()
         val originalDataByteArray = ByteArray(targetMessage.readableBytes())
         targetMessage.readBytes(originalDataByteArray)
@@ -96,21 +104,21 @@ internal class TargetToProxyHandler(
         if (logger.isDebugEnabled) {
             logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
         }
-        proxyChannelContext.channel().write(proxyMessage)
-            .addListener {
-                if (proxyChannelContext.channel().isWritable) {
-                    targetChannelContext.channel().read()
-                } else {
-                    proxyChannelContext.channel().flush()
-                }
+        proxyChannel.write(proxyMessage).addListener {
+            if (proxyChannel.isWritable) {
+                targetChannel.read()
+            } else {
+                proxyChannel.flush()
             }
-        proxyChannelContext.channel().flush()
+        }
+        proxyChannel.flush()
     }
 
     override fun channelWritabilityChanged(targetChannelContext: ChannelHandlerContext) {
         val targetChannel = targetChannelContext.channel()
         val proxyChannelContext = targetChannel.attr(PROXY_CHANNEL_CONTEXT).get()
-        if (targetChannelContext.channel().isWritable) {
+        val proxyChannel = proxyChannelContext.channel()
+        if (targetChannel.isWritable) {
             if (logger.isDebugEnabled) {
                 logger.debug {
                     "Recover auto read on proxy channel: ${
@@ -118,10 +126,10 @@ internal class TargetToProxyHandler(
                     }"
                 }
             }
-            proxyChannelContext.channel().read()
+            proxyChannel.read()
         } else {
-            targetChannelContext.channel().flush()
-            proxyChannelContext.channel().flush()
+            targetChannel.flush()
+            proxyChannel.flush()
         }
     }
 }

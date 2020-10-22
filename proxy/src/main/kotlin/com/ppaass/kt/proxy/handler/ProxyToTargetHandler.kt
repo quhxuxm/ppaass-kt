@@ -30,7 +30,7 @@ internal class ProxyToTargetHandler : SimpleChannelInboundHandler<AgentMessage>(
         }
         targetChannel.write(Unpooled.wrappedBuffer(agentMessage.body.originalData)).addListener {
             if (targetChannel.isWritable) {
-                proxyChannelContext.channel().read()
+                proxyChannel.read()
             } else {
                 targetChannel.flush()
             }
@@ -47,13 +47,13 @@ internal class ProxyToTargetHandler : SimpleChannelInboundHandler<AgentMessage>(
         val proxyChannel = proxyChannelContext.channel();
         val targetChannelContext = proxyChannel.attr(TARGET_CHANNEL_CONTEXT).get()
         val targetChannel = targetChannelContext.channel()
-        if (proxyChannelContext.channel().isWritable) {
+        if (proxyChannel.isWritable) {
             if (logger.isDebugEnabled) {
                 logger.debug { "Recover auto read on target channel: ${targetChannel.id().asLongText()}" }
             }
             targetChannel.read()
         } else {
-            proxyChannelContext.channel().flush()
+            proxyChannel.flush()
             targetChannel.flush()
         }
     }
