@@ -45,12 +45,16 @@ internal class TargetToProxyHandler(
         targetChannel.attr(PROXY_CHANNEL_CONTEXT).set(null)
         val agentConnectMessage = targetChannel.attr(AGENT_CONNECT_MESSAGE).get()
         targetChannel.attr(AGENT_CONNECT_MESSAGE).set(null)
-        val proxyMessageBody = ProxyMessageBody(ProxyMessageBodyType.TARGET_CHANNEL_CLOSE, generateUid())
-        proxyMessageBody.targetAddress = agentConnectMessage.body.targetAddress
-        proxyMessageBody.targetPort = agentConnectMessage.body.targetPort
-        val proxyMessage =
-            ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
-        proxyChannelContext.channel().writeAndFlush(proxyMessage).addListener(ChannelFutureListener.CLOSE)
+        if (agentConnectMessage != null) {
+            val proxyMessageBody = ProxyMessageBody(ProxyMessageBodyType.TARGET_CHANNEL_CLOSE, generateUid())
+            proxyMessageBody.targetAddress = agentConnectMessage.body.targetAddress
+            proxyMessageBody.targetPort = agentConnectMessage.body.targetPort
+            val proxyMessage =
+                ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
+            proxyChannelContext.channel().writeAndFlush(proxyMessage).addListener(ChannelFutureListener.CLOSE)
+        } else {
+            proxyChannelContext.close()
+        }
     }
 
     override fun channelRead0(targetChannelContext: ChannelHandlerContext, targetMessage: ByteBuf) {
