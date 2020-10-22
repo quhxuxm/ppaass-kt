@@ -16,7 +16,8 @@ fun main() {
     val threadPool = Executors.newFixedThreadPool(100)
     while (true) {
         threadPool.submit {
-            val connection = urls[(Math.random() * 1000 % 4).toInt()].openConnection(Proxy(Proxy.Type.SOCKS, proxyAddress))
+            val connection =
+                urls[(Math.random() * 1000 % 4).toInt()].openConnection(Proxy(Proxy.Type.SOCKS, proxyAddress))
             val startTime = System.currentTimeMillis()
             println("The ${Thread.currentThread().name} start.")
             val inputStream = connection.getInputStream()

@@ -52,7 +52,7 @@ internal class SetupTargetConnectionHandler(private val targetBootstrap: Bootstr
                 }
                 targetChannel.attr(PROXY_CHANNEL_CONTEXT).setIfAbsent(proxyChannelContext)
                 targetChannel.attr(AGENT_CONNECT_MESSAGE).setIfAbsent(agentMessage)
-                targetChannel.attr(HANDLERS_TO_REMOVE).setIfAbsent(listOf(this))
+                targetChannel.attr(HANDLERS_TO_REMOVE_AFTER_TARGET_ACTIVE).setIfAbsent(listOf(this))
             }))
     }
 }

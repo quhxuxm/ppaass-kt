@@ -34,6 +34,7 @@ internal class SocksV5ConnectCommandHandler(
                 }
                 proxyChannel.attr(AGENT_CHANNEL_CONTEXT).setIfAbsent(agentChannelContext)
                 proxyChannel.attr(SOCKS_V5_COMMAND_REQUEST).setIfAbsent(socks5CommandRequest)
+                proxyChannel.attr(HANDLERS_TO_REMOVE_AFTER_PROXY_ACTIVE).setIfAbsent(listOf(this))
             }))
     }
 }

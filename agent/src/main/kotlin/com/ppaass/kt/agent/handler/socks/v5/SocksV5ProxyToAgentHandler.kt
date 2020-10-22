@@ -54,8 +54,13 @@ internal class SocksV5ProxyToAgentHandler(
         agentChannel.attr(PROXY_CHANNEL_CONTEXT).setIfAbsent(proxyChannelContext)
         agentChannel.attr(SOCKS_V5_COMMAND_REQUEST).setIfAbsent(socks5CommandRequest)
         agentChannel.pipeline().apply {
-            if (this[SocksV5ConnectCommandHandler::class.java] != null) {
-                remove(SocksV5ConnectCommandHandler::class.java)
+            val handlersToRemove = agentChannel.attr(HANDLERS_TO_REMOVE_AFTER_PROXY_ACTIVE).get()
+            handlersToRemove.forEach {
+                try {
+                    remove(it)
+                } catch (e: NoSuchElementException) {
+                    logger.debug { "The handler removed from pipeline already, handler = $it" }
+                }
             }
             if (this[SocksV5AgentToProxyHandler::class.java] == null) {
                 addLast(dataTransferIoEventLoopGroup, socksV5AgentToProxyHandler)

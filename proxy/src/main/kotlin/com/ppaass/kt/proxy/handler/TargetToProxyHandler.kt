@@ -68,7 +68,7 @@ internal class TargetToProxyHandler(
     private fun setupProxyChannelPipelineForConnectMessage(proxyChannelContext: ChannelHandlerContext,
                                                            targetChannel: Channel) {
         proxyChannelContext.pipeline().apply {
-            val handlersToRemove = targetChannel.attr(HANDLERS_TO_REMOVE).get()
+            val handlersToRemove = targetChannel.attr(HANDLERS_TO_REMOVE_AFTER_TARGET_ACTIVE).get()
             handlersToRemove.forEach {
                 try {
                     remove(it)
@@ -87,7 +87,7 @@ internal class TargetToProxyHandler(
         targetChannel.attr(PROXY_CHANNEL_CONTEXT).set(null)
         val agentConnectMessage = targetChannel.attr(AGENT_CONNECT_MESSAGE).get()
         targetChannel.attr(AGENT_CONNECT_MESSAGE).set(null)
-        targetChannel.attr(HANDLERS_TO_REMOVE).set(null)
+        targetChannel.attr(HANDLERS_TO_REMOVE_AFTER_TARGET_ACTIVE).set(null)
         if (agentConnectMessage != null) {
             if (proxyChannelContext != null) {
                 val proxyChannel = proxyChannelContext.channel()

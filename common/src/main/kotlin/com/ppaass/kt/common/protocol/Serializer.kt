@@ -17,7 +17,8 @@ private const val MAGIC_CODE = "__PPAASS__"
  * @param messageBodyEncryptionToken The message body encryption token.
  * @return The encrypt message body byte array
  */
-private fun encryptMessageBody(messageBodyByteArrayBeforeEncrypt: ByteArray, messageBodyBodyEncryptionType: MessageBodyEncryptionType,
+private fun encryptMessageBody(messageBodyByteArrayBeforeEncrypt: ByteArray,
+                               messageBodyBodyEncryptionType: MessageBodyEncryptionType,
                                messageBodyEncryptionToken: String): ByteArray {
     //Read bytes from direct buffer to heap as byte array
     val encryptedByteArray: ByteArray
