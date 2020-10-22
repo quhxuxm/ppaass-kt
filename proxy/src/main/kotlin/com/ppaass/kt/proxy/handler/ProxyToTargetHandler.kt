@@ -22,10 +22,20 @@ internal class ProxyToTargetHandler : SimpleChannelInboundHandler<AgentMessage>(
         val targetChannel = targetChannelContext.channel()
         if (AgentMessageBodyType.CONNECT_WITH_KEEP_ALIVE === agentMessage.body.bodyType) {
             logger.debug("Discard CONNECT_WITH_KEEP_ALIVE message from agent.")
+            if (targetChannel.isWritable) {
+                proxyChannel.read()
+            } else {
+                targetChannel.flush()
+            }
             return
         }
         if (AgentMessageBodyType.CONNECT_WITHOUT_KEEP_ALIVE === agentMessage.body.bodyType) {
             logger.debug("Discard CONNECT_WITHOUT_KEEP_ALIVE message from agent.")
+            if (targetChannel.isWritable) {
+                proxyChannel.read()
+            } else {
+                targetChannel.flush()
+            }
             return
         }
         targetChannel.write(Unpooled.wrappedBuffer(agentMessage.body.originalData)).addListener {
@@ -40,6 +50,10 @@ internal class ProxyToTargetHandler : SimpleChannelInboundHandler<AgentMessage>(
 
     override fun channelInactive(proxyChannelContext: ChannelHandlerContext) {
         val proxyChannel = proxyChannelContext.channel();
+        val targetChannelContext = proxyChannel.attr(TARGET_CHANNEL_CONTEXT).get()
+        if (targetChannelContext != null) {
+            targetChannelContext.close()
+        }
         proxyChannel.attr(TARGET_CHANNEL_CONTEXT).set(null)
     }
 

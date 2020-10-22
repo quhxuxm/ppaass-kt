@@ -88,7 +88,6 @@ internal class TargetToProxyHandler(
     override fun channelInactive(targetChannelContext: ChannelHandlerContext) {
         val targetChannel = targetChannelContext.channel()
         val proxyChannelContext = targetChannel.attr(PROXY_CHANNEL_CONTEXT).get()
-
         targetChannel.attr(PROXY_CHANNEL_CONTEXT).set(null)
         val agentConnectMessage = targetChannel.attr(AGENT_CONNECT_MESSAGE).get()
         targetChannel.attr(AGENT_CONNECT_MESSAGE).set(null)
