@@ -55,7 +55,7 @@ internal class TargetToProxyHandler(
                 throw PpaassException("Incoming agent connect message do not have a suitable type.")
             }
         }
-        proxyChannelContext.pipeline().apply {
+        proxyChannel.pipeline().apply {
             if (this[SetupTargetConnectionHandler::class.java] != null) {
                 remove(SetupTargetConnectionHandler::class.java)
             }
