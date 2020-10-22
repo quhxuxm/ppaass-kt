@@ -56,7 +56,11 @@ internal class TargetToProxyHandler(
         proxyChannelContext.pipeline().apply {
             val handlersToRemove = targetChannel.attr(HANDLERS_TO_REMOVE).get()
             handlersToRemove.forEach {
-                remove(it)
+                try {
+                    remove(it)
+                } catch (e: NoSuchElementException) {
+                    logger.debug { "The handler removed from pipeline already, handler = $it" }
+                }
             }
             addLast(dataTransferIoEventLoopGroup, proxyToTargetHandler)
         }
