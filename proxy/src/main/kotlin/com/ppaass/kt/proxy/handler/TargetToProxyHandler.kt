@@ -1,6 +1,5 @@
 package com.ppaass.kt.proxy.handler
 
-import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.protocol.AgentMessageBodyType
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import com.ppaass.kt.common.protocol.ProxyMessage
@@ -51,8 +50,7 @@ internal class TargetToProxyHandler(
                 }
             }
             else -> {
-                logger.error { "Incoming agent connect message do not have a suitable type: $agentConnectMessage" }
-                throw PpaassException("Incoming agent connect message do not have a suitable type.")
+                logger.debug { "Nothing to do , because of incoming agent connect message is not a CONNECT message: $agentConnectMessage" }
             }
         }
         proxyChannelContext.pipeline().apply {
