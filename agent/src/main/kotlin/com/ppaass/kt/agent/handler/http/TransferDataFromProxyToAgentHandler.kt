@@ -7,6 +7,7 @@ import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
+import io.netty.channel.ChannelOption
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 
@@ -25,9 +26,19 @@ internal class TransferDataFromProxyToAgentHandler(
         val agentChannel = agentChannelContext.channel()
         val agentChannelId = agentChannel.id().asLongText()
         val httpConnectionInfo = proxyChannel.attr(HTTP_CONNECTION_INFO).get()
+        val httpConnectionKeepalive = proxyChannel.attr(HTTP_CONNECTION_KEEP_ALIVE).get()
         val initOnChannelActivateCallback = proxyChannel.attr(PROXY_CHANNEL_ACTIVE_CALLBACK).get()
+        val bodyType = if (httpConnectionKeepalive) {
+            proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, true)
+            agentChannel.config().setOption(ChannelOption.SO_KEEPALIVE, true)
+            AgentMessageBodyType.CONNECT_WITH_KEEP_ALIVE
+        } else {
+            proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
+            agentChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
+            AgentMessageBodyType.CONNECT_WITHOUT_KEEP_ALIVE
+        }
         writeAgentMessageToProxy(
-            bodyType = AgentMessageBodyType.CONNECT,
+            bodyType = bodyType,
             secureToken = agentConfiguration.userToken,
             proxyChannel = proxyChannelContext.channel(),
             host = httpConnectionInfo.host,

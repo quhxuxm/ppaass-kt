@@ -10,6 +10,8 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.handler.codec.http.DefaultFullHttpResponse
 import io.netty.handler.codec.http.FullHttpRequest
+import io.netty.handler.codec.http.HttpHeaderNames
+import io.netty.handler.codec.http.HttpHeaderValues
 import io.netty.handler.codec.http.HttpMethod
 import io.netty.handler.codec.http.HttpObjectAggregator
 import io.netty.handler.codec.http.HttpResponseStatus
@@ -58,10 +60,12 @@ internal class HttpProxySetupConnectionHandler(
         if (HttpMethod.CONNECT === msg.method()) {
             //A https request to setup the connection
             logger.debug("Incoming request is https protocol to setup connection, clientChannelId={}", clientChannelId)
+            val connectionHeader =
+                msg.headers()[HttpHeaderNames.PROXY_CONNECTION] ?: msg.headers()[HttpHeaderNames.CONNECTION]
+            val connectionKeepAlive = connectionHeader?.toLowerCase()?.equals(HttpHeaderValues.KEEP_ALIVE) ?: false
             val httpConnectionInfo = parseHttpConnectionInfo(msg.uri())
             this.proxyBootstrapForHttps.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort)
-                .addListener(ChannelFutureListener {
-                    proxyChannelFuture->
+                .addListener(ChannelFutureListener { proxyChannelFuture ->
                     if (!proxyChannelFuture.isSuccess) {
                         agentChannelContext.close()
                         logger.debug("Fail to connect to proxy server because of exception.",
@@ -70,6 +74,7 @@ internal class HttpProxySetupConnectionHandler(
                     }
                     proxyChannelFuture.channel().attr(AGENT_CHANNEL_CONTEXT).setIfAbsent(agentChannelContext)
                     proxyChannelFuture.channel().attr(HTTP_CONNECTION_INFO).setIfAbsent(httpConnectionInfo)
+                    proxyChannelFuture.channel().attr(HTTP_CONNECTION_KEEP_ALIVE).setIfAbsent(connectionKeepAlive)
                     proxyChannelFuture.channel().attr(PROXY_CHANNEL_ACTIVE_CALLBACK).setIfAbsent {
                         val okResponse = DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
                         agentChannelContext.channel().writeAndFlush(okResponse)
@@ -111,9 +116,11 @@ internal class HttpProxySetupConnectionHandler(
             }
         }
         val httpConnectionInfo = parseHttpConnectionInfo(msg.uri())
+        val connectionHeader =
+            msg.headers()[HttpHeaderNames.PROXY_CONNECTION] ?: msg.headers()[HttpHeaderNames.CONNECTION]
+        val connectionKeepAlive = connectionHeader?.toLowerCase()?.equals(HttpHeaderValues.KEEP_ALIVE) ?: false
         this.proxyBootstrapForHttp.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort)
-            .addListener(ChannelFutureListener {
-                proxyChannelFuture->
+            .addListener(ChannelFutureListener { proxyChannelFuture ->
                 if (!proxyChannelFuture.isSuccess) {
                     ChannelInfoCache.removeChannelInfo(clientChannelId)
                     agentChannelContext.close()
@@ -124,6 +131,7 @@ internal class HttpProxySetupConnectionHandler(
                 }
                 proxyChannelFuture.channel().attr(AGENT_CHANNEL_CONTEXT).setIfAbsent(agentChannelContext)
                 proxyChannelFuture.channel().attr(HTTP_CONNECTION_INFO).setIfAbsent(httpConnectionInfo)
+                proxyChannelFuture.channel().attr(HTTP_CONNECTION_KEEP_ALIVE).setIfAbsent(connectionKeepAlive)
                 proxyChannelFuture.channel().attr(PROXY_CHANNEL_ACTIVE_CALLBACK).setIfAbsent { proxyChannelContext ->
                     writeAgentMessageToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
                         proxyChannelContext.channel(), httpConnectionInfo.host, httpConnectionInfo.port,
@@ -146,7 +154,6 @@ internal class HttpProxySetupConnectionHandler(
     override fun channelInactive(agentChannelContext: ChannelHandlerContext) {
         ChannelInfoCache.removeChannelInfo(
             agentChannelContext.channel().id().asLongText())
-
     }
 
     override fun channelReadComplete(agentChannelContext: ChannelHandlerContext) {

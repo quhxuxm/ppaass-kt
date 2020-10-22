@@ -81,7 +81,8 @@ enum class AgentMessageBodyType {
     /**
      * A connect message
      */
-    CONNECT,
+    CONNECT_WITH_KEEP_ALIVE,
+    CONNECT_WITHOUT_KEEP_ALIVE,
 
     /**
      * A data message
@@ -129,6 +130,7 @@ enum class ProxyMessageBodyType {
      * Connect fail message
      */
     CONNECT_FAIL,
+
     /**
      * Target close the channel
      */

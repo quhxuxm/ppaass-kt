@@ -5,6 +5,7 @@ import com.ppaass.kt.common.protocol.AgentMessageBodyType
 import io.netty.buffer.Unpooled
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
+import io.netty.channel.ChannelOption
 import io.netty.channel.SimpleChannelInboundHandler
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
@@ -20,7 +21,15 @@ internal class ProxyToTargetHandler : SimpleChannelInboundHandler<AgentMessage>(
         val proxyChannel = proxyChannelContext.channel();
         val targetChannelContext = proxyChannel.attr(TARGET_CHANNEL_CONTEXT).get()
         val targetChannel = targetChannelContext.channel()
-        if (AgentMessageBodyType.CONNECT === agentMessage.body.bodyType) {
+        if (AgentMessageBodyType.CONNECT_WITH_KEEP_ALIVE === agentMessage.body.bodyType) {
+            targetChannel.config().setOption(ChannelOption.SO_KEEPALIVE, true)
+            proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, true)
+            logger.debug("Discard CONNECT message from agent.")
+            return
+        }
+        if (AgentMessageBodyType.CONNECT_WITHOUT_KEEP_ALIVE === agentMessage.body.bodyType) {
+            targetChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
+            proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
             logger.debug("Discard CONNECT message from agent.")
             return
         }
