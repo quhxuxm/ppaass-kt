@@ -1,5 +1,6 @@
 package com.ppaass.kt.proxy.handler
 
+import com.ppaass.kt.common.protocol.AgentMessageBodyType
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import com.ppaass.kt.common.protocol.ProxyMessage
 import com.ppaass.kt.common.protocol.ProxyMessageBody
@@ -9,6 +10,7 @@ import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
+import io.netty.channel.ChannelOption
 import io.netty.channel.EventLoopGroup
 import io.netty.channel.SimpleChannelInboundHandler
 import mu.KotlinLogging
@@ -30,6 +32,18 @@ internal class TargetToProxyHandler(
         val agentConnectMessage = targetChannel.attr(AGENT_CONNECT_MESSAGE).get()
         val proxyChannel = proxyChannelContext.channel()
         proxyChannel.attr(TARGET_CHANNEL_CONTEXT).setIfAbsent(targetChannelContext)
+        when (agentConnectMessage.body.bodyType) {
+            AgentMessageBodyType.CONNECT_WITHOUT_KEEP_ALIVE -> {
+                targetChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
+                proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
+            }
+            AgentMessageBodyType.CONNECT_WITH_KEEP_ALIVE -> {
+                targetChannel.config().setOption(ChannelOption.SO_KEEPALIVE, true)
+                proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, true)
+            }
+            else -> {
+            }
+        }
         proxyChannelContext.pipeline().apply {
             if (this[SetupTargetConnectionHandler::class.java] != null) {
                 remove(SetupTargetConnectionHandler::class.java)
