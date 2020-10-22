@@ -34,7 +34,9 @@ internal class TransferDataFromProxyToAgentHandler(
             AgentMessageBodyType.CONNECT_WITH_KEEP_ALIVE
         } else {
             proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
-            agentChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
+            if (agentChannel.isOpen) {
+                agentChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
+            }
             AgentMessageBodyType.CONNECT_WITHOUT_KEEP_ALIVE
         }
         writeAgentMessageToProxy(
