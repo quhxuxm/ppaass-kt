@@ -50,10 +50,10 @@ internal class TargetToProxyHandler(
                     proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, true)
                 }
             }
-            else -> {
-                logger.error { "Incoming agent connect message do not have a suitable type: $agentConnectMessage" }
-                throw PpaassException("Incoming agent connect message do not have a suitable type.")
-            }
+//            else -> {
+//                logger.error { "Incoming agent connect message do not have a suitable type: $agentConnectMessage" }
+//                throw PpaassException("Incoming agent connect message do not have a suitable type.")
+//            }
         }
         proxyChannelContext.pipeline().apply {
             if (this[SetupTargetConnectionHandler::class.java] != null) {
