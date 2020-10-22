@@ -1,6 +1,5 @@
 package com.ppaass.kt.proxy.handler
 
-import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import com.ppaass.kt.common.protocol.ProxyMessage
 import com.ppaass.kt.common.protocol.ProxyMessageBody
@@ -24,8 +23,6 @@ internal class TargetToProxyHandler(
     private companion object {
         private val logger = KotlinLogging.logger {}
     }
-
-    private val unWritableDataQueueMap = mutableMapOf<ChannelHandlerContext, ArrayDeque<ProxyMessage>>()
 
     override fun channelActive(targetChannelContext: ChannelHandlerContext) {
         val targetChannel = targetChannelContext.channel()
@@ -54,7 +51,6 @@ internal class TargetToProxyHandler(
         val proxyMessage =
             ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
         proxyChannelContext.channel().writeAndFlush(proxyMessage).addListener(ChannelFutureListener.CLOSE)
-        unWritableDataQueueMap.remove(targetChannelContext)
     }
 
     override fun channelRead0(targetChannelContext: ChannelHandlerContext, targetMessage: ByteBuf) {
@@ -72,39 +68,15 @@ internal class TargetToProxyHandler(
         if (logger.isDebugEnabled) {
             logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
         }
-        val unWritableDataQueue = unWritableDataQueueMap.computeIfAbsent(targetChannelContext) {
-            ArrayDeque()
-        }
-        unWritableDataQueue.addLast(proxyMessage)
-        writeQueuedMessageToProxy(proxyChannelContext, targetChannelContext) {
-            targetChannelContext.channel().read()
-        }
-    }
-
-    private fun writeQueuedMessageToProxy(
-        proxyChannelContext: ChannelHandlerContext,
-        targetChannelContext: ChannelHandlerContext, afterWriteCallback: () -> Unit = {}) {
-        val unWritableDataQueue = this.unWritableDataQueueMap[targetChannelContext]
-        if (unWritableDataQueue == null) {
-            throw PpaassException("Un-writable data queue is missing in channel.")
-        }
-        if (!proxyChannelContext.channel().isWritable) {
-            return
-        }
-        val proxyMessageToWrite = unWritableDataQueue.removeFirstOrNull()
-        if (proxyMessageToWrite == null) {
-            afterWriteCallback()
-            return
-        }
-        proxyChannelContext.channel().writeAndFlush(proxyMessageToWrite)
-            .addListener((ChannelFutureListener { channelFuture ->
-                if (!channelFuture.isSuccess) {
-                    proxyChannelContext.close()
-                    targetChannelContext.close()
-                    throw PpaassException("Fail to write message to agent.")
+        proxyChannelContext.channel().write(proxyMessage)
+            .addListener {
+                if (proxyChannelContext.channel().isWritable) {
+                    targetChannelContext.channel().read()
+                } else {
+                    proxyChannelContext.channel().flush()
                 }
-                this.writeQueuedMessageToProxy(proxyChannelContext, targetChannelContext, afterWriteCallback)
-            }))
+            }
+        proxyChannelContext.channel().flush()
     }
 
     override fun channelWritabilityChanged(targetChannelContext: ChannelHandlerContext) {
@@ -118,9 +90,7 @@ internal class TargetToProxyHandler(
                     }"
                 }
             }
-            writeQueuedMessageToProxy(proxyChannelContext, targetChannelContext) {
-                targetChannel.read()
-            }
+            proxyChannelContext.channel().read()
         } else {
             targetChannelContext.channel().flush()
             proxyChannelContext.channel().flush()
