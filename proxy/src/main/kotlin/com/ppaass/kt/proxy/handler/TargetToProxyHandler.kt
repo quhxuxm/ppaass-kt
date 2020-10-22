@@ -69,7 +69,7 @@ internal class TargetToProxyHandler(
                                                            targetChannel: Channel) {
         proxyChannelContext.pipeline().apply {
             val handlersToRemove = targetChannel.attr(HANDLERS_TO_REMOVE_AFTER_TARGET_ACTIVE).get()
-            handlersToRemove.forEach {
+            handlersToRemove?.forEach {
                 try {
                     remove(it)
                 } catch (e: NoSuchElementException) {
