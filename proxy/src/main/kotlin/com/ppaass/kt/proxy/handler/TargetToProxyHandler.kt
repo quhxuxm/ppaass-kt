@@ -7,6 +7,7 @@ import com.ppaass.kt.common.protocol.ProxyMessageBody
 import com.ppaass.kt.common.protocol.ProxyMessageBodyType
 import com.ppaass.kt.common.protocol.generateUid
 import io.netty.buffer.ByteBuf
+import io.netty.channel.Channel
 import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
@@ -40,6 +41,10 @@ internal class TargetToProxyHandler(
                 if (proxyChannel.isOpen) {
                     proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
                 }
+                this.setupProxyChannelPipelineForConnectMessage(proxyChannelContext, targetChannel)
+                if (proxyChannel.isWritable) {
+                    targetChannel.read()
+                }
             }
             AgentMessageBodyType.CONNECT_WITH_KEEP_ALIVE -> {
                 if (targetChannel.isOpen) {
@@ -48,11 +53,20 @@ internal class TargetToProxyHandler(
                 if (proxyChannel.isOpen) {
                     proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, true)
                 }
+                this.setupProxyChannelPipelineForConnectMessage(proxyChannelContext, targetChannel)
+                if (proxyChannel.isWritable) {
+                    targetChannel.read()
+                }
             }
             else -> {
                 logger.debug { "Nothing to do , because of incoming agent connect message is not a CONNECT message: $agentConnectMessage" }
             }
         }
+        proxyChannelContext.fireChannelRead(agentConnectMessage)
+    }
+
+    private fun setupProxyChannelPipelineForConnectMessage(proxyChannelContext: ChannelHandlerContext,
+                                                           targetChannel: Channel) {
         proxyChannelContext.pipeline().apply {
             val handlersToRemove = targetChannel.attr(HANDLERS_TO_REMOVE).get()
             handlersToRemove.forEach {
@@ -64,10 +78,6 @@ internal class TargetToProxyHandler(
             }
             addLast(dataTransferIoEventLoopGroup, proxyToTargetHandler)
         }
-        if (proxyChannel.isWritable) {
-            targetChannel.read()
-        }
-        proxyChannelContext.fireChannelRead(agentConnectMessage)
     }
 
     override fun channelInactive(targetChannelContext: ChannelHandlerContext) {
