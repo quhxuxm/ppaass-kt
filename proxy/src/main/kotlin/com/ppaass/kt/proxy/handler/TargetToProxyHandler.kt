@@ -61,9 +61,6 @@ internal class TargetToProxyHandler(
             }
             addLast(dataTransferIoEventLoopGroup, proxyToTargetHandler)
         }
-        if (proxyChannel.isWritable) {
-            targetChannel.read()
-        }
         proxyChannelContext.fireChannelRead(agentConnectMessage)
     }
 
