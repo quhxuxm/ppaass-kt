@@ -75,7 +75,9 @@ internal class TargetToProxyHandler(
                 ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
             proxyChannelContext.channel().writeAndFlush(proxyMessage).addListener(ChannelFutureListener.CLOSE)
         } else {
-            proxyChannelContext.close()
+            if (proxyChannelContext != null) {
+                proxyChannelContext.close()
+            }
         }
     }
 
