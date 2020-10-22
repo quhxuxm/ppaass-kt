@@ -55,13 +55,12 @@ internal class TargetToProxyHandler(
                 throw PpaassException("Incoming agent connect message do not have a suitable type.")
             }
         }
-        proxyChannel.pipeline().apply {
+        proxyChannelContext.pipeline().apply {
             if (this[SetupTargetConnectionHandler::class.java] != null) {
                 remove(SetupTargetConnectionHandler::class.java)
             }
             addLast(dataTransferIoEventLoopGroup, proxyToTargetHandler)
         }
-        proxyChannelContext.fireChannelRead(agentConnectMessage)
     }
 
     override fun channelInactive(targetChannelContext: ChannelHandlerContext) {
