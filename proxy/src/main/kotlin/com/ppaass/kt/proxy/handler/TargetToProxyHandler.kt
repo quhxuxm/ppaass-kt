@@ -35,7 +35,9 @@ internal class TargetToProxyHandler(
         when (agentConnectMessage.body.bodyType) {
             AgentMessageBodyType.CONNECT_WITHOUT_KEEP_ALIVE -> {
                 targetChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
-                proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
+                if (proxyChannel.isOpen) {
+                    proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
+                }
             }
             AgentMessageBodyType.CONNECT_WITH_KEEP_ALIVE -> {
                 targetChannel.config().setOption(ChannelOption.SO_KEEPALIVE, true)
