@@ -11,6 +11,7 @@ import io.netty.buffer.Unpooled
 import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
+import io.netty.channel.ChannelOption
 import io.netty.channel.EventLoopGroup
 import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandResponse
@@ -39,6 +40,8 @@ internal class SocksV5ProxyToAgentHandler(
         val agentMessageBody = AgentMessageBody(bodyType = AgentMessageBodyType.CONNECT_WITHOUT_KEEP_ALIVE, id = agentChannelId,
             securityToken = agentConfiguration.userToken,
             targetAddress = socks5CommandRequest.dstAddr(), targetPort = socks5CommandRequest.dstPort())
+        agentChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
+        proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
         val agentMessage = AgentMessage(
             encryptionToken = generateUid(),
             messageBodyEncryptionType = MessageBodyEncryptionType.random(),
