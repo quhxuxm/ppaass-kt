@@ -1,7 +1,6 @@
 package com.ppaass.kt.proxy.handler
 
 import io.netty.buffer.Unpooled
-import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
@@ -31,7 +30,7 @@ internal class TargetChannelHeartbeatHandler : ChannelInboundHandlerAdapter() {
         logger.debug { "Do heartbeat for target channel ${targetChannel.id().asLongText()}." }
         val proxyChannelContext = targetChannel.attr(PROXY_CHANNEL_CONTEXT).get()
         if (proxyChannelContext == null) {
-            logger.info {
+            logger.error {
                 "No proxy channel context attached to target channel ${
                     targetChannel.id().asLongText()
                 }, close target channel on heartbeat."
@@ -41,7 +40,7 @@ internal class TargetChannelHeartbeatHandler : ChannelInboundHandlerAdapter() {
         }
         val proxyChannel = proxyChannelContext.channel();
         if (!proxyChannel.isActive) {
-            logger.info {
+            logger.error {
                 "Proxy channel ${
                     proxyChannel.id().asLongText()
                 } attached to target channel ${
@@ -51,16 +50,28 @@ internal class TargetChannelHeartbeatHandler : ChannelInboundHandlerAdapter() {
             targetChannelContext.close()
             return
         }
-        logger.info {
+        logger.debug {
             "Proxy channel ${
                 proxyChannel.id().asLongText()
             } attached to target channel ${
                 targetChannel.id().asLongText()
             } is active, keep alive target channel."
         }
-        targetChannelContext.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
-        if (proxyChannel.isWritable) {
-            targetChannel.read()
+        targetChannelContext.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener {
+            if (it.isSuccess) {
+                if (proxyChannel.isWritable) {
+                    targetChannel.read()
+                }
+                return@addListener
+            }
+            logger.error {
+                "Close target channel ${
+                    targetChannel.id().asLongText()
+                } as keep alive fail, close attached proxy channel ${
+                    proxyChannel.id().asLongText()
+                } also."
+            }
+            targetChannelContext.close()
         }
         return
     }
