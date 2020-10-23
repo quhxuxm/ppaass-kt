@@ -31,7 +31,8 @@ import javax.swing.JTextField
 import javax.swing.border.EmptyBorder
 
 @Service
-internal class MainFrame(private val applicationContext: ApplicationContext, private val messageSource: MessageSource,
+internal class MainFrame(private val applicationContext: ApplicationContext,
+                         private val messageSource: MessageSource,
                          private val agentConfiguration: AgentConfiguration) : JFrame() {
     companion object {
         private val logger = LoggerFactory.getLogger(MainFrame::class.java)
@@ -42,15 +43,20 @@ internal class MainFrame(private val applicationContext: ApplicationContext, pri
         private const val SYSTEM_TRAY_TOOLTIP_MESSAGE_KEY = "mainFrame.systemTray.tooltip"
         private const val STATUS_LABEL_DEFAULT_MESSAGE_KEY = "mainFrame.statusLabel.default"
         private const val BUTTON_START_HTTP_PROXY_MESSAGE_KEY = "mainFrame.button.startHttpProxy"
-        private const val BUTTON_START_SOCKS5_PROXY_MESSAGE_KEY = "mainFrame.button.startSocks5Proxy"
+        private const val BUTTON_START_SOCKS5_PROXY_MESSAGE_KEY =
+            "mainFrame.button.startSocks5Proxy"
         private const val BUTTON_STOP_PROXY_MESSAGE_KEY = "mainFrame.button.stopProxy"
-        private const val STATUS_TOKEN_VALIDATION_FAIL_MESSAGE_KEY = "mainFrame.status.tokenValidationFail"
-        private const val STATUS_PORT_VALIDATION_FAIL_MESSAGE_KEY = "mainFrame.status.portValidationFail"
+        private const val STATUS_TOKEN_VALIDATION_FAIL_MESSAGE_KEY =
+            "mainFrame.status.tokenValidationFail"
+        private const val STATUS_PORT_VALIDATION_FAIL_MESSAGE_KEY =
+            "mainFrame.status.portValidationFail"
         private const val STATUS_PROXY_PORT_VALIDATION_FAIL_MESSAGE_KEY =
             "mainFrame.status.proxyPortValidationFail"
-        private const val STATUS_HTTP_PROXY_IS_RUNNING_MESSAGE_KEY = "mainFrame.status.httpProxyIsRunning"
+        private const val STATUS_HTTP_PROXY_IS_RUNNING_MESSAGE_KEY =
+            "mainFrame.status.httpProxyIsRunning"
         private const val STATUS_AGENT_START_FAIL_MESSAGE_KEY = "mainFrame.status.agentStartFail"
-        private const val STATUS_SOCKS5_PROXY_IS_RUNNING_MESSAGE_KEY = "mainFrame.status.socks5ProxyIsRunning"
+        private const val STATUS_SOCKS5_PROXY_IS_RUNNING_MESSAGE_KEY =
+            "mainFrame.status.socks5ProxyIsRunning"
         private const val LOGO_BLACK = "icons/logo_black.png"
         private const val LOGO_WHITE = "icons/logo_white.png"
         private const val PANEL_WIDTH = 500

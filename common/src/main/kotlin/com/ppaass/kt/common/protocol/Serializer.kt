@@ -24,10 +24,12 @@ private fun encryptMessageBody(messageBodyByteArrayBeforeEncrypt: ByteArray,
     val encryptedByteArray: ByteArray
     when (messageBodyBodyEncryptionType) {
         MessageBodyEncryptionType.AES -> {
-            encryptedByteArray = aesEncrypt(messageBodyEncryptionToken, messageBodyByteArrayBeforeEncrypt)
+            encryptedByteArray =
+                aesEncrypt(messageBodyEncryptionToken, messageBodyByteArrayBeforeEncrypt)
         }
         MessageBodyEncryptionType.BLOWFISH -> {
-            encryptedByteArray = blowfishEncrypt(messageBodyEncryptionToken, messageBodyByteArrayBeforeEncrypt)
+            encryptedByteArray =
+                blowfishEncrypt(messageBodyEncryptionToken, messageBodyByteArrayBeforeEncrypt)
         }
     }
     //Create heap byte buffer
@@ -65,7 +67,8 @@ private fun decryptMessageBody(messageBodyByteArrayBeforeDecrypt: ByteArray,
 /**
  * Encode a heap proxy message body object to heap byte buffer
  */
-private fun encodeProxyMessageBody(message: ProxyMessageBody?, messageBodyBodyEncryptionType: MessageBodyEncryptionType,
+private fun encodeProxyMessageBody(message: ProxyMessageBody?,
+                                   messageBodyBodyEncryptionType: MessageBodyEncryptionType,
                                    messageBodyEncryptionToken: String): ByteBuf {
     logger.debug("Encode proxy message body.")
     val tempBuffer = Unpooled.buffer()
@@ -92,7 +95,8 @@ private fun encodeProxyMessageBody(message: ProxyMessageBody?, messageBodyBodyEn
 /**
  * Encode a heap agent message body object to heap byte buffer
  */
-private fun encodeAgentMessageBody(message: AgentMessageBody?, messageBodyBodyEncryptionType: MessageBodyEncryptionType,
+private fun encodeAgentMessageBody(message: AgentMessageBody?,
+                                   messageBodyBodyEncryptionType: MessageBodyEncryptionType,
                                    messageBodyEncryptionToken: String): ByteBuf {
     logger.debug("Encode agent message body.")
     val tempBuf = Unpooled.buffer()
@@ -120,18 +124,21 @@ private fun encodeAgentMessageBody(message: AgentMessageBody?, messageBodyBodyEn
     return Unpooled.wrappedBuffer(encryptedResult)
 }
 
-private fun decodeAgentMessageBody(messageBytes: ByteArray, messageBodyBodyEncryptionType: MessageBodyEncryptionType,
+private fun decodeAgentMessageBody(messageBytes: ByteArray,
+                                   messageBodyBodyEncryptionType: MessageBodyEncryptionType,
                                    messageBodyEncryptionToken: String): AgentMessageBody {
     val messageBodyBytes =
         decryptMessageBody(messageBytes, messageBodyBodyEncryptionType, messageBodyEncryptionToken);
     val messageBodyByteBuf = Unpooled.wrappedBuffer(messageBodyBytes)
     val bodyTypeNameLength = messageBodyByteBuf.readInt()
-    val bodyTypeName = messageBodyByteBuf.readCharSequence(bodyTypeNameLength, Charsets.UTF_8).toString()
+    val bodyTypeName =
+        messageBodyByteBuf.readCharSequence(bodyTypeNameLength, Charsets.UTF_8).toString()
     val bodyType = AgentMessageBodyType.valueOf(bodyTypeName)
     val messageIdLength = messageBodyByteBuf.readInt()
     val messageId = messageBodyByteBuf.readCharSequence(messageIdLength, Charsets.UTF_8).toString()
     val securityTokenLength = messageBodyByteBuf.readInt()
-    val securityToken = messageBodyByteBuf.readCharSequence(securityTokenLength, Charsets.UTF_8).toString()
+    val securityToken =
+        messageBodyByteBuf.readCharSequence(securityTokenLength, Charsets.UTF_8).toString()
     val targetAddressLength = messageBodyByteBuf.readInt()
     val targetAddress = if (targetAddressLength == 0) {
         null
@@ -150,7 +157,8 @@ private fun decodeAgentMessageBody(messageBytes: ByteArray, messageBodyBodyEncry
     return agentMessageBody
 }
 
-private fun decodeProxyMessageBody(messageBytes: ByteArray, messageBodyBodyEncryptionType: MessageBodyEncryptionType,
+private fun decodeProxyMessageBody(messageBytes: ByteArray,
+                                   messageBodyBodyEncryptionType: MessageBodyEncryptionType,
                                    messageBodyEncryptionToken: String): ProxyMessageBody {
     val messageBodyBytes =
         decryptMessageBody(messageBytes, messageBodyBodyEncryptionType, messageBodyEncryptionToken);
@@ -181,7 +189,8 @@ private fun decodeProxyMessageBody(messageBytes: ByteArray, messageBodyBodyEncry
     return proxyMessageBody
 }
 
-internal fun encodeAgentMessage(message: AgentMessage, proxyPublicKeyString: String, output: ByteBuf) {
+internal fun encodeAgentMessage(message: AgentMessage, proxyPublicKeyString: String,
+                                output: ByteBuf) {
     val originalMessageBodyEncryptionToken = DigestUtils.md5Hex(generateUid())
     val encryptedMessageBodyEncryptionToken =
         rsaEncrypt(originalMessageBodyEncryptionToken, proxyPublicKeyString)
@@ -196,7 +205,8 @@ internal fun encodeAgentMessage(message: AgentMessage, proxyPublicKeyString: Str
     output.writeBytes(bodyByteArray);
 }
 
-internal fun encodeProxyMessage(message: ProxyMessage, agentPublicKeyString: String, output: ByteBuf) {
+internal fun encodeProxyMessage(message: ProxyMessage, agentPublicKeyString: String,
+                                output: ByteBuf) {
     val originalMessageBodyEncryptionToken = DigestUtils.md5Hex(generateUid())
     val encryptedMessageBodyEncryptionToken =
         rsaEncrypt(originalMessageBodyEncryptionToken, agentPublicKeyString)
@@ -230,7 +240,8 @@ internal fun decodeAgentMessage(input: ByteBuf, proxyPrivateKeyString: String): 
     val messageBodyByteArray = ByteArray(input.readableBytes())
     input.readBytes(messageBodyByteArray)
     val agentMessage = AgentMessage(messageBodyEncryptionToken, messageBodyEncryptionType,
-        decodeAgentMessageBody(messageBodyByteArray, messageBodyEncryptionType, messageBodyEncryptionToken))
+        decodeAgentMessageBody(messageBodyByteArray, messageBodyEncryptionType,
+            messageBodyEncryptionToken))
     return agentMessage
 }
 
@@ -253,7 +264,8 @@ internal fun decodeProxyMessage(input: ByteBuf, agentPrivateKeyString: String): 
     val messageBodyByteArray = ByteArray(input.readableBytes())
     input.readBytes(messageBodyByteArray)
     val proxyMessage = ProxyMessage(messageBodyEncryptionToken, messageBodyEncryptionType,
-        decodeProxyMessageBody(messageBodyByteArray, messageBodyEncryptionType, messageBodyEncryptionToken))
+        decodeProxyMessageBody(messageBodyByteArray, messageBodyEncryptionType,
+            messageBodyEncryptionToken))
     return proxyMessage
 }
 

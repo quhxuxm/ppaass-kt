@@ -31,14 +31,16 @@ fun aesDecrypt(messageBodyEncryptionToken: String, aesData: ByteArray): ByteArra
 }
 
 fun blowfishEncrypt(messageBodyEncryptionToken: String, data: ByteArray): ByteArray {
-    val key = SecretKeySpec(messageBodyEncryptionToken.toByteArray(Charsets.UTF_8), ALGORITHM_BLOWFISH)
+    val key =
+        SecretKeySpec(messageBodyEncryptionToken.toByteArray(Charsets.UTF_8), ALGORITHM_BLOWFISH)
     val cipher = Cipher.getInstance(BLOWFISH_CIPHER)
     cipher.init(Cipher.ENCRYPT_MODE, key)
     return cipher.doFinal(data)
 }
 
 fun blowfishDecrypt(messageBodyEncryptionToken: String, aesData: ByteArray): ByteArray {
-    val key = SecretKeySpec(messageBodyEncryptionToken.toByteArray(Charsets.UTF_8), ALGORITHM_BLOWFISH)
+    val key =
+        SecretKeySpec(messageBodyEncryptionToken.toByteArray(Charsets.UTF_8), ALGORITHM_BLOWFISH)
     val cipher = Cipher.getInstance(BLOWFISH_CIPHER)
     cipher.init(Cipher.DECRYPT_MODE, key)
     return cipher.doFinal(aesData)

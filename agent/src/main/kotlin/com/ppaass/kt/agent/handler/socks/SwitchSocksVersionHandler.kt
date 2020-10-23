@@ -18,7 +18,8 @@ internal class SwitchSocksVersionHandler(
         private val logger = KotlinLogging.logger {}
     }
 
-    override fun channelRead0(agentChannelContext: ChannelHandlerContext, socksRequest: SocksMessage) {
+    override fun channelRead0(agentChannelContext: ChannelHandlerContext,
+                              socksRequest: SocksMessage) {
         val clientChannelId = agentChannelContext.channel().id().asLongText();
         if (SocksVersion.UNKNOWN == socksRequest.version()) {
             logger.error(

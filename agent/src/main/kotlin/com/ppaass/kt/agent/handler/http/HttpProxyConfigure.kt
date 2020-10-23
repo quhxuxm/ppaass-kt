@@ -42,8 +42,10 @@ internal class HttpProxyConfigure {
             option(ChannelOption.AUTO_CLOSE, true)
             option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
             option(ChannelOption.TCP_NODELAY, true)
-            option(ChannelOption.SO_RCVBUF, agentConfiguration.staticAgentConfiguration.proxyServerSoRcvbuf)
-            option(ChannelOption.SO_SNDBUF, agentConfiguration.staticAgentConfiguration.proxyServerSoSndbuf)
+            option(ChannelOption.SO_RCVBUF,
+                agentConfiguration.staticAgentConfiguration.proxyServerSoRcvbuf)
+            option(ChannelOption.SO_SNDBUF,
+                agentConfiguration.staticAgentConfiguration.proxyServerSoSndbuf)
             handler(object : ChannelInitializer<SocketChannel>() {
                 override fun initChannel(httpProxyChannel: SocketChannel) {
                     httpProxyChannel.pipeline().apply {
@@ -53,7 +55,8 @@ internal class HttpProxyConfigure {
                         addLast(LengthFieldBasedFrameDecoder(Integer.MAX_VALUE,
                             0, 4, 0,
                             4))
-                        addLast(ProxyMessageDecoder(agentConfiguration.staticAgentConfiguration.agentPrivateKey))
+                        addLast(ProxyMessageDecoder(
+                            agentConfiguration.staticAgentConfiguration.agentPrivateKey))
                         addLast(preForwardProxyMessageHandler)
                         addLast(ExtractProxyMessageOriginalDataDecoder())
                         addLast(HttpResponseDecoder())
@@ -63,7 +66,8 @@ internal class HttpProxyConfigure {
                             addLast(Lz4FrameEncoder())
                         }
                         addLast(LengthFieldPrepender(4))
-                        addLast(AgentMessageEncoder(agentConfiguration.staticAgentConfiguration.proxyPublicKey))
+                        addLast(AgentMessageEncoder(
+                            agentConfiguration.staticAgentConfiguration.proxyPublicKey))
                         addLast(resourceClearHandler)
                     }
                 }
@@ -91,8 +95,10 @@ internal class HttpProxyConfigure {
             option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
             option(ChannelOption.SO_REUSEADDR, true)
             option(ChannelOption.TCP_NODELAY, true)
-            option(ChannelOption.SO_RCVBUF, agentConfiguration.staticAgentConfiguration.proxyServerSoRcvbuf)
-            option(ChannelOption.SO_SNDBUF, agentConfiguration.staticAgentConfiguration.proxyServerSoSndbuf)
+            option(ChannelOption.SO_RCVBUF,
+                agentConfiguration.staticAgentConfiguration.proxyServerSoRcvbuf)
+            option(ChannelOption.SO_SNDBUF,
+                agentConfiguration.staticAgentConfiguration.proxyServerSoSndbuf)
 
             handler(object : ChannelInitializer<SocketChannel>() {
                 override fun initChannel(httpsProxyChannel: SocketChannel) {
@@ -104,7 +110,8 @@ internal class HttpProxyConfigure {
                         addLast(LengthFieldBasedFrameDecoder(Integer.MAX_VALUE,
                             0, 4, 0,
                             4))
-                        addLast(ProxyMessageDecoder(agentConfiguration.staticAgentConfiguration.agentPrivateKey))
+                        addLast(ProxyMessageDecoder(
+                            agentConfiguration.staticAgentConfiguration.agentPrivateKey))
                         addLast(preForwardProxyMessageHandler)
                         addLast(ExtractProxyMessageOriginalDataDecoder())
                         addLast(dataTransferIoEventLoopGroup, transferDataFromProxyToAgentHandler)
@@ -112,7 +119,8 @@ internal class HttpProxyConfigure {
                             addLast(Lz4FrameEncoder())
                         }
                         addLast(LengthFieldPrepender(4))
-                        addLast(AgentMessageEncoder(agentConfiguration.staticAgentConfiguration.proxyPublicKey))
+                        addLast(AgentMessageEncoder(
+                            agentConfiguration.staticAgentConfiguration.proxyPublicKey))
                         addLast(resourceClearHandler)
                     }
                 }

@@ -99,7 +99,8 @@ class AgentMessageBody(val bodyType: AgentMessageBodyType, override val id: Stri
     override var targetAddress: String? = null
     override var targetPort: Int? = null
 
-    constructor(bodyType: AgentMessageBodyType, id: String, securityToken: String, targetAddress: String?,
+    constructor(bodyType: AgentMessageBodyType, id: String, securityToken: String,
+                targetAddress: String?,
                 targetPort: Int?) : this(bodyType,
         id, securityToken) {
         this.targetAddress = targetAddress
@@ -140,7 +141,8 @@ enum class ProxyMessageBodyType {
 /**
  * The proxy message body
  */
-class ProxyMessageBody(val bodyType: ProxyMessageBodyType, override val id: String) : MessageBody() {
+class ProxyMessageBody(val bodyType: ProxyMessageBodyType, override val id: String) :
+    MessageBody() {
     override var originalData: ByteArray? = null
     override var targetAddress: String? = null
     override var targetPort: Int? = null

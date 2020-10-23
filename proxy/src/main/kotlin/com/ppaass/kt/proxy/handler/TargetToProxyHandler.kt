@@ -72,8 +72,9 @@ internal class TargetToProxyHandler(
         }
     }
 
-    private fun setupProxyChannelPipelineForConnectMessage(proxyChannelContext: ChannelHandlerContext,
-                                                           targetChannel: Channel) {
+    private fun setupProxyChannelPipelineForConnectMessage(
+        proxyChannelContext: ChannelHandlerContext,
+        targetChannel: Channel) {
         proxyChannelContext.pipeline().apply {
             val handlersToRemove = targetChannel.attr(HANDLERS_TO_REMOVE_AFTER_TARGET_ACTIVE).get()
             handlersToRemove?.forEach {
@@ -97,11 +98,13 @@ internal class TargetToProxyHandler(
         if (agentConnectMessage != null) {
             if (proxyChannelContext != null) {
                 val proxyChannel = proxyChannelContext.channel()
-                val proxyMessageBody = ProxyMessageBody(ProxyMessageBodyType.TARGET_CHANNEL_CLOSE, generateUid())
+                val proxyMessageBody =
+                    ProxyMessageBody(ProxyMessageBodyType.TARGET_CHANNEL_CLOSE, generateUid())
                 proxyMessageBody.targetAddress = agentConnectMessage.body.targetAddress
                 proxyMessageBody.targetPort = agentConnectMessage.body.targetPort
                 val proxyMessage =
-                    ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
+                    ProxyMessage(generateUid(), MessageBodyEncryptionType.random(),
+                        proxyMessageBody)
                 proxyChannel.writeAndFlush(proxyMessage).addListener(ChannelFutureListener.CLOSE)
             }
         } else {
@@ -125,7 +128,8 @@ internal class TargetToProxyHandler(
         val proxyMessage =
             ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
         if (logger.isDebugEnabled) {
-            logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n", proxyMessage)
+            logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n",
+                proxyMessage)
         }
         proxyChannel.write(proxyMessage).addListener {
             if (proxyChannel.isWritable) {

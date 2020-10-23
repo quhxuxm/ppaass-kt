@@ -30,7 +30,8 @@ internal class SocksV5AgentToProxyHandler(
         val data = ByteArray(msg.readableBytes())
         msg.readBytes(data)
         val agentMessageBody =
-            AgentMessageBody(AgentMessageBodyType.DATA, agentChannelContext.channel().id().asLongText(),
+            AgentMessageBody(AgentMessageBodyType.DATA,
+                agentChannelContext.channel().id().asLongText(),
                 this.agentConfiguration.userToken)
         agentMessageBody.targetAddress = socks5CommandRequest.dstAddr()
         agentMessageBody.targetPort = socks5CommandRequest.dstPort()

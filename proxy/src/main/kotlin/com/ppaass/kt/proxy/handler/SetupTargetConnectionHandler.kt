@@ -23,30 +23,39 @@ internal class SetupTargetConnectionHandler(private val targetBootstrap: Bootstr
         private val logger = KotlinLogging.logger {}
     }
 
-    override fun channelRead0(proxyChannelContext: ChannelHandlerContext, agentMessage: AgentMessage) {
+    override fun channelRead0(proxyChannelContext: ChannelHandlerContext,
+                              agentMessage: AgentMessage) {
         val targetAddress = agentMessage.body.targetAddress
         val targetPort = agentMessage.body.targetPort
         if (targetAddress == null) {
-            logger.error("Return because of targetAddress is null, message id=${agentMessage.body.id}")
-            throw PpaassException("Return because of targetAddress is null, message id=${agentMessage.body.id}")
+            logger.error(
+                "Return because of targetAddress is null, message id=${agentMessage.body.id}")
+            throw PpaassException(
+                "Return because of targetAddress is null, message id=${agentMessage.body.id}")
         }
         if (targetPort == null) {
             logger.error("Return because of targetPort is null, message id=${agentMessage.body.id}")
-            throw PpaassException("Return because of targetPort is null, message id=${agentMessage.body.id}")
+            throw PpaassException(
+                "Return because of targetPort is null, message id=${agentMessage.body.id}")
         }
-        logger.debug("Begin to connect ${targetAddress}:${targetPort}, message id=${agentMessage.body.id}")
+        logger.debug(
+            "Begin to connect ${targetAddress}:${targetPort}, message id=${agentMessage.body.id}")
         this.targetBootstrap.connect(targetAddress, targetPort)
             .addListener((ChannelFutureListener { targetChannelFuture ->
                 val targetChannel = targetChannelFuture.channel()
                 val proxyChannel = proxyChannelContext.channel()
                 if (!targetChannelFuture.isSuccess) {
-                    logger.error("Fail connect to ${targetAddress}:${targetPort}.", targetChannelFuture.cause())
-                    val proxyMessageBody = ProxyMessageBody(ProxyMessageBodyType.CONNECT_FAIL, agentMessage.body.id)
+                    logger.error("Fail connect to ${targetAddress}:${targetPort}.",
+                        targetChannelFuture.cause())
+                    val proxyMessageBody =
+                        ProxyMessageBody(ProxyMessageBodyType.CONNECT_FAIL, agentMessage.body.id)
                     proxyMessageBody.targetAddress = agentMessage.body.targetAddress
                     proxyMessageBody.targetPort = agentMessage.body.targetPort
                     val failProxyMessage =
-                        ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
-                    proxyChannel.writeAndFlush(failProxyMessage).addListener(ChannelFutureListener.CLOSE)
+                        ProxyMessage(generateUid(), MessageBodyEncryptionType.random(),
+                            proxyMessageBody)
+                    proxyChannel.writeAndFlush(failProxyMessage)
+                        .addListener(ChannelFutureListener.CLOSE)
                     targetChannel.close()
                     return@ChannelFutureListener
                 }

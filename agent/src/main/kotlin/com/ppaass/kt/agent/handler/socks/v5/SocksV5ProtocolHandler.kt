@@ -23,7 +23,8 @@ internal class SocksV5ProtocolHandler(
         private val logger = KotlinLogging.logger {}
     }
 
-    override fun channelRead0(agentChannelContext: ChannelHandlerContext, socksRequest: SocksMessage) {
+    override fun channelRead0(agentChannelContext: ChannelHandlerContext,
+                              socksRequest: SocksMessage) {
         val channelPipeline = agentChannelContext.pipeline()
         val clientChannelId = agentChannelContext.channel().id().asLongText()
         with(channelPipeline) {
@@ -31,9 +32,11 @@ internal class SocksV5ProtocolHandler(
                 is Socks5InitialRequest -> {
                     logger.debug(
                         "Socks5 initial request coming always NO_AUTH ...")
-                    addBefore(SocksV5ProtocolHandler::class.java.name, Socks5CommandRequestDecoder::class.java.name,
+                    addBefore(SocksV5ProtocolHandler::class.java.name,
+                        Socks5CommandRequestDecoder::class.java.name,
                         Socks5CommandRequestDecoder())
-                    agentChannelContext.writeAndFlush(DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH))
+                    agentChannelContext.writeAndFlush(
+                        DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH))
                     return@channelRead0
                 }
                 is Socks5CommandRequest -> {
@@ -41,7 +44,8 @@ internal class SocksV5ProtocolHandler(
                         "Socks5 command request with {} command coming ...", socksRequest.type())
                     when (socksRequest.type()) {
                         Socks5CommandType.CONNECT -> {
-                            addLast(SocksV5ConnectCommandHandler::class.java.name, socksV5ConnectCommandHandler)
+                            addLast(SocksV5ConnectCommandHandler::class.java.name,
+                                socksV5ConnectCommandHandler)
                             agentChannelContext.fireChannelRead(socksRequest)
                             return@channelRead0
                         }
@@ -73,7 +77,8 @@ internal class SocksV5ProtocolHandler(
                 }
                 else -> {
                     logger.error(
-                        "Current request type of socks5 still do not support, socks5 message: {}", socksRequest)
+                        "Current request type of socks5 still do not support, socks5 message: {}",
+                        socksRequest)
                     remove(this@SocksV5ProtocolHandler)
                     agentChannelContext.close()
                     return@channelRead0

@@ -46,8 +46,10 @@ internal class DefaultProxy(
                 WriteBufferWaterMark(proxyConfiguration.writeBufferWaterMarkLow,
                     proxyConfiguration.writeBufferWaterMarkHigh))
             childOption(ChannelOption.RCVBUF_ALLOCATOR,
-                AdaptiveRecvByteBufAllocator(proxyConfiguration.receiveDataAverageBufferMinSize, proxyConfiguration
-                    .receiveDataAverageBufferInitialSize, proxyConfiguration.receiveDataAverageBufferMaxSize))
+                AdaptiveRecvByteBufAllocator(proxyConfiguration.receiveDataAverageBufferMinSize,
+                    proxyConfiguration
+                        .receiveDataAverageBufferInitialSize,
+                    proxyConfiguration.receiveDataAverageBufferMaxSize))
             childHandler(proxyChannelInitializer)
         }
     }

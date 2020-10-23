@@ -16,7 +16,8 @@ internal class ProxyToTargetHandler : SimpleChannelInboundHandler<AgentMessage>(
         private val logger = KotlinLogging.logger {}
     }
 
-    override fun channelRead0(proxyChannelContext: ChannelHandlerContext, agentMessage: AgentMessage) {
+    override fun channelRead0(proxyChannelContext: ChannelHandlerContext,
+                              agentMessage: AgentMessage) {
         val proxyChannel = proxyChannelContext.channel();
         val targetChannelContext = proxyChannel.attr(TARGET_CHANNEL_CONTEXT).get()
         val targetChannel = targetChannelContext.channel()
@@ -63,7 +64,11 @@ internal class ProxyToTargetHandler : SimpleChannelInboundHandler<AgentMessage>(
         val targetChannel = targetChannelContext.channel()
         if (proxyChannel.isWritable) {
             if (logger.isDebugEnabled) {
-                logger.debug { "Recover auto read on target channel: ${targetChannel.id().asLongText()}" }
+                logger.debug {
+                    "Recover auto read on target channel: ${
+                        targetChannel.id().asLongText()
+                    }"
+                }
             }
             targetChannel.read()
         } else {

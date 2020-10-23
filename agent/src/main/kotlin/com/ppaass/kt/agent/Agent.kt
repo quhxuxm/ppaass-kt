@@ -37,8 +37,10 @@ internal abstract class Agent(private val agentConfiguration: AgentConfiguration
             option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
             option(ChannelOption.TCP_NODELAY, true)
             childOption(ChannelOption.TCP_NODELAY, true)
-            childOption(ChannelOption.SO_RCVBUF, agentConfiguration.staticAgentConfiguration.soRcvbuf)
-            childOption(ChannelOption.SO_SNDBUF, agentConfiguration.staticAgentConfiguration.soSndbuf)
+            childOption(ChannelOption.SO_RCVBUF,
+                agentConfiguration.staticAgentConfiguration.soRcvbuf)
+            childOption(ChannelOption.SO_SNDBUF,
+                agentConfiguration.staticAgentConfiguration.soSndbuf)
             childHandler(this@Agent.channelInitializer)
         }
         val channelFuture = newServerBootstrap.bind(this.agentConfiguration.port).sync()

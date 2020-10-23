@@ -38,33 +38,42 @@ internal class HttpProxySetupConnectionHandler(
         logger.debug("Agent receive a client connection, clientChannelId={}", clientChannelId)
         if (msg !is FullHttpRequest) {
             //A https request to send data
-            logger.debug("Incoming request is https protocol to send data, clientChannelId={}", clientChannelId)
+            logger.debug("Incoming request is https protocol to send data, clientChannelId={}",
+                clientChannelId)
             val channelCacheInfo = ChannelInfoCache.getChannelInfoByClientChannelId(clientChannelId)
             if (channelCacheInfo == null) {
                 agentChannelContext.close()
-                logger.debug("Fail to find channel cache information, clientChannelId={}", clientChannelId)
+                logger.debug("Fail to find channel cache information, clientChannelId={}",
+                    clientChannelId)
                 return
             }
             if (!channelCacheInfo.proxyChannel.isActive) {
                 channelCacheInfo.proxyChannel.close()
                 channelCacheInfo.agentChannel.close()
-                logger.debug("Fail to write data to proxy channel because of it is inactive, clientChannelId={}",
+                logger.debug(
+                    "Fail to write data to proxy channel because of it is inactive, clientChannelId={}",
                     clientChannelId)
                 return
             }
             writeAgentMessageToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
-                channelCacheInfo.proxyChannel, channelCacheInfo.targetHost, channelCacheInfo.targetPort,
+                channelCacheInfo.proxyChannel, channelCacheInfo.targetHost,
+                channelCacheInfo.targetPort,
                 msg, clientChannelId, MessageBodyEncryptionType.random())
             return
         }
         if (HttpMethod.CONNECT === msg.method()) {
             //A https request to setup the connection
-            logger.debug("Incoming request is https protocol to setup connection, clientChannelId={}", clientChannelId)
+            logger.debug(
+                "Incoming request is https protocol to setup connection, clientChannelId={}",
+                clientChannelId)
             val connectionHeader =
-                msg.headers()[HttpHeaderNames.PROXY_CONNECTION] ?: msg.headers()[HttpHeaderNames.CONNECTION]
-            val connectionKeepAlive = connectionHeader?.toLowerCase()?.equals(HttpHeaderValues.KEEP_ALIVE) ?: false
+                msg.headers()[HttpHeaderNames.PROXY_CONNECTION]
+                    ?: msg.headers()[HttpHeaderNames.CONNECTION]
+            val connectionKeepAlive =
+                connectionHeader?.toLowerCase()?.equals(HttpHeaderValues.KEEP_ALIVE) ?: false
             val httpConnectionInfo = parseHttpConnectionInfo(msg.uri())
-            this.proxyBootstrapForHttps.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort)
+            this.proxyBootstrapForHttps.connect(this.agentConfiguration.proxyAddress,
+                this.agentConfiguration.proxyPort)
                 .addListener(ChannelFutureListener { proxyChannelFuture ->
                     if (!proxyChannelFuture.isSuccess) {
                         agentChannelContext.close()
@@ -72,11 +81,15 @@ internal class HttpProxySetupConnectionHandler(
                             proxyChannelFuture.cause())
                         return@ChannelFutureListener
                     }
-                    proxyChannelFuture.channel().attr(AGENT_CHANNEL_CONTEXT).setIfAbsent(agentChannelContext)
-                    proxyChannelFuture.channel().attr(HTTP_CONNECTION_INFO).setIfAbsent(httpConnectionInfo)
-                    proxyChannelFuture.channel().attr(HTTP_CONNECTION_KEEP_ALIVE).setIfAbsent(connectionKeepAlive)
+                    proxyChannelFuture.channel().attr(AGENT_CHANNEL_CONTEXT)
+                        .setIfAbsent(agentChannelContext)
+                    proxyChannelFuture.channel().attr(HTTP_CONNECTION_INFO)
+                        .setIfAbsent(httpConnectionInfo)
+                    proxyChannelFuture.channel().attr(HTTP_CONNECTION_KEEP_ALIVE)
+                        .setIfAbsent(connectionKeepAlive)
                     proxyChannelFuture.channel().attr(PROXY_CHANNEL_ACTIVE_CALLBACK).setIfAbsent {
-                        val okResponse = DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
+                        val okResponse =
+                            DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
                         agentChannelContext.channel().writeAndFlush(okResponse)
                             .addListener(ChannelFutureListener { okResponseFuture ->
                                 okResponseFuture.channel().pipeline().apply {
@@ -98,8 +111,10 @@ internal class HttpProxySetupConnectionHandler(
         val channelCacheInfo = ChannelInfoCache.getChannelInfoByClientChannelId(clientChannelId)
         if (channelCacheInfo != null) {
             if (channelCacheInfo.proxyChannel.isActive) {
-                writeAgentMessageToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
-                    channelCacheInfo.proxyChannel, channelCacheInfo.targetHost, channelCacheInfo.targetPort,
+                writeAgentMessageToProxy(AgentMessageBodyType.DATA,
+                    this.agentConfiguration.userToken,
+                    channelCacheInfo.proxyChannel, channelCacheInfo.targetHost,
+                    channelCacheInfo.targetPort,
                     msg, clientChannelId, MessageBodyEncryptionType.random()) {
                     if (!it.isSuccess) {
                         ChannelInfoCache.removeChannelInfo(clientChannelId)
@@ -117,9 +132,12 @@ internal class HttpProxySetupConnectionHandler(
         }
         val httpConnectionInfo = parseHttpConnectionInfo(msg.uri())
         val connectionHeader =
-            msg.headers()[HttpHeaderNames.PROXY_CONNECTION] ?: msg.headers()[HttpHeaderNames.CONNECTION]
-        val connectionKeepAlive = connectionHeader?.toLowerCase()?.equals(HttpHeaderValues.KEEP_ALIVE) ?: false
-        this.proxyBootstrapForHttp.connect(this.agentConfiguration.proxyAddress, this.agentConfiguration.proxyPort)
+            msg.headers()[HttpHeaderNames.PROXY_CONNECTION]
+                ?: msg.headers()[HttpHeaderNames.CONNECTION]
+        val connectionKeepAlive =
+            connectionHeader?.toLowerCase()?.equals(HttpHeaderValues.KEEP_ALIVE) ?: false
+        this.proxyBootstrapForHttp.connect(this.agentConfiguration.proxyAddress,
+            this.agentConfiguration.proxyPort)
             .addListener(ChannelFutureListener { proxyChannelFuture ->
                 if (!proxyChannelFuture.isSuccess) {
                     ChannelInfoCache.removeChannelInfo(clientChannelId)
@@ -129,25 +147,31 @@ internal class HttpProxySetupConnectionHandler(
                         proxyChannelFuture.cause())
                     return@ChannelFutureListener
                 }
-                proxyChannelFuture.channel().attr(AGENT_CHANNEL_CONTEXT).setIfAbsent(agentChannelContext)
-                proxyChannelFuture.channel().attr(HTTP_CONNECTION_INFO).setIfAbsent(httpConnectionInfo)
-                proxyChannelFuture.channel().attr(HTTP_CONNECTION_KEEP_ALIVE).setIfAbsent(connectionKeepAlive)
-                proxyChannelFuture.channel().attr(PROXY_CHANNEL_ACTIVE_CALLBACK).setIfAbsent { proxyChannelContext ->
-                    writeAgentMessageToProxy(AgentMessageBodyType.DATA, this.agentConfiguration.userToken,
-                        proxyChannelContext.channel(), httpConnectionInfo.host, httpConnectionInfo.port,
-                        msg, clientChannelId, MessageBodyEncryptionType.random()) {
-                        if (!it.isSuccess) {
-                            ChannelInfoCache.removeChannelInfo(clientChannelId)
-                            agentChannelContext.close()
-                            proxyChannelContext.close()
-                            logger.debug(
-                                "Fail to send connect message from agent to proxy, clientChannelId=$clientChannelId, " +
-                                    "targetHost=${httpConnectionInfo.host}, targetPort =${httpConnectionInfo.port}",
-                                it.cause())
-                            return@writeAgentMessageToProxy
+                proxyChannelFuture.channel().attr(AGENT_CHANNEL_CONTEXT)
+                    .setIfAbsent(agentChannelContext)
+                proxyChannelFuture.channel().attr(HTTP_CONNECTION_INFO)
+                    .setIfAbsent(httpConnectionInfo)
+                proxyChannelFuture.channel().attr(HTTP_CONNECTION_KEEP_ALIVE)
+                    .setIfAbsent(connectionKeepAlive)
+                proxyChannelFuture.channel().attr(PROXY_CHANNEL_ACTIVE_CALLBACK)
+                    .setIfAbsent { proxyChannelContext ->
+                        writeAgentMessageToProxy(AgentMessageBodyType.DATA,
+                            this.agentConfiguration.userToken,
+                            proxyChannelContext.channel(), httpConnectionInfo.host,
+                            httpConnectionInfo.port,
+                            msg, clientChannelId, MessageBodyEncryptionType.random()) {
+                            if (!it.isSuccess) {
+                                ChannelInfoCache.removeChannelInfo(clientChannelId)
+                                agentChannelContext.close()
+                                proxyChannelContext.close()
+                                logger.debug(
+                                    "Fail to send connect message from agent to proxy, clientChannelId=$clientChannelId, " +
+                                        "targetHost=${httpConnectionInfo.host}, targetPort =${httpConnectionInfo.port}",
+                                    it.cause())
+                                return@writeAgentMessageToProxy
+                            }
                         }
                     }
-                }
             })
     }
 
@@ -162,7 +186,8 @@ internal class HttpProxySetupConnectionHandler(
 
     override fun exceptionCaught(agentChannelContext: ChannelHandlerContext, cause: Throwable) {
         val channelCacheInfo =
-            ChannelInfoCache.getChannelInfoByClientChannelId(agentChannelContext.channel().id().asLongText())
+            ChannelInfoCache.getChannelInfoByClientChannelId(
+                agentChannelContext.channel().id().asLongText())
         if (channelCacheInfo != null) {
             channelCacheInfo.agentChannel.close()
             channelCacheInfo.proxyChannel.close()

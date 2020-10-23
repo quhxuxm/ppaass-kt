@@ -10,11 +10,13 @@ import org.springframework.context.annotation.Configuration
 internal class AgentConfigure(private val agentConfiguration: AgentConfiguration) {
     @Bean
     fun proxyBootstrapIoEventLoopGroup() =
-        NioEventLoopGroup(agentConfiguration.staticAgentConfiguration.proxyBootstrapIoEventThreadNumber)
+        NioEventLoopGroup(
+            agentConfiguration.staticAgentConfiguration.proxyBootstrapIoEventThreadNumber)
 
     @Bean
     fun dataTransferIoEventLoopGroup() =
-        NioEventLoopGroup(agentConfiguration.staticAgentConfiguration.dataTransferIoEventThreadNumber)
+        NioEventLoopGroup(
+            agentConfiguration.staticAgentConfiguration.dataTransferIoEventThreadNumber)
 
     @Bean
     fun agentMasterIoEventLoopGroup() =

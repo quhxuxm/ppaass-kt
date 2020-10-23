@@ -48,14 +48,16 @@ class ProxyConfiguration(
 ) {
     val agentPublicKey: String by lazy {
         val lines = IOUtils.readLines(
-            ProxyConfiguration::class.java.classLoader.getResourceAsStream("security/agentPublicKey.txt"),
+            ProxyConfiguration::class.java.classLoader.getResourceAsStream(
+                "security/agentPublicKey.txt"),
             Charsets.UTF_8)
         val result = lines.joinToString("")
         result
     }
     val proxyPrivateKey: String by lazy {
         val lines = IOUtils.readLines(
-            ProxyConfiguration::class.java.classLoader.getResourceAsStream("security/proxyPrivateKey.txt"),
+            ProxyConfiguration::class.java.classLoader.getResourceAsStream(
+                "security/proxyPrivateKey.txt"),
             Charsets.UTF_8)
         val result = lines.joinToString("")
         result

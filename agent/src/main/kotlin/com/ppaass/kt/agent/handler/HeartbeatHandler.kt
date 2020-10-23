@@ -25,6 +25,7 @@ internal class HeartbeatHandler : ChannelInboundHandlerAdapter() {
         if (IdleState.ALL_IDLE !== evt.state()) {
             return
         }
-        agentContext.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
+        agentContext.writeAndFlush(Unpooled.EMPTY_BUFFER)
+            .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
     }
 }

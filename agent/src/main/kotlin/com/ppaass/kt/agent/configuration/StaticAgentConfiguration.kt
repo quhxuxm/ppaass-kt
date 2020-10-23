@@ -30,14 +30,16 @@ class StaticAgentConfiguration(
 ) {
     val proxyPublicKey: String by lazy {
         val lines = IOUtils.readLines(
-            StaticAgentConfiguration::class.java.classLoader.getResourceAsStream("security/proxyPublicKey.txt"),
+            StaticAgentConfiguration::class.java.classLoader.getResourceAsStream(
+                "security/proxyPublicKey.txt"),
             Charsets.UTF_8)
         val result = lines.joinToString("")
         result
     }
     val agentPrivateKey: String by lazy {
         val lines = IOUtils.readLines(
-            StaticAgentConfiguration::class.java.classLoader.getResourceAsStream("security/agentPrivateKey.txt"),
+            StaticAgentConfiguration::class.java.classLoader.getResourceAsStream(
+                "security/agentPrivateKey.txt"),
             Charsets.UTF_8)
         val result = lines.joinToString("")
         result

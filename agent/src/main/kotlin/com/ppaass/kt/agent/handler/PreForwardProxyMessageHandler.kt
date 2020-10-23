@@ -19,7 +19,8 @@ internal class PreForwardProxyMessageHandler :
         private val logger = KotlinLogging.logger {}
     }
 
-    override fun channelRead0(proxyChannelContext: ChannelHandlerContext, proxyMessage: ProxyMessage) {
+    override fun channelRead0(proxyChannelContext: ChannelHandlerContext,
+                              proxyMessage: ProxyMessage) {
         val proxyChannel = proxyChannelContext.channel();
         val agentChannelContext = proxyChannel.attr(AGENT_CHANNEL_CONTEXT).get()
         if (ProxyMessageBodyType.HEARTBEAT == proxyMessage.body.bodyType) {

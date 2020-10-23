@@ -7,7 +7,8 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.MessageToByteEncoder
 import mu.KotlinLogging
 
-class ProxyMessageEncoder(private val agentPublicKeyString: String) : MessageToByteEncoder<ProxyMessage>() {
+class ProxyMessageEncoder(private val agentPublicKeyString: String) :
+    MessageToByteEncoder<ProxyMessage>() {
     private companion object {
         private val logger = KotlinLogging.logger {}
     }

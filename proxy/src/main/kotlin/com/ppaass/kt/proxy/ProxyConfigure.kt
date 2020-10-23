@@ -77,7 +77,8 @@ internal class ProxyConfigure(private val proxyConfiguration: ProxyConfiguration
                 WriteBufferWaterMark(proxyConfiguration.targetWriteBufferWaterMarkLow,
                     proxyConfiguration.targetWriteBufferWaterMarkHigh))
             option(ChannelOption.RCVBUF_ALLOCATOR,
-                AdaptiveRecvByteBufAllocator(proxyConfiguration.targetReceiveDataAverageBufferMinSize,
+                AdaptiveRecvByteBufAllocator(
+                    proxyConfiguration.targetReceiveDataAverageBufferMinSize,
                     proxyConfiguration
                         .targetReceiveDataAverageBufferInitialSize,
                     proxyConfiguration.targetReceiveDataAverageBufferMaxSize))

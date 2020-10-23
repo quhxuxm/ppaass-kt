@@ -105,7 +105,8 @@ internal fun parseHttpConnectionInfo(uri: String): HttpConnectionInfo {
     return HttpConnectionInfo(hostName, port)
 }
 
-fun writeAgentMessageToProxy(bodyType: AgentMessageBodyType, secureToken: String, proxyChannel: Channel,
+fun writeAgentMessageToProxy(bodyType: AgentMessageBodyType, secureToken: String,
+                             proxyChannel: Channel,
                              host: String, port: Int,
                              input: Any?,
                              clientChannelId: String,

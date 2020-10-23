@@ -27,8 +27,10 @@ internal class SocksV5Configure {
             option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
             option(ChannelOption.TCP_NODELAY, true)
             option(ChannelOption.SO_REUSEADDR, true)
-            option(ChannelOption.SO_RCVBUF, agentConfiguration.staticAgentConfiguration.proxyServerSoRcvbuf)
-            option(ChannelOption.SO_SNDBUF, agentConfiguration.staticAgentConfiguration.proxyServerSoSndbuf)
+            option(ChannelOption.SO_RCVBUF,
+                agentConfiguration.staticAgentConfiguration.proxyServerSoRcvbuf)
+            option(ChannelOption.SO_SNDBUF,
+                agentConfiguration.staticAgentConfiguration.proxyServerSoSndbuf)
         }
         proxyBootstrap.handler(socksV5ProxyChannelInitializer)
         return proxyBootstrap

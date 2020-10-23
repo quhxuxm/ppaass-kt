@@ -16,7 +16,9 @@ class ResourceClearHandler : ChannelInboundHandlerAdapter() {
             ctx.channel().id()
                 .asLongText()
         }, remote address: ${ctx.channel().remoteAddress()}", cause)
-        logger.debug("Close current channel on exception, current channel: ${ctx.channel().id().asLongText()}", cause)
+        logger.debug("Close current channel on exception, current channel: ${
+            ctx.channel().id().asLongText()
+        }", cause)
         ctx.close()
     }
 }
