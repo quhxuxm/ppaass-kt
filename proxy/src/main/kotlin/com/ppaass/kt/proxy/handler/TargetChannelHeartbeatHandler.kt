@@ -1,5 +1,7 @@
 package com.ppaass.kt.proxy.handler
 
+import io.netty.buffer.Unpooled
+import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
@@ -39,6 +41,8 @@ internal class TargetChannelHeartbeatHandler : ChannelInboundHandlerAdapter() {
             } else {
                 proxyChannel.flush()
             }
+            targetChannelContext.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(
+                ChannelFutureListener.CLOSE_ON_FAILURE)
             return
         }
         targetChannelContext.close()
