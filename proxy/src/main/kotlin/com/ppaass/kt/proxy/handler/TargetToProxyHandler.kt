@@ -84,28 +84,28 @@ internal class TargetToProxyHandler(
 
     override fun channelInactive(targetChannelContext: ChannelHandlerContext) {
         val targetChannel = targetChannelContext.channel()
-        val proxyChannelContext = targetChannel.attr(PROXY_CHANNEL_CONTEXT).get()
+//        val proxyChannelContext = targetChannel.attr(PROXY_CHANNEL_CONTEXT).get()
         targetChannel.attr(PROXY_CHANNEL_CONTEXT).set(null)
-        val agentConnectMessage = targetChannel.attr(AGENT_CONNECT_MESSAGE).get()
+//        val agentConnectMessage = targetChannel.attr(AGENT_CONNECT_MESSAGE).get()
         targetChannel.attr(AGENT_CONNECT_MESSAGE).set(null)
         targetChannel.attr(HANDLERS_TO_REMOVE_AFTER_TARGET_ACTIVE).set(null)
-        if (agentConnectMessage != null) {
-            if (proxyChannelContext != null) {
-                val proxyChannel = proxyChannelContext.channel()
-                val proxyMessageBody =
-                    ProxyMessageBody(ProxyMessageBodyType.TARGET_CHANNEL_CLOSE, generateUid())
-                proxyMessageBody.targetAddress = agentConnectMessage.body.targetAddress
-                proxyMessageBody.targetPort = agentConnectMessage.body.targetPort
-                val proxyMessage =
-                    ProxyMessage(generateUid(), MessageBodyEncryptionType.random(),
-                        proxyMessageBody)
-                proxyChannel.writeAndFlush(proxyMessage).addListener(ChannelFutureListener.CLOSE)
-            }
-        } else {
-            if (proxyChannelContext != null) {
-                proxyChannelContext.close()
-            }
-        }
+//        if (agentConnectMessage != null) {
+//            if (proxyChannelContext != null) {
+//                val proxyChannel = proxyChannelContext.channel()
+//                val proxyMessageBody =
+//                    ProxyMessageBody(ProxyMessageBodyType.TARGET_CHANNEL_CLOSE, generateUid())
+//                proxyMessageBody.targetAddress = agentConnectMessage.body.targetAddress
+//                proxyMessageBody.targetPort = agentConnectMessage.body.targetPort
+//                val proxyMessage =
+//                    ProxyMessage(generateUid(), MessageBodyEncryptionType.random(),
+//                        proxyMessageBody)
+//                proxyChannel.writeAndFlush(proxyMessage).addListener(ChannelFutureListener.CLOSE)
+//            }
+//        } else {
+//            if (proxyChannelContext != null) {
+//                proxyChannelContext.close()
+//            }
+//        }
     }
 
     override fun channelRead0(targetChannelContext: ChannelHandlerContext, targetMessage: ByteBuf) {
