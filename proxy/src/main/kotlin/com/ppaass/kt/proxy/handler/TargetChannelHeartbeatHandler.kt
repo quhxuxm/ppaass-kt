@@ -1,11 +1,10 @@
 package com.ppaass.kt.proxy.handler
 
-import com.ppaass.kt.common.protocol.AgentMessageBodyType
 import io.netty.buffer.Unpooled
+import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
-import io.netty.channel.ChannelOption
 import io.netty.handler.timeout.IdleState
 import io.netty.handler.timeout.IdleStateEvent
 import mu.KotlinLogging
@@ -59,7 +58,10 @@ internal class TargetChannelHeartbeatHandler : ChannelInboundHandlerAdapter() {
                 targetChannel.id().asLongText()
             } is active, keep alive target channel."
         }
-        targetChannelContext.writeAndFlush(Unpooled.EMPTY_BUFFER)
+        targetChannelContext.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
+        if (proxyChannel.isWritable) {
+            targetChannel.read()
+        }
         return
     }
 }
