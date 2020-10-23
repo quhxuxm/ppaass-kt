@@ -59,24 +59,13 @@ internal class TargetChannelHeartbeatHandler : ChannelInboundHandlerAdapter() {
                 targetChannel.id().asLongText()
             } is active, keep alive target channel."
         }
-        if (proxyChannel.isWritable) {
-            targetChannel.read()
-        } else {
-            proxyChannel.flush()
-        }
         val agentConnectMessage = targetChannel.attr(AGENT_CONNECT_MESSAGE).get()
         if (agentConnectMessage == null) {
             return
         }
         if (agentConnectMessage.body.bodyType == AgentMessageBodyType.CONNECT_WITH_KEEP_ALIVE) {
             targetChannel.config().setOption(ChannelOption.SO_KEEPALIVE, true)
-            targetChannelContext.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener {
-                if (proxyChannel.isWritable) {
-                    targetChannel.read()
-                } else {
-                    proxyChannel.flush()
-                }
-            }
+            targetChannelContext.writeAndFlush(Unpooled.EMPTY_BUFFER);
         }
         return
     }
