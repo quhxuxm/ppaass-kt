@@ -38,14 +38,14 @@ internal class SocksV5ProxyToAgentHandler(
         val agentChannelId = agentChannel.id().asLongText()
         val socks5CommandRequest = proxyChannel.attr(SOCKS_V5_COMMAND_REQUEST).get()
         val agentMessageBody =
-            AgentMessageBody(bodyType = AgentMessageBodyType.CONNECT_WITH_KEEP_ALIVE, id = agentChannelId,
+            AgentMessageBody(bodyType = AgentMessageBodyType.CONNECT_WITHOUT_KEEP_ALIVE, id = agentChannelId,
                 securityToken = agentConfiguration.userToken,
                 targetAddress = socks5CommandRequest.dstAddr(), targetPort = socks5CommandRequest.dstPort())
         if (agentChannel.isOpen) {
-            agentChannel.config().setOption(ChannelOption.SO_KEEPALIVE, true)
+            agentChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
         }
         if (proxyChannel.isOpen) {
-            proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, true)
+            proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
         }
         val agentMessage = AgentMessage(
             encryptionToken = generateUid(),
