@@ -15,6 +15,7 @@ class ProxyConfiguration(
     val port: Int = 0,
     val targetConnectionTimeout: Int = 0,
     val agentConnectionIdleSeconds: Int = 0,
+    val targetConnectionIdleSeconds: Int = 0,
     val targetReceiveDataAverageBufferMinSize: Int = 0,
     val targetReceiveDataAverageBufferInitialSize: Int = 0,
     val targetReceiveDataAverageBufferMaxSize: Int = 0,

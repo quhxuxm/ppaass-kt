@@ -25,7 +25,7 @@ internal class ProxyChannelInitializer(
     private val proxyConfiguration: ProxyConfiguration,
     private val globalChannelTrafficShapingHandler: GlobalChannelTrafficShapingHandler,
     private val setupTargetConnectionHandler: SetupTargetConnectionHandler,
-    private val heartbeatHandler: HeartbeatHandler,
+    private val proxyChannelHeartbeatHandler: ProxyChannelHeartbeatHandler,
     private val resourceClearHandler: ResourceClearHandler) :
     ChannelInitializer<SocketChannel>() {
     private companion object {
@@ -37,7 +37,7 @@ internal class ProxyChannelInitializer(
             logger.debug { "Begin to initialize proxy channel ${proxyChannel.id().asLongText()}" }
             addLast(globalChannelTrafficShapingHandler)
             addLast(IdleStateHandler(0, 0, proxyConfiguration.agentConnectionIdleSeconds))
-            addLast(heartbeatHandler)
+            addLast(proxyChannelHeartbeatHandler)
             //Inbound
             if (proxyConfiguration.compressingEnable) {
                 addLast(Lz4FrameDecoder())
