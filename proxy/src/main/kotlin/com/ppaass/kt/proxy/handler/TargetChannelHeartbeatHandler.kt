@@ -59,14 +59,7 @@ internal class TargetChannelHeartbeatHandler : ChannelInboundHandlerAdapter() {
                 targetChannel.id().asLongText()
             } is active, keep alive target channel."
         }
-        val agentConnectMessage = targetChannel.attr(AGENT_CONNECT_MESSAGE).get()
-        if (agentConnectMessage == null) {
-            return
-        }
-        if (agentConnectMessage.body.bodyType == AgentMessageBodyType.CONNECT_WITH_KEEP_ALIVE) {
-            targetChannel.config().setOption(ChannelOption.SO_KEEPALIVE, true)
-            targetChannelContext.writeAndFlush(Unpooled.EMPTY_BUFFER);
-        }
+        targetChannelContext.writeAndFlush(Unpooled.EMPTY_BUFFER)
         return
     }
 }
