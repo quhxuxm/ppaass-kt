@@ -29,17 +29,11 @@ internal class TransferDataFromProxyToAgentHandler(
         val httpConnectionKeepalive = proxyChannel.attr(HTTP_CONNECTION_KEEP_ALIVE).get()
         val initOnChannelActivateCallback = proxyChannel.attr(PROXY_CHANNEL_ACTIVE_CALLBACK).get()
         val bodyType = if (httpConnectionKeepalive) {
-            if (proxyChannel.isOpen) {
-                proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, true)
-            }
             if (agentChannel.isOpen) {
                 agentChannel.config().setOption(ChannelOption.SO_KEEPALIVE, true)
             }
             AgentMessageBodyType.CONNECT_WITH_KEEP_ALIVE
         } else {
-            if (proxyChannel.isOpen) {
-                proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
-            }
             if (agentChannel.isOpen) {
                 agentChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
             }

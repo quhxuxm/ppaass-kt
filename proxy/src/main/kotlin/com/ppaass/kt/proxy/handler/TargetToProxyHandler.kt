@@ -46,17 +46,11 @@ internal class TargetToProxyHandler(
                 if (targetChannel.isOpen) {
                     targetChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
                 }
-                if (proxyChannel.isOpen) {
-                    proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
-                }
                 this.setupProxyChannelPipelineForConnectMessage(proxyChannelContext, targetChannel)
             }
             AgentMessageBodyType.CONNECT_WITH_KEEP_ALIVE -> {
                 if (targetChannel.isOpen) {
                     targetChannel.config().setOption(ChannelOption.SO_KEEPALIVE, true)
-                }
-                if (proxyChannel.isOpen) {
-                    proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, true)
                 }
                 this.setupProxyChannelPipelineForConnectMessage(proxyChannelContext, targetChannel)
             }
