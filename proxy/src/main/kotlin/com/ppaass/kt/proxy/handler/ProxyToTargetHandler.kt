@@ -68,7 +68,6 @@ internal class ProxyToTargetHandler : SimpleChannelInboundHandler<AgentMessage>(
             targetChannel.read()
         } else {
             proxyChannel.flush()
-            targetChannel.flush()
         }
     }
 }

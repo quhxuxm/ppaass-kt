@@ -67,6 +67,8 @@ internal class TargetToProxyHandler(
         proxyChannelContext.fireChannelRead(agentConnectMessage)
         if (proxyChannel.isWritable) {
             targetChannel.read()
+        } else {
+            proxyChannel.flush()
         }
     }
 
@@ -150,7 +152,6 @@ internal class TargetToProxyHandler(
             proxyChannel.read()
         } else {
             targetChannel.flush()
-            proxyChannel.flush()
         }
     }
 }
