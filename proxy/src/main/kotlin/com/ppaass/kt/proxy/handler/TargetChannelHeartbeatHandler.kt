@@ -27,24 +27,44 @@ internal class TargetChannelHeartbeatHandler : ChannelInboundHandlerAdapter() {
             logger.debug { "Ignore the idle event because it is not a valid status: ${evt.state()}" }
             return
         }
-        logger.debug { "Do heartbeat." }
         val targetChannel = targetChannelContext.channel()
+        logger.debug { "Do heartbeat for target channel ${targetChannel.id().asLongText()}." }
         val proxyChannelContext = targetChannel.attr(PROXY_CHANNEL_CONTEXT).get()
         if (proxyChannelContext == null) {
+            logger.info {
+                "No proxy channel context attached to target channel ${
+                    targetChannel.id().asLongText()
+                }, close target channel on heartbeat."
+            }
             targetChannelContext.close()
             return
         }
         val proxyChannel = proxyChannelContext.channel();
-        if (proxyChannel.isActive) {
-            if (proxyChannel.isWritable) {
-                targetChannel.read()
-            } else {
-                proxyChannel.flush()
+        if (!proxyChannel.isActive) {
+            logger.info {
+                "Proxy channel ${
+                    proxyChannel.id().asLongText()
+                } attached to target channel ${
+                    targetChannel.id().asLongText()
+                } is not active, close target channel on heartbeat."
             }
-            targetChannelContext.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(
-                ChannelFutureListener.CLOSE_ON_FAILURE)
+            targetChannelContext.close()
             return
         }
-        targetChannelContext.close()
+        logger.info {
+            "Proxy channel ${
+                proxyChannel.id().asLongText()
+            } attached to target channel ${
+                targetChannel.id().asLongText()
+            } is active, keep alive target channel."
+        }
+        if (proxyChannel.isWritable) {
+            targetChannel.read()
+        } else {
+            proxyChannel.flush()
+        }
+        targetChannelContext.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(
+            ChannelFutureListener.CLOSE_ON_FAILURE)
+        return
     }
 }
