@@ -3,7 +3,7 @@ package com.ppaass.kt.agent
 import com.ppaass.kt.agent.configuration.AgentConfiguration
 import com.ppaass.kt.agent.handler.HeartbeatHandler
 import com.ppaass.kt.agent.handler.socks.SwitchSocksVersionHandler
-import com.ppaass.kt.common.netty.handler.ResourceClearHandler
+import com.ppaass.kt.common.netty.handler.ExceptionHandler
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler
@@ -16,7 +16,7 @@ internal class SocksAgent(
     private val agentConfiguration: AgentConfiguration,
     private val switchSocksVersionHandler: SwitchSocksVersionHandler,
     private val heartbeatHandler: HeartbeatHandler,
-    private val resourceClearHandler: ResourceClearHandler) : Agent(agentConfiguration) {
+    private val exceptionHandler: ExceptionHandler) : Agent(agentConfiguration) {
     final override val channelInitializer: ChannelInitializer<SocketChannel>
 
     private companion object {
@@ -32,7 +32,7 @@ internal class SocksAgent(
                         agentConfiguration.staticAgentConfiguration.clientConnectionIdleSeconds))
                     addLast(heartbeatHandler)
                     addLast(SocksPortUnificationServerHandler())
-                    addLast(resourceClearHandler)
+                    addLast(exceptionHandler)
                     addLast(switchSocksVersionHandler)
                 }
             }

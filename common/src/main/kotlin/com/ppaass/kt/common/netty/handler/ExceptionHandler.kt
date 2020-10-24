@@ -6,7 +6,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter
 import mu.KotlinLogging
 
 @ChannelHandler.Sharable
-class ResourceClearHandler : ChannelInboundHandlerAdapter() {
+class ExceptionHandler : ChannelInboundHandlerAdapter() {
     private companion object {
         private val logger = KotlinLogging.logger {}
     }
@@ -16,9 +16,5 @@ class ResourceClearHandler : ChannelInboundHandlerAdapter() {
             ctx.channel().id()
                 .asLongText()
         }, remote address: ${ctx.channel().remoteAddress()}", cause)
-        logger.debug("Close current channel on exception, current channel: ${
-            ctx.channel().id().asLongText()
-        }", cause)
-        ctx.close()
     }
 }
