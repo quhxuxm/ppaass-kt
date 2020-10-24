@@ -33,9 +33,8 @@ internal class TargetChannelHeartbeatHandler : ChannelInboundHandlerAdapter() {
             logger.error {
                 "No proxy channel context attached to target channel ${
                     targetChannel.id().asLongText()
-                }, close target channel on heartbeat."
+                }, can not do heartbeat."
             }
-            targetChannelContext.close()
             return
         }
         val proxyChannel = proxyChannelContext.channel();
@@ -47,20 +46,9 @@ internal class TargetChannelHeartbeatHandler : ChannelInboundHandlerAdapter() {
             } is active, keep alive target channel."
         }
         targetChannelContext.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener {
-            if (it.isSuccess) {
-                if (proxyChannel.isWritable) {
-                    targetChannel.read()
-                }
-                return@addListener
+            if (proxyChannel.isWritable) {
+                targetChannel.read()
             }
-            logger.error {
-                "Close target channel ${
-                    targetChannel.id().asLongText()
-                } as keep alive fail, close attached proxy channel ${
-                    proxyChannel.id().asLongText()
-                } also."
-            }
-            targetChannelContext.close()
         }
         return
     }
