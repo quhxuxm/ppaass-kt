@@ -1,7 +1,6 @@
 package com.ppaass.kt.proxy.handler
 
 import io.netty.buffer.Unpooled
-import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
@@ -27,8 +26,21 @@ internal class ProxyChannelHeartbeatHandler : ChannelInboundHandlerAdapter() {
             logger.debug { "Ignore the idle event because it is not a valid status: ${evt.state()}" }
             return
         }
-        logger.debug { "Do heartbeat." }
-        proxyChannelContext.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(
-            ChannelFutureListener.CLOSE_ON_FAILURE)
+        logger.debug {
+            "Do heartbeat on proxy channel ${
+                proxyChannelContext.channel().id().asLongText()
+            }."
+        }
+        proxyChannelContext.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener {
+            val proxyChannel = proxyChannelContext.channel()
+            val targetChannelContext = proxyChannel.attr(TARGET_CHANNEL_CONTEXT).get()
+            if (targetChannelContext == null) {
+                return@addListener
+            }
+            val targetChannel = targetChannelContext.channel()
+            if (proxyChannel.isWritable) {
+                targetChannel.read()
+            }
+        }
     }
 }
