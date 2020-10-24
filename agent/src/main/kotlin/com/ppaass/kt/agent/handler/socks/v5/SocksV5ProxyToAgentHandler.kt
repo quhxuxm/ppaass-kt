@@ -46,6 +46,9 @@ internal class SocksV5ProxyToAgentHandler(
         if (agentChannel.isOpen) {
             agentChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
         }
+        if (proxyChannel.isOpen) {
+            proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
+        }
         val agentMessage = AgentMessage(
             encryptionToken = generateUid(),
             messageBodyEncryptionType = MessageBodyEncryptionType.random(),
