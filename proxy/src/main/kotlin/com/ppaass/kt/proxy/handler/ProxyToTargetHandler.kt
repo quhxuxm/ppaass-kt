@@ -49,11 +49,6 @@ internal class ProxyToTargetHandler : SimpleChannelInboundHandler<AgentMessage>(
         targetChannel.flush()
     }
 
-    override fun channelInactive(proxyChannelContext: ChannelHandlerContext) {
-        val proxyChannel = proxyChannelContext.channel();
-        proxyChannel.attr(TARGET_CHANNEL_CONTEXT).set(null)
-    }
-
     override fun channelWritabilityChanged(proxyChannelContext: ChannelHandlerContext) {
         val proxyChannel = proxyChannelContext.channel();
         val targetChannelContext = proxyChannel.attr(TARGET_CHANNEL_CONTEXT).get()
