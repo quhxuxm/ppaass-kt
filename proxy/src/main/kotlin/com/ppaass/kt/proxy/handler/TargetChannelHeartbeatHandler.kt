@@ -39,17 +39,6 @@ internal class TargetChannelHeartbeatHandler : ChannelInboundHandlerAdapter() {
             return
         }
         val proxyChannel = proxyChannelContext.channel();
-        if (!proxyChannel.isActive) {
-            logger.error {
-                "Proxy channel ${
-                    proxyChannel.id().asLongText()
-                } attached to target channel ${
-                    targetChannel.id().asLongText()
-                } is not active, close target channel on heartbeat."
-            }
-            targetChannelContext.close()
-            return
-        }
         logger.debug {
             "Proxy channel ${
                 proxyChannel.id().asLongText()
