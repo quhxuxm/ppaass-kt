@@ -15,7 +15,8 @@ import org.springframework.context.annotation.Configuration
 import java.util.concurrent.Executors
 
 @Configuration
-internal class ProxyConfigure(private val proxyConfiguration: ProxyConfiguration) {
+internal class ProxyConfigure(
+    private val proxyConfiguration: ProxyConfiguration) {
     @Bean
     fun targetBootstrapIoEventLoopGroup() =
         NioEventLoopGroup(this.proxyConfiguration.targetIoEventThreadNumber)
@@ -58,8 +59,10 @@ internal class ProxyConfigure(private val proxyConfiguration: ProxyConfiguration
         )
 
     @Bean
-    fun targetBootstrap(targetBootstrapIoEventLoopGroup: EventLoopGroup,
-                        targetChannelInitializer: TargetChannelInitializer): Bootstrap {
+    fun targetBootstrap(
+        targetBootstrapIoEventLoopGroup: EventLoopGroup,
+        targetChannelInitializer: TargetChannelInitializer
+    ): Bootstrap {
         val targetBootstrap = Bootstrap()
         targetBootstrap.apply {
             group(targetBootstrapIoEventLoopGroup)

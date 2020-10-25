@@ -6,7 +6,6 @@ import com.ppaass.kt.common.protocol.ProxyMessage
 import com.ppaass.kt.common.protocol.ProxyMessageBody
 import com.ppaass.kt.common.protocol.ProxyMessageBodyType
 import com.ppaass.kt.common.protocol.generateUid
-import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.ByteBuf
 import io.netty.channel.Channel
 import io.netty.channel.ChannelHandler
@@ -16,14 +15,13 @@ import io.netty.channel.EventLoopGroup
 import io.netty.channel.SimpleChannelInboundHandler
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
-import java.net.SocketException
 
 @ChannelHandler.Sharable
 @Service
 internal class TargetToProxyHandler(
     private val dataTransferIoEventLoopGroup: EventLoopGroup,
-    private val proxyToTargetHandler: ProxyToTargetHandler,
-    private val targetBootstrap: Bootstrap
+    private val proxyToTargetHandler: ProxyToTargetHandler
+//    private val targetBootstrap: Bootstrap
 ) : SimpleChannelInboundHandler<ByteBuf>() {
     private companion object {
         private val logger = KotlinLogging.logger {}
@@ -132,47 +130,46 @@ internal class TargetToProxyHandler(
             targetChannel.flush()
         }
     }
-
-    override fun exceptionCaught(targetChannelContext: ChannelHandlerContext, cause: Throwable) {
-        logger.error(cause) {
-            "Exception happen on target channel ${
-                targetChannelContext.channel().id().asLongText()
-            }."
-        }
-        if (cause is SocketException) {
-            val targetChannel = targetChannelContext.channel()
-            val proxyChannelContext = targetChannel.attr(PROXY_CHANNEL_CONTEXT).get()
-            if (proxyChannelContext == null) {
-                targetChannelContext.fireExceptionCaught(cause)
-                return
-            }
-            val agentConnectMessage = targetChannel.attr(AGENT_CONNECT_MESSAGE).get()
-            if (agentConnectMessage == null) {
-                targetChannelContext.fireExceptionCaught(cause)
-                return
-            }
-            val targetAddress = agentConnectMessage.body.targetAddress
-            if (targetAddress == null) {
-                targetChannelContext.fireExceptionCaught(cause)
-                return
-            }
-            val targetPort = agentConnectMessage.body.targetPort
-            if (targetPort == null) {
-                targetChannelContext.fireExceptionCaught(cause)
-                return
-            }
-            targetChannelContext.close()
-            val targetConnectFuture = this.targetBootstrap.connect()
-            targetConnectFuture.addListener(TargetConnectListener(
-                targetConnectFuture,
-                proxyChannelContext,
-                targetAddress,
-                targetPort,
-                agentConnectMessage,
-                listOf()
-            ))
-            return
-        }
-        targetChannelContext.fireExceptionCaught(cause)
-    }
+//    override fun exceptionCaught(targetChannelContext: ChannelHandlerContext, cause: Throwable) {
+//        logger.error(cause) {
+//            "Exception happen on target channel ${
+//                targetChannelContext.channel().id().asLongText()
+//            }."
+//        }
+//        if (cause is SocketException) {
+//            val targetChannel = targetChannelContext.channel()
+//            val proxyChannelContext = targetChannel.attr(PROXY_CHANNEL_CONTEXT).get()
+//            if (proxyChannelContext == null) {
+//                targetChannelContext.fireExceptionCaught(cause)
+//                return
+//            }
+//            val agentConnectMessage = targetChannel.attr(AGENT_CONNECT_MESSAGE).get()
+//            if (agentConnectMessage == null) {
+//                targetChannelContext.fireExceptionCaught(cause)
+//                return
+//            }
+//            val targetAddress = agentConnectMessage.body.targetAddress
+//            if (targetAddress == null) {
+//                targetChannelContext.fireExceptionCaught(cause)
+//                return
+//            }
+//            val targetPort = agentConnectMessage.body.targetPort
+//            if (targetPort == null) {
+//                targetChannelContext.fireExceptionCaught(cause)
+//                return
+//            }
+//            targetChannelContext.close()
+//            val targetConnectFuture = this.targetBootstrap.connect()
+//            targetConnectFuture.addListener(TargetConnectListener(
+//                targetConnectFuture,
+//                proxyChannelContext,
+//                targetAddress,
+//                targetPort,
+//                agentConnectMessage,
+//                listOf()
+//            ))
+//            return
+//        }
+//        targetChannelContext.fireExceptionCaught(cause)
+//    }
 }
