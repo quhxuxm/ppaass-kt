@@ -31,11 +31,9 @@ internal class TargetToProxyHandler(
         val proxyChannelContext = targetChannel.attr(PROXY_CHANNEL_CONTEXT).get()
         val agentConnectMessage = targetChannel.attr(AGENT_CONNECT_MESSAGE).get()
         if (proxyChannelContext == null) {
-            targetChannelContext.close()
             return
         }
         if (agentConnectMessage == null) {
-            targetChannelContext.close()
             return
         }
         val proxyChannel = proxyChannelContext.channel()
