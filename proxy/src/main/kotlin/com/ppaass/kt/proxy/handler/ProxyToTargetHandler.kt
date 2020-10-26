@@ -66,4 +66,13 @@ internal class ProxyToTargetHandler : SimpleChannelInboundHandler<AgentMessage>(
             proxyChannel.flush()
         }
     }
+
+    override fun exceptionCaught(proxyChannelContext: ChannelHandlerContext, cause: Throwable) {
+        logger.error(cause) {
+            "Exception happen on proxy channel ${
+                proxyChannelContext.channel().id().asLongText()
+            }."
+        }
+        proxyChannelContext.close()
+    }
 }
