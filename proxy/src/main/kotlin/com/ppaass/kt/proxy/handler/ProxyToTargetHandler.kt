@@ -54,12 +54,10 @@ internal class ProxyToTargetHandler : SimpleChannelInboundHandler<AgentMessage>(
         val targetChannelContext = proxyChannel.attr(TARGET_CHANNEL_CONTEXT).get()
         val targetChannel = targetChannelContext.channel()
         if (proxyChannel.isWritable) {
-            if (logger.isDebugEnabled) {
-                logger.debug {
-                    "Recover auto read on target channel: ${
-                        targetChannel.id().asLongText()
-                    }"
-                }
+            logger.debug {
+                "Recover auto read on target channel: ${
+                    targetChannel.id().asLongText()
+                }"
             }
             targetChannel.read()
         } else {
@@ -77,7 +75,11 @@ internal class ProxyToTargetHandler : SimpleChannelInboundHandler<AgentMessage>(
                 proxyChannelContext.channel().id().asLongText()
             }, remote address: ${
                 proxyChannelContext.channel().remoteAddress()
-            }, targetAddress=${agentConnectMessage?.body?.targetAddress}, targetPort=${agentConnectMessage?.body?.targetPort}"
+            }, targetAddress=${
+                agentConnectMessage?.body?.targetAddress
+            }, targetPort=${
+                agentConnectMessage?.body?.targetPort
+            }"
         }
         proxyChannelContext.close()
     }

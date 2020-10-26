@@ -118,12 +118,10 @@ internal class TargetToProxyHandler(
         val proxyChannelContext = targetChannel.attr(PROXY_CHANNEL_CONTEXT).get()
         val proxyChannel = proxyChannelContext.channel()
         if (targetChannel.isWritable) {
-            if (logger.isDebugEnabled) {
-                logger.debug {
-                    "Recover auto read on proxy channel: ${
-                        proxyChannelContext.channel().id().asLongText()
-                    }"
-                }
+            logger.debug {
+                "Recover auto read on proxy channel: ${
+                    proxyChannelContext.channel().id().asLongText()
+                }"
             }
             proxyChannel.read()
         } else {
@@ -139,7 +137,11 @@ internal class TargetToProxyHandler(
                 targetChannelContext.channel().id().asLongText()
             }, remote address: ${
                 targetChannelContext.channel().remoteAddress()
-            }, targetAddress=${agentConnectMessage?.body?.targetAddress}, targetPort=${agentConnectMessage?.body?.targetPort}"
+            }, targetAddress=${
+                agentConnectMessage?.body?.targetAddress
+            }, targetPort=${
+                agentConnectMessage?.body?.targetPort
+            }"
         }
         targetChannelContext.close()
     }
