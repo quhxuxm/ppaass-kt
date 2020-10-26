@@ -38,7 +38,7 @@ internal class ProxyChannelHeartbeatHandler : ChannelInboundHandlerAdapter() {
         val heartBeatMessageBody = ProxyMessageBody(ProxyMessageBodyType.HEARTBEAT, generateUid())
         val heartBeatMessage =
             ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), heartBeatMessageBody)
-        proxyChannelContext.writeAndFlush(heartBeatMessage).addListener {
+        proxyChannelContext.channel().writeAndFlush(heartBeatMessage).addListener {
             if (!it.isSuccess) {
                 logger.error {
                     "Fail to write heartbeat message from proxy to agent, close the proxy channel. Proxy channel = ${
