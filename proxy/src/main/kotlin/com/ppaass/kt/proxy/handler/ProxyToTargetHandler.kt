@@ -68,10 +68,16 @@ internal class ProxyToTargetHandler : SimpleChannelInboundHandler<AgentMessage>(
     }
 
     override fun exceptionCaught(proxyChannelContext: ChannelHandlerContext, cause: Throwable) {
+        val proxyChannel = proxyChannelContext.channel();
+        val targetChannelContext = proxyChannel.attr(TARGET_CHANNEL_CONTEXT).get()
+        val targetChannel = targetChannelContext?.channel()
+        val agentConnectMessage = targetChannel?.attr(AGENT_CONNECT_MESSAGE)?.get()
         logger.error(cause) {
             "Exception happen on proxy channel ${
                 proxyChannelContext.channel().id().asLongText()
-            }."
+            }, remote address: ${
+                proxyChannelContext.channel().remoteAddress()
+            }, targetAddress=${agentConnectMessage?.body?.targetAddress}, targetPort=${agentConnectMessage?.body?.targetPort}"
         }
         proxyChannelContext.close()
     }

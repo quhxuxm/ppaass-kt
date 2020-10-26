@@ -132,10 +132,14 @@ internal class TargetToProxyHandler(
     }
 
     override fun exceptionCaught(targetChannelContext: ChannelHandlerContext, cause: Throwable) {
+        val targetChannel = targetChannelContext.channel()
+        val agentConnectMessage = targetChannel.attr(AGENT_CONNECT_MESSAGE).get()
         logger.error(cause) {
             "Exception happen on target channel ${
                 targetChannelContext.channel().id().asLongText()
-            }."
+            }, remote address: ${
+                targetChannelContext.channel().remoteAddress()
+            }, targetAddress=${agentConnectMessage?.body?.targetAddress}, targetPort=${agentConnectMessage?.body?.targetPort}"
         }
         targetChannelContext.close()
     }
