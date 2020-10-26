@@ -72,7 +72,7 @@ internal class SocksV5ProtocolHandler(
                                                 socksRequest.dstAddrType()))
                                             .addListener(ChannelFutureListener.CLOSE)
                                         logger.error {
-                                            "Fail to connect target, channel id =${
+                                            "Fail to connect proxy, agent channel id =${
                                                 agentChannelContext.channel().id().asLongText()
                                             }, targetAddress=${
                                                 socksRequest.dstAddr()
