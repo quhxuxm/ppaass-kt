@@ -40,7 +40,7 @@
         </logger>
         <logger name="com.ppaass.kt"
                 additivity="false"
-                level="error">
+                level="info">
             <appender-ref ref="FILE_APPENDER"/>
         </logger>
         <Root level="error">

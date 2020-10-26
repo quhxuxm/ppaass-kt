@@ -48,6 +48,11 @@ internal class ProxyChannelHeartbeatHandler : ChannelInboundHandlerAdapter() {
                 proxyChannelContext.close()
                 return@addListener
             }
+            logger.info {
+                "Send heartbeat message from proxy to agent success.Proxy channel = ${
+                    proxyChannelContext.channel().id().asLongText()
+                }"
+            }
             val proxyChannel = proxyChannelContext.channel()
             val targetChannel = proxyChannel.attr(TARGET_CHANNEL).get()
             if (targetChannel == null) {

@@ -108,7 +108,11 @@ internal class SocksV5ProxyToAgentHandler(
             return
         }
         if (msg.body.bodyType == ProxyMessageBodyType.HEARTBEAT) {
-            logger.debug { "Discard proxy channel heartbeat." }
+            logger.info {
+                "Discard proxy channel heartbeat, proxy channel = ${
+                    proxyChannel.id().asLongText()
+                }."
+            }
             return
         }
         if (!agentChannel.isActive) {
