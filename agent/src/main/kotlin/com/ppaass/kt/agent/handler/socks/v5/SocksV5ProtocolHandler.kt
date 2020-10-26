@@ -71,10 +71,6 @@ internal class SocksV5ProtocolHandler(
                                                 Socks5CommandStatus.FAILURE,
                                                 socksRequest.dstAddrType()))
                                             .addListener(ChannelFutureListener.CLOSE)
-                                        logger.debug(
-                                            "Fail to send connect message from agent to proxy because of exception.",
-                                            proxyChannelFuture.cause())
-
                                         logger.error {
                                             "Fail to connect target, channel id =${
                                                 agentChannelContext.channel().id().asLongText()
