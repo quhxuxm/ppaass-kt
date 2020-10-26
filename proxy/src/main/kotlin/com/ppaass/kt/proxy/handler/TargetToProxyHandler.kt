@@ -141,6 +141,8 @@ internal class TargetToProxyHandler(
                 agentConnectMessage?.body?.targetAddress
             }, targetPort=${
                 agentConnectMessage?.body?.targetPort
+            }, targetConnectionType=${
+                agentConnectMessage?.body?.bodyType
             }"
         }
         targetChannelContext.close()

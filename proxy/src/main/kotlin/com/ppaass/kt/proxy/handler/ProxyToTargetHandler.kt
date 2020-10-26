@@ -79,6 +79,8 @@ internal class ProxyToTargetHandler : SimpleChannelInboundHandler<AgentMessage>(
                 agentConnectMessage?.body?.targetAddress
             }, targetPort=${
                 agentConnectMessage?.body?.targetPort
+            }, targetConnectionType=${
+                agentConnectMessage?.body?.bodyType
             }"
         }
         proxyChannelContext.close()
