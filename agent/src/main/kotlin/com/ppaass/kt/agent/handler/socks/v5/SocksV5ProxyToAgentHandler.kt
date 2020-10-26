@@ -6,6 +6,7 @@ import com.ppaass.kt.common.protocol.AgentMessageBody
 import com.ppaass.kt.common.protocol.AgentMessageBodyType
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import com.ppaass.kt.common.protocol.ProxyMessage
+import com.ppaass.kt.common.protocol.ProxyMessageBodyType
 import com.ppaass.kt.common.protocol.generateUid
 import io.netty.buffer.Unpooled
 import io.netty.channel.ChannelFutureListener
@@ -80,15 +81,6 @@ internal class SocksV5ProxyToAgentHandler(
                         proxyChannelFuture.cause())
                     return@ChannelFutureListener
                 }
-                logger.debug(
-                    "Success connect to target server: {}:{}", socks5CommandRequest.dstAddr(),
-                    socks5CommandRequest.dstPort())
-                agentChannel.writeAndFlush(DefaultSocks5CommandResponse(
-                    Socks5CommandStatus.SUCCESS,
-                    socks5CommandRequest.dstAddrType(),
-                    socks5CommandRequest.dstAddr(),
-                    socks5CommandRequest.dstPort()))
-                    .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
             }))
     }
 
@@ -108,6 +100,19 @@ internal class SocksV5ProxyToAgentHandler(
             agentChannel.close()
             logger.debug(
                 "Fail to send message from proxy to agent because of agent channel not active.")
+            return
+        }
+        if (msg.body.bodyType == ProxyMessageBodyType.CONNECT_SUCCESS) {
+            val socks5CommandRequest = proxyChannel.attr(SOCKS_V5_COMMAND_REQUEST).get()
+            logger.debug(
+                "Success connect to target server: {}:{}", socks5CommandRequest.dstAddr(),
+                socks5CommandRequest.dstPort())
+            agentChannel.writeAndFlush(DefaultSocks5CommandResponse(
+                Socks5CommandStatus.SUCCESS,
+                socks5CommandRequest.dstAddrType(),
+                socks5CommandRequest.dstAddr(),
+                socks5CommandRequest.dstPort()))
+                .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
             return
         }
         agentChannel.writeAndFlush(originalDataBuf)

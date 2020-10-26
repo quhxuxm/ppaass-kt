@@ -36,14 +36,13 @@ internal class ProxyToTargetHandler(private val targetBootstrap: Bootstrap) :
         when (bodyType) {
             AgentMessageBodyType.DATA -> {
                 val proxyChannel = proxyChannelContext.channel();
-                val targetChannelContext = proxyChannel.attr(TARGET_CHANNEL_CONTEXT).get()
-                if (targetChannelContext == null) {
+                val targetChannel = proxyChannel.attr(TARGET_CHANNEL).get()
+                if (targetChannel == null) {
                     logger.error { "Fail to transfer data from proxy to target because of no target channel attached, agent message: ${agentMessage}" }
                     throw PpaassException(
                         "Fail to transfer data from proxy to target because of no target channel attached")
                 }
-                val targetChannel = targetChannelContext.channel()
-                targetChannel.write(Unpooled.wrappedBuffer(agentMessage.body.originalData))
+                targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData))
                     .addListener {
                         if (targetChannel.isWritable) {
                             proxyChannel.read()
@@ -51,7 +50,6 @@ internal class ProxyToTargetHandler(private val targetBootstrap: Bootstrap) :
                             targetChannel.flush()
                         }
                     }
-                targetChannel.flush()
                 return
             }
             else -> {
@@ -120,6 +118,7 @@ internal class ProxyToTargetHandler(private val targetBootstrap: Bootstrap) :
                             }
                         }
                         targetChannel.attr(PROXY_CHANNEL_CONTEXT).setIfAbsent(proxyChannelContext)
+                        proxyChannel.attr(TARGET_CHANNEL).setIfAbsent(targetChannel)
                         targetChannel.attr(AGENT_CONNECT_MESSAGE).setIfAbsent(agentMessage)
                         proxyChannel.read()
                     }))
@@ -129,8 +128,7 @@ internal class ProxyToTargetHandler(private val targetBootstrap: Bootstrap) :
 
     override fun channelWritabilityChanged(proxyChannelContext: ChannelHandlerContext) {
         val proxyChannel = proxyChannelContext.channel();
-        val targetChannelContext = proxyChannel.attr(TARGET_CHANNEL_CONTEXT).get()
-        val targetChannel = targetChannelContext.channel()
+        val targetChannel = proxyChannel.attr(TARGET_CHANNEL).get()
         if (proxyChannel.isWritable) {
             logger.debug {
                 "Recover auto read on target channel: ${
@@ -145,8 +143,7 @@ internal class ProxyToTargetHandler(private val targetBootstrap: Bootstrap) :
 
     override fun exceptionCaught(proxyChannelContext: ChannelHandlerContext, cause: Throwable) {
         val proxyChannel = proxyChannelContext.channel();
-        val targetChannelContext = proxyChannel.attr(TARGET_CHANNEL_CONTEXT).get()
-        val targetChannel = targetChannelContext?.channel()
+        val targetChannel = proxyChannel.attr(TARGET_CHANNEL).get()
         val agentConnectMessage = targetChannel?.attr(AGENT_CONNECT_MESSAGE)?.get()
         logger.error(cause) {
             "Exception happen on proxy channel ${

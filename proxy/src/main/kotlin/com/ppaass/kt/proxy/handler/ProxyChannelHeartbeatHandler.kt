@@ -37,12 +37,11 @@ internal class ProxyChannelHeartbeatHandler : ChannelInboundHandlerAdapter() {
                 return@addListener
             }
             val proxyChannel = proxyChannelContext.channel()
-            val targetChannelContext = proxyChannel.attr(TARGET_CHANNEL_CONTEXT).get()
-            if (targetChannelContext == null) {
+            val targetChannel = proxyChannel.attr(TARGET_CHANNEL).get()
+            if (targetChannel == null) {
                 proxyChannelContext.close()
                 return@addListener
             }
-            val targetChannel = targetChannelContext.channel()
             if (targetChannel.isWritable) {
                 proxyChannel.read()
             }

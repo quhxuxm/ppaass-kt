@@ -7,6 +7,7 @@ import com.ppaass.kt.common.protocol.ProxyMessageBody
 import com.ppaass.kt.common.protocol.ProxyMessageBodyType
 import com.ppaass.kt.common.protocol.generateUid
 import io.netty.buffer.ByteBuf
+import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
@@ -28,12 +29,29 @@ internal class TargetToProxyHandler(
             throw PpaassException("No proxy channel context attach to target channel.")
         }
         val proxyChannel = proxyChannelContext.channel()
-        proxyChannel.attr(TARGET_CHANNEL_CONTEXT).setIfAbsent(targetChannelContext)
-        if (proxyChannel.isWritable) {
-            targetChannel.read()
-        } else {
-            proxyChannel.flush()
+        val agentConnectMessage = targetChannel.attr(AGENT_CONNECT_MESSAGE).get()
+        if (agentConnectMessage == null) {
+            throw PpaassException("No agent connect message attach to target channel.")
         }
+        val proxyMessageBody =
+            ProxyMessageBody(ProxyMessageBodyType.CONNECT_SUCCESS, generateUid())
+        proxyMessageBody.targetAddress = agentConnectMessage.body.targetAddress
+        proxyMessageBody.targetPort = agentConnectMessage.body.targetPort
+        val successMessage =
+            ProxyMessage(generateUid(), MessageBodyEncryptionType.random(),
+                proxyMessageBody)
+        proxyChannel.writeAndFlush(successMessage)
+            .addListener((ChannelFutureListener { proxyChannelFuture ->
+                if (!proxyChannelFuture.isSuccess) {
+                    proxyChannelContext.close()
+                    return@ChannelFutureListener
+                }
+                if (proxyChannel.isWritable) {
+                    targetChannel.read()
+                } else {
+                    proxyChannel.flush()
+                }
+            }))
     }
 
     override fun channelRead0(targetChannelContext: ChannelHandlerContext, targetMessage: ByteBuf) {
