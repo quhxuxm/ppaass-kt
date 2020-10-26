@@ -35,6 +35,7 @@ internal class TargetChannelHeartbeatHandler : ChannelInboundHandlerAdapter() {
                     targetChannel.id().asLongText()
                 }, can not do heartbeat."
             }
+            targetChannelContext.close()
             return
         }
         val proxyChannel = proxyChannelContext.channel();
@@ -46,6 +47,10 @@ internal class TargetChannelHeartbeatHandler : ChannelInboundHandlerAdapter() {
             } is active, keep alive target channel."
         }
         targetChannelContext.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener {
+            if (!it.isSuccess) {
+                targetChannelContext.close()
+                return@addListener
+            }
             if (proxyChannel.isWritable) {
                 targetChannel.read()
             }
