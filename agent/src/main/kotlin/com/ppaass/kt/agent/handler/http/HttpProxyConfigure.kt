@@ -28,7 +28,7 @@ internal class HttpProxyConfigure {
                               transferDataFromProxyToAgentHandler: TransferDataFromProxyToAgentHandler,
                               exceptionHandler: ExceptionHandler,
                               agentConfiguration: AgentConfiguration,
-                              preForwardProxyMessageHandler: PreForwardProxyMessageHandler): Bootstrap {
+                              httpProxyMessageBodyTypeHandler: HttpProxyMessageBodyTypeHandler): Bootstrap {
         val proxyBootstrap = Bootstrap()
         proxyBootstrap.apply {
             group(proxyBootstrapIoEventLoopGroup)
@@ -56,7 +56,7 @@ internal class HttpProxyConfigure {
                             4))
                         addLast(ProxyMessageDecoder(
                             agentConfiguration.staticAgentConfiguration.agentPrivateKey))
-                        addLast(preForwardProxyMessageHandler)
+                        addLast(httpProxyMessageBodyTypeHandler)
                         addLast(ExtractProxyMessageOriginalDataDecoder())
                         addLast(HttpResponseDecoder())
                         addLast(HttpObjectAggregator(Int.MAX_VALUE, true))
@@ -81,7 +81,7 @@ internal class HttpProxyConfigure {
                                transferDataFromProxyToAgentHandler: TransferDataFromProxyToAgentHandler,
                                exceptionHandler: ExceptionHandler,
                                agentConfiguration: AgentConfiguration,
-                               preForwardProxyMessageHandler: PreForwardProxyMessageHandler): Bootstrap {
+                               httpProxyMessageBodyTypeHandler: HttpProxyMessageBodyTypeHandler): Bootstrap {
         val proxyBootstrap = Bootstrap()
         proxyBootstrap.apply {
             group(proxyBootstrapIoEventLoopGroup)
@@ -111,7 +111,7 @@ internal class HttpProxyConfigure {
                             4))
                         addLast(ProxyMessageDecoder(
                             agentConfiguration.staticAgentConfiguration.agentPrivateKey))
-                        addLast(preForwardProxyMessageHandler)
+                        addLast(httpProxyMessageBodyTypeHandler)
                         addLast(ExtractProxyMessageOriginalDataDecoder())
                         addLast(dataTransferIoEventLoopGroup, transferDataFromProxyToAgentHandler)
                         if (agentConfiguration.staticAgentConfiguration.compressingEnable) {

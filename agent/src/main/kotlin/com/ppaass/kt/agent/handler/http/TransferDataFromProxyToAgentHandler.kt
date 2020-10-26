@@ -27,7 +27,6 @@ internal class TransferDataFromProxyToAgentHandler(
         val agentChannelId = agentChannel.id().asLongText()
         val httpConnectionInfo = proxyChannel.attr(HTTP_CONNECTION_INFO).get()
         val httpConnectionKeepalive = proxyChannel.attr(HTTP_CONNECTION_KEEP_ALIVE).get()
-        val initOnChannelActivateCallback = proxyChannel.attr(PROXY_CHANNEL_ACTIVE_CALLBACK).get()
         val bodyType = if (httpConnectionKeepalive) {
             if (proxyChannel.isOpen) {
                 proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, true)
@@ -73,7 +72,6 @@ internal class TransferDataFromProxyToAgentHandler(
                     targetPort = httpConnectionInfo.port)
             channelCacheInfo.proxyConnectionActivated = true
             ChannelInfoCache.saveChannelInfo(agentChannelId, channelCacheInfo)
-            initOnChannelActivateCallback(proxyChannelContext)
         }
     }
 

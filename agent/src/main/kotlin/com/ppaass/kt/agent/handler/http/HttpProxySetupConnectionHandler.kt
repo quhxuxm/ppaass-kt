@@ -87,21 +87,7 @@ internal class HttpProxySetupConnectionHandler(
                         .setIfAbsent(httpConnectionInfo)
                     proxyChannelFuture.channel().attr(HTTP_CONNECTION_KEEP_ALIVE)
                         .setIfAbsent(connectionKeepAlive)
-                    proxyChannelFuture.channel().attr(PROXY_CHANNEL_ACTIVE_CALLBACK).setIfAbsent {
-                        val okResponse =
-                            DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
-                        agentChannelContext.channel().writeAndFlush(okResponse)
-                            .addListener(ChannelFutureListener { okResponseFuture ->
-                                okResponseFuture.channel().pipeline().apply {
-                                    if (this[HttpServerCodec::class.java.name] != null) {
-                                        remove(HttpServerCodec::class.java.name)
-                                    }
-                                    if (this[HttpObjectAggregator::class.java.name] != null) {
-                                        remove(HttpObjectAggregator::class.java.name)
-                                    }
-                                }
-                            })
-                    }
+                    proxyChannelFuture.channel().attr(HTTP_CONNECTION_IS_HTTPS).setIfAbsent(true)
                 })
             return
         }
@@ -153,25 +139,11 @@ internal class HttpProxySetupConnectionHandler(
                     .setIfAbsent(httpConnectionInfo)
                 proxyChannelFuture.channel().attr(HTTP_CONNECTION_KEEP_ALIVE)
                     .setIfAbsent(connectionKeepAlive)
-                proxyChannelFuture.channel().attr(PROXY_CHANNEL_ACTIVE_CALLBACK)
-                    .setIfAbsent { proxyChannelContext ->
-                        writeAgentMessageToProxy(AgentMessageBodyType.DATA,
-                            this.agentConfiguration.userToken,
-                            proxyChannelContext.channel(), httpConnectionInfo.host,
-                            httpConnectionInfo.port,
-                            msg, clientChannelId, MessageBodyEncryptionType.random()) {
-                            if (!it.isSuccess) {
-                                ChannelInfoCache.removeChannelInfo(clientChannelId)
-                                agentChannelContext.close()
-                                proxyChannelContext.close()
-                                logger.debug(
-                                    "Fail to send connect message from agent to proxy, clientChannelId=$clientChannelId, " +
-                                        "targetHost=${httpConnectionInfo.host}, targetPort =${httpConnectionInfo.port}",
-                                    it.cause())
-                                return@writeAgentMessageToProxy
-                            }
-                        }
-                    }
+                proxyChannelFuture.channel().attr(HTTP_CONNECTION_IS_HTTPS).setIfAbsent(false)
+                proxyChannelFuture.channel().attr(HTTP_MESSAGE).setIfAbsent(msg)
+
+
+
             })
     }
 
