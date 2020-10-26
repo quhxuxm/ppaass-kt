@@ -67,26 +67,29 @@ internal class SocksV5ProxyToAgentHandler(
                 addLast(dataTransferIoEventLoopGroup, socksV5AgentToProxyHandler)
             }
         }
-        val proxyChannelFuture = proxyChannel.writeAndFlush(agentMessage).sync()
-        if (!proxyChannelFuture.isSuccess) {
-            proxyChannelContext.close()
-            agentChannel.writeAndFlush(
-                DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE,
-                    socks5CommandRequest.dstAddrType()))
-                .addListener(ChannelFutureListener.CLOSE)
-            logger.debug(
-                "Fail to send connect message from agent to proxy because of exception.",
-                proxyChannelFuture.cause())
-            return
-        }
-        logger.debug(
-            "Success connect to target server: {}:{}", socks5CommandRequest.dstAddr(),
-            socks5CommandRequest.dstPort())
-        agentChannel.writeAndFlush(DefaultSocks5CommandResponse(
-            Socks5CommandStatus.SUCCESS,
-            socks5CommandRequest.dstAddrType(),
-            socks5CommandRequest.dstAddr(),
-            socks5CommandRequest.dstPort())).addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
+        proxyChannel.writeAndFlush(agentMessage)
+            .addListener((ChannelFutureListener { proxyChannelFuture ->
+                if (!proxyChannelFuture.isSuccess) {
+                    proxyChannelContext.close()
+                    agentChannel.writeAndFlush(
+                        DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE,
+                            socks5CommandRequest.dstAddrType()))
+                        .addListener(ChannelFutureListener.CLOSE)
+                    logger.debug(
+                        "Fail to send connect message from agent to proxy because of exception.",
+                        proxyChannelFuture.cause())
+                    return@ChannelFutureListener
+                }
+                logger.debug(
+                    "Success connect to target server: {}:{}", socks5CommandRequest.dstAddr(),
+                    socks5CommandRequest.dstPort())
+                agentChannel.writeAndFlush(DefaultSocks5CommandResponse(
+                    Socks5CommandStatus.SUCCESS,
+                    socks5CommandRequest.dstAddrType(),
+                    socks5CommandRequest.dstAddr(),
+                    socks5CommandRequest.dstPort()))
+                    .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
+            }))
     }
 
     override fun channelInactive(proxyChannelContext: ChannelHandlerContext) {
