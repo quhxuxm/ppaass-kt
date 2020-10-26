@@ -1,6 +1,5 @@
 package com.ppaass.kt.proxy.handler
 
-import io.netty.buffer.Unpooled
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
@@ -11,7 +10,7 @@ import org.springframework.stereotype.Service
 
 @ChannelHandler.Sharable
 @Service
-internal class TargetChannelHeartbeatHandler : ChannelInboundHandlerAdapter() {
+internal class TargetChannelKeepAliveHandler : ChannelInboundHandlerAdapter() {
     private companion object {
         private val logger = KotlinLogging.logger {}
     }
@@ -46,14 +45,8 @@ internal class TargetChannelHeartbeatHandler : ChannelInboundHandlerAdapter() {
                 targetChannel.id().asLongText()
             } is active, keep alive target channel."
         }
-        targetChannelContext.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener {
-            if (!it.isSuccess) {
-                targetChannelContext.close()
-                return@addListener
-            }
-            if (proxyChannel.isWritable) {
-                targetChannel.read()
-            }
+        if (proxyChannel.isWritable) {
+            targetChannel.read()
         }
         return
     }

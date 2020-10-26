@@ -18,13 +18,13 @@ internal class TargetChannelInitializer(
     private val targetToProxyHandler: TargetToProxyHandler,
     private val exceptionHandler: ExceptionHandler,
     private val proxyConfiguration: ProxyConfiguration,
-    private val targetChannelHeartbeatHandler: TargetChannelHeartbeatHandler
+    private val targetChannelKeepAliveHandler: TargetChannelKeepAliveHandler
 ) : ChannelInitializer<SocketChannel>() {
     override fun initChannel(targetChannel: SocketChannel) {
         with(targetChannel.pipeline()) {
             addLast(targetGlobalChannelTrafficShapingHandler)
             addLast(IdleStateHandler(0, 0, proxyConfiguration.targetConnectionIdleSeconds))
-            addLast(targetChannelHeartbeatHandler)
+            addLast(targetChannelKeepAliveHandler)
             addLast(dataTransferIoEventLoopGroup, targetToProxyHandler)
             addLast(exceptionHandler)
         }
