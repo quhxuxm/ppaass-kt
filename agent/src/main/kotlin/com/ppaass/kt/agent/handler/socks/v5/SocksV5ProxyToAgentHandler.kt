@@ -94,14 +94,6 @@ internal class SocksV5ProxyToAgentHandler(
         val proxyChannel = proxyChannelContext.channel();
         val agentChannelContext = proxyChannel.attr(AGENT_CHANNEL_CONTEXT).get()
         val agentChannel = agentChannelContext.channel()
-        val originalDataBuf = Unpooled.wrappedBuffer(msg.body.originalData)
-        if (!agentChannel.isActive) {
-            proxyChannelContext.close()
-            agentChannel.close()
-            logger.debug(
-                "Fail to send message from proxy to agent because of agent channel not active.")
-            return
-        }
         if (msg.body.bodyType == ProxyMessageBodyType.CONNECT_SUCCESS) {
             val socks5CommandRequest = proxyChannel.attr(SOCKS_V5_COMMAND_REQUEST).get()
             logger.debug(
@@ -115,11 +107,18 @@ internal class SocksV5ProxyToAgentHandler(
                 .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
             return
         }
-        if (msg.body.bodyType == ProxyMessageBodyType.TARGET_CHANNEL_CLOSE) {
-            proxyChannelContext.close()
-            agentChannelContext.close()
+        if (msg.body.bodyType == ProxyMessageBodyType.HEARTBEAT) {
+            logger.debug { "Discard proxy channel heartbeat." }
             return
         }
+        if (!agentChannel.isActive) {
+            proxyChannelContext.close()
+            agentChannel.close()
+            logger.debug(
+                "Fail to send message from proxy to agent because of agent channel not active.")
+            return
+        }
+        val originalDataBuf = Unpooled.wrappedBuffer(msg.body.originalData)
         agentChannel.writeAndFlush(originalDataBuf)
     }
 

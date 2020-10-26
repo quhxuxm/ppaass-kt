@@ -133,11 +133,6 @@ enum class ProxyMessageBodyType {
     CONNECT_FAIL,
 
     CONNECT_SUCCESS,
-
-    /**
-     * Target close the channel
-     */
-    TARGET_CHANNEL_CLOSE
 }
 
 /**

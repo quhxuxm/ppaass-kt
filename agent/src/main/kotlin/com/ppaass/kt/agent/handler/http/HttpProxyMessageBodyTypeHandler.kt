@@ -44,11 +44,6 @@ internal class HttpProxyMessageBodyTypeHandler(private val agentConfiguration: A
             ReferenceCountUtil.release(proxyMessage)
             return
         }
-        if (ProxyMessageBodyType.TARGET_CHANNEL_CLOSE === proxyMessage.body.bodyType) {
-            agentChannelContext.close()
-            proxyChannelContext.close()
-            return
-        }
         if (ProxyMessageBodyType.CONNECT_SUCCESS === proxyMessage.body.bodyType) {
             val isHttps = proxyChannel.attr(HTTP_CONNECTION_IS_HTTPS).get()
             if (isHttps) {
