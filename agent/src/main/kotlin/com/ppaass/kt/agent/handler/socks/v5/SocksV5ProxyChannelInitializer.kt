@@ -1,7 +1,6 @@
 package com.ppaass.kt.agent.handler.socks.v5
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
-import com.ppaass.kt.agent.handler.PreForwardProxyMessageHandler
 import com.ppaass.kt.common.netty.codec.AgentMessageEncoder
 import com.ppaass.kt.common.netty.codec.ProxyMessageDecoder
 import com.ppaass.kt.common.netty.handler.ExceptionHandler
@@ -21,7 +20,6 @@ internal class SocksV5ProxyChannelInitializer(
     private val agentConfiguration: AgentConfiguration,
     private val dataTransferIoEventLoopGroup: EventLoopGroup,
     private val socksV5ProxyToAgentHandler: SocksV5ProxyToAgentHandler,
-    private val preForwardProxyMessageHandler: PreForwardProxyMessageHandler,
     private val exceptionHandler: ExceptionHandler
 ) : ChannelInitializer<SocketChannel>() {
     override fun initChannel(proxyChannel: SocketChannel) {
@@ -34,7 +32,6 @@ internal class SocksV5ProxyChannelInitializer(
                 4))
             addLast(
                 ProxyMessageDecoder(agentConfiguration.staticAgentConfiguration.agentPrivateKey))
-            addLast(preForwardProxyMessageHandler)
             addLast(dataTransferIoEventLoopGroup, socksV5ProxyToAgentHandler)
             if (agentConfiguration.staticAgentConfiguration.compressingEnable) {
                 addLast(Lz4FrameEncoder())

@@ -115,6 +115,11 @@ internal class SocksV5ProxyToAgentHandler(
                 .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
             return
         }
+        if (msg.body.bodyType == ProxyMessageBodyType.TARGET_CHANNEL_CLOSE) {
+            proxyChannelContext.close()
+            agentChannelContext.close()
+            return
+        }
         agentChannel.writeAndFlush(originalDataBuf)
     }
 

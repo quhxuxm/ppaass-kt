@@ -1,7 +1,6 @@
 package com.ppaass.kt.agent.handler.http
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
-import com.ppaass.kt.agent.handler.PreForwardProxyMessageHandler
 import com.ppaass.kt.common.netty.codec.AgentMessageEncoder
 import com.ppaass.kt.common.netty.codec.ProxyMessageDecoder
 import com.ppaass.kt.common.netty.handler.ExceptionHandler

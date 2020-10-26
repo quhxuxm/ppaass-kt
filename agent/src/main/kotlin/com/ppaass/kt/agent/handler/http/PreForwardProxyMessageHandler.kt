@@ -1,4 +1,4 @@
-package com.ppaass.kt.agent.handler
+package com.ppaass.kt.agent.handler.http
 
 import com.ppaass.kt.agent.handler.socks.v5.AGENT_CHANNEL_CONTEXT
 import com.ppaass.kt.common.exception.PpaassException
