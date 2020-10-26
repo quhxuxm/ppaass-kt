@@ -38,6 +38,7 @@ internal class DefaultProxy(
             option(ChannelOption.TCP_NODELAY, true)
             option(ChannelOption.SO_REUSEADDR, true)
             childOption(ChannelOption.TCP_NODELAY, true)
+            childOption(ChannelOption.AUTO_READ, false)
             childOption(ChannelOption.SO_KEEPALIVE, proxyConfiguration.connectionKeepAlive)
             childOption(ChannelOption.SO_RCVBUF, proxyConfiguration.soRcvbuf)
             childOption(ChannelOption.SO_SNDBUF, proxyConfiguration.soSndbuf)

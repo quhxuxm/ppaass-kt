@@ -1,13 +1,18 @@
 package com.ppaass.kt.agent.handler.socks.v5
 
+import com.ppaass.kt.agent.configuration.AgentConfiguration
+import io.netty.bootstrap.Bootstrap
+import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.handler.codec.socksx.SocksMessage
+import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandResponse
 import io.netty.handler.codec.socksx.v5.DefaultSocks5InitialResponse
 import io.netty.handler.codec.socksx.v5.Socks5AuthMethod
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequestDecoder
+import io.netty.handler.codec.socksx.v5.Socks5CommandStatus
 import io.netty.handler.codec.socksx.v5.Socks5CommandType
 import io.netty.handler.codec.socksx.v5.Socks5InitialRequest
 import mu.KotlinLogging
@@ -16,7 +21,8 @@ import org.springframework.stereotype.Service
 @ChannelHandler.Sharable
 @Service
 internal class SocksV5ProtocolHandler(
-    private val socksV5ConnectCommandHandler: SocksV5ConnectCommandHandler
+    private val agentConfiguration: AgentConfiguration,
+    private val socksV5ProxyServerBootstrap: Bootstrap
 ) :
     SimpleChannelInboundHandler<SocksMessage>() {
     companion object {
@@ -26,6 +32,7 @@ internal class SocksV5ProtocolHandler(
     override fun channelRead0(agentChannelContext: ChannelHandlerContext,
                               socksRequest: SocksMessage) {
         val channelPipeline = agentChannelContext.pipeline()
+        val agentChannel = agentChannelContext.channel()
         val clientChannelId = agentChannelContext.channel().id().asLongText()
         with(channelPipeline) {
             when (socksRequest) {
@@ -37,17 +44,56 @@ internal class SocksV5ProtocolHandler(
                         Socks5CommandRequestDecoder())
                     agentChannelContext.writeAndFlush(
                         DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH))
-                    return@channelRead0
+                    return
                 }
                 is Socks5CommandRequest -> {
-                    logger.debug(
-                        "Socks5 command request with {} command coming ...", socksRequest.type())
+                    logger.debug {
+                        "Socks5 command request with ${
+                            socksRequest.type()
+                        } command coming, channel id =${
+                            agentChannelContext.channel().id().asLongText()
+                        }, targetAddress=${
+                            socksRequest.dstAddr()
+                        }, targetPort=${
+                            socksRequest.dstPort()
+                        }"
+                    }
                     when (socksRequest.type()) {
                         Socks5CommandType.CONNECT -> {
-                            addLast(SocksV5ConnectCommandHandler::class.java.name,
-                                socksV5ConnectCommandHandler)
-                            agentChannelContext.fireChannelRead(socksRequest)
-                            return@channelRead0
+                            socksV5ProxyServerBootstrap.connect(agentConfiguration.proxyAddress,
+                                agentConfiguration.proxyPort)
+                                .addListener((ChannelFutureListener { proxyChannelFuture ->
+                                    val proxyChannel = proxyChannelFuture.channel()
+                                    if (!proxyChannelFuture.isSuccess) {
+                                        proxyChannel.close()
+                                        agentChannel.writeAndFlush(
+                                            DefaultSocks5CommandResponse(
+                                                Socks5CommandStatus.FAILURE,
+                                                socksRequest.dstAddrType()))
+                                            .addListener(ChannelFutureListener.CLOSE)
+                                        logger.debug(
+                                            "Fail to send connect message from agent to proxy because of exception.",
+                                            proxyChannelFuture.cause())
+
+                                        logger.error {
+                                            "Fail to connect target, channel id =${
+                                                agentChannelContext.channel().id().asLongText()
+                                            }, targetAddress=${
+                                                socksRequest.dstAddr()
+                                            }, targetPort=${
+                                                socksRequest.dstPort()
+                                            }"
+                                        }
+                                        return@ChannelFutureListener
+                                    }
+                                    proxyChannel.attr(AGENT_CHANNEL_CONTEXT)
+                                        .setIfAbsent(agentChannelContext)
+                                    proxyChannel.attr(SOCKS_V5_COMMAND_REQUEST)
+                                        .setIfAbsent(socksRequest)
+                                    proxyChannel.attr(HANDLERS_TO_REMOVE_AFTER_PROXY_ACTIVE)
+                                        .setIfAbsent(listOf(this@SocksV5ProtocolHandler))
+                                }))
+                            return
                         }
                         Socks5CommandType.BIND -> {
                             logger.error(
@@ -55,7 +101,7 @@ internal class SocksV5ProtocolHandler(
                                 clientChannelId)
                             remove(this@SocksV5ProtocolHandler)
                             agentChannelContext.close()
-                            return@channelRead0
+                            return
                         }
                         Socks5CommandType.UDP_ASSOCIATE -> {
                             logger.error(
@@ -63,7 +109,7 @@ internal class SocksV5ProtocolHandler(
                                 clientChannelId)
                             remove(this@SocksV5ProtocolHandler)
                             agentChannelContext.close()
-                            return@channelRead0
+                            return
                         }
                         else -> {
                             logger.error(
@@ -71,7 +117,7 @@ internal class SocksV5ProtocolHandler(
                                 clientChannelId)
                             remove(this@SocksV5ProtocolHandler)
                             agentChannelContext.close()
-                            return@channelRead0
+                            return
                         }
                     }
                 }
@@ -81,7 +127,7 @@ internal class SocksV5ProtocolHandler(
                         socksRequest)
                     remove(this@SocksV5ProtocolHandler)
                     agentChannelContext.close()
-                    return@channelRead0
+                    return
                 }
             }
         }

@@ -1,17 +1,14 @@
 package com.ppaass.kt.proxy.handler
 
-import com.ppaass.kt.common.protocol.AgentMessageBodyType
+import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import com.ppaass.kt.common.protocol.ProxyMessage
 import com.ppaass.kt.common.protocol.ProxyMessageBody
 import com.ppaass.kt.common.protocol.ProxyMessageBodyType
 import com.ppaass.kt.common.protocol.generateUid
 import io.netty.buffer.ByteBuf
-import io.netty.channel.Channel
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
-import io.netty.channel.ChannelOption
-import io.netty.channel.EventLoopGroup
 import io.netty.channel.SimpleChannelInboundHandler
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
@@ -19,9 +16,6 @@ import org.springframework.stereotype.Service
 @ChannelHandler.Sharable
 @Service
 internal class TargetToProxyHandler(
-    private val dataTransferIoEventLoopGroup: EventLoopGroup,
-    private val proxyToTargetHandler: ProxyToTargetHandler
-//    private val targetBootstrap: Bootstrap
 ) : SimpleChannelInboundHandler<ByteBuf>() {
     private companion object {
         private val logger = KotlinLogging.logger {}
@@ -30,59 +24,15 @@ internal class TargetToProxyHandler(
     override fun channelActive(targetChannelContext: ChannelHandlerContext) {
         val targetChannel = targetChannelContext.channel()
         val proxyChannelContext = targetChannel.attr(PROXY_CHANNEL_CONTEXT).get()
-        val agentConnectMessage = targetChannel.attr(AGENT_CONNECT_MESSAGE).get()
         if (proxyChannelContext == null) {
-            return
-        }
-        if (agentConnectMessage == null) {
-            return
+            throw PpaassException("No proxy channel context attach to target channel.")
         }
         val proxyChannel = proxyChannelContext.channel()
         proxyChannel.attr(TARGET_CHANNEL_CONTEXT).setIfAbsent(targetChannelContext)
-        when (agentConnectMessage.body.bodyType) {
-            AgentMessageBodyType.CONNECT_WITHOUT_KEEP_ALIVE -> {
-                if (targetChannel.isOpen) {
-                    targetChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
-                }
-                if (proxyChannel.isOpen) {
-                    proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, false)
-                }
-                this.setupProxyChannelPipelineForConnectMessage(proxyChannelContext, targetChannel)
-            }
-            AgentMessageBodyType.CONNECT_WITH_KEEP_ALIVE -> {
-                if (targetChannel.isOpen) {
-                    targetChannel.config().setOption(ChannelOption.SO_KEEPALIVE, true)
-                }
-                if (proxyChannel.isOpen) {
-                    proxyChannel.config().setOption(ChannelOption.SO_KEEPALIVE, true)
-                }
-                this.setupProxyChannelPipelineForConnectMessage(proxyChannelContext, targetChannel)
-            }
-            else -> {
-                logger.debug { "Nothing to do , because of incoming agent connect message is not a CONNECT message: $agentConnectMessage" }
-            }
-        }
-        proxyChannelContext.fireChannelRead(agentConnectMessage)
         if (proxyChannel.isWritable) {
             targetChannel.read()
         } else {
             proxyChannel.flush()
-        }
-    }
-
-    private fun setupProxyChannelPipelineForConnectMessage(
-        proxyChannelContext: ChannelHandlerContext,
-        targetChannel: Channel) {
-        proxyChannelContext.pipeline().apply {
-            val handlersToRemove = targetChannel.attr(HANDLERS_TO_REMOVE_AFTER_TARGET_ACTIVE).get()
-            handlersToRemove?.forEach {
-                try {
-                    remove(it)
-                } catch (e: NoSuchElementException) {
-                    logger.debug { "The handler removed from pipeline already, handler = $it" }
-                }
-            }
-            addLast(dataTransferIoEventLoopGroup, proxyToTargetHandler)
         }
     }
 

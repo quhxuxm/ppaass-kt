@@ -24,7 +24,7 @@ import org.springframework.stereotype.Service
 internal class ProxyChannelInitializer(
     private val proxyConfiguration: ProxyConfiguration,
     private val globalChannelTrafficShapingHandler: GlobalChannelTrafficShapingHandler,
-    private val setupTargetConnectionHandler: SetupTargetConnectionHandler,
+    private val proxyToTargetHandler: ProxyToTargetHandler,
     private val proxyChannelHeartbeatHandler: ProxyChannelHeartbeatHandler,
     private val exceptionHandler: ExceptionHandler) :
     ChannelInitializer<SocketChannel>() {
@@ -44,7 +44,7 @@ internal class ProxyChannelInitializer(
             }
             addLast(LengthFieldBasedFrameDecoder(Int.MAX_VALUE, 0, 4, 0, 4))
             addLast(AgentMessageDecoder(proxyConfiguration.proxyPrivateKey))
-            addLast(setupTargetConnectionHandler)
+            addLast(proxyToTargetHandler)
             //Outbound
             if (proxyConfiguration.compressingEnable) {
                 addLast(Lz4FrameEncoder())
