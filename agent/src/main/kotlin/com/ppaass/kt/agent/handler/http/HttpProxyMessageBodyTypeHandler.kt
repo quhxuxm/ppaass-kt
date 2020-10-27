@@ -1,6 +1,6 @@
 package com.ppaass.kt.agent.handler.http
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.ppaass.kt.agent.configuration.AgentConfiguration
 import com.ppaass.kt.agent.handler.socks.v5.AGENT_CHANNEL_CONTEXT
 import com.ppaass.kt.common.protocol.AgentMessageBodyType
@@ -22,10 +22,10 @@ import org.springframework.stereotype.Service
 
 @ChannelHandler.Sharable
 @Service
-internal class HttpProxyMessageBodyTypeHandler(
-    private val objectMapper: ObjectMapper,
-    private val agentConfiguration: AgentConfiguration) :
+internal class HttpProxyMessageBodyTypeHandler(private val agentConfiguration: AgentConfiguration) :
     SimpleChannelInboundHandler<ProxyMessage>(false) {
+    private val objectMapper = jacksonObjectMapper()
+
     private companion object {
         private val logger = KotlinLogging.logger {}
     }

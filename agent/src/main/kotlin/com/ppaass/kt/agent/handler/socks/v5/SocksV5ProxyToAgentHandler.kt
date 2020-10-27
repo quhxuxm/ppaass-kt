@@ -1,6 +1,6 @@
 package com.ppaass.kt.agent.handler.socks.v5
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.ppaass.kt.agent.configuration.AgentConfiguration
 import com.ppaass.kt.common.protocol.AgentMessage
 import com.ppaass.kt.common.protocol.AgentMessageBody
@@ -25,11 +25,12 @@ import org.springframework.stereotype.Service
 @ChannelHandler.Sharable
 @Service
 internal class SocksV5ProxyToAgentHandler(
-    private val objectMapper: ObjectMapper,
     private val agentConfiguration: AgentConfiguration,
     private val socksV5AgentToProxyHandler: SocksV5AgentToProxyHandler,
     private val dataTransferIoEventLoopGroup: EventLoopGroup) :
     SimpleChannelInboundHandler<ProxyMessage>() {
+    private val objectMapper = jacksonObjectMapper()
+
     private companion object {
         private val logger = KotlinLogging.logger {}
     }

@@ -1,6 +1,6 @@
 package com.ppaass.kt.proxy.handler
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.ppaass.kt.common.protocol.Heartbeat
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import com.ppaass.kt.common.protocol.ProxyMessage
@@ -19,8 +19,10 @@ import java.util.*
 
 @ChannelHandler.Sharable
 @Service
-internal class ProxyChannelHeartbeatHandler(private val objectMapper: ObjectMapper) :
+internal class ProxyChannelHeartbeatHandler :
     ChannelInboundHandlerAdapter() {
+    private val objectMapper = jacksonObjectMapper()
+
     private companion object {
         private val logger = KotlinLogging.logger {}
     }
