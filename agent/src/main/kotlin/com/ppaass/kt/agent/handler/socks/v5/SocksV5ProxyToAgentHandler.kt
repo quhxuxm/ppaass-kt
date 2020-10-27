@@ -108,9 +108,15 @@ internal class SocksV5ProxyToAgentHandler(
             return
         }
         if (msg.body.bodyType == ProxyMessageBodyType.HEARTBEAT) {
+            val originalData = msg.body.originalData
+            val utcDataTimeString = originalData?.toString(Charsets.UTF_8) ?: ""
             logger.info {
                 "Discard proxy channel heartbeat, proxy channel = ${
                     proxyChannel.id().asLongText()
+                }, agent channel = ${
+                    agentChannelContext.channel().id().asLongText()
+                }, heartbeat time = ${
+                    utcDataTimeString
                 }."
             }
             return
@@ -119,7 +125,11 @@ internal class SocksV5ProxyToAgentHandler(
             proxyChannelContext.close()
             agentChannel.close()
             logger.debug(
-                "Fail to send message from proxy to agent because of agent channel not active.")
+                "Fail to send message from proxy to agent because of agent channel not active, proxy channel=${
+                    proxyChannel.id().asLongText()
+                }, agent channel=${
+                    agentChannel.id().asLongText()
+                }.")
             return
         }
         val originalDataBuf = Unpooled.wrappedBuffer(msg.body.originalData)

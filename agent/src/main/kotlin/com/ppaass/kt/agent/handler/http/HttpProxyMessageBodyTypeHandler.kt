@@ -2,7 +2,6 @@ package com.ppaass.kt.agent.handler.http
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
 import com.ppaass.kt.agent.handler.socks.v5.AGENT_CHANNEL_CONTEXT
-import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.protocol.AgentMessageBodyType
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import com.ppaass.kt.common.protocol.ProxyMessage
@@ -16,7 +15,6 @@ import io.netty.handler.codec.http.HttpObjectAggregator
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.netty.handler.codec.http.HttpServerCodec
 import io.netty.handler.codec.http.HttpVersion
-import io.netty.util.ReferenceCountUtil
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 
@@ -34,14 +32,16 @@ internal class HttpProxyMessageBodyTypeHandler(private val agentConfiguration: A
         val agentChannelContext = proxyChannel.attr(AGENT_CHANNEL_CONTEXT).get()
         if (ProxyMessageBodyType.HEARTBEAT == proxyMessage.body.bodyType) {
             val originalData = proxyMessage.body.originalData
-            if (originalData == null) {
-                throw PpaassException()
+            val utcDataTimeString = originalData?.toString(Charsets.UTF_8) ?: ""
+            logger.info {
+                "Discard proxy channel heartbeat, proxy channel = ${
+                    proxyChannel.id().asLongText()
+                }, agent channel = ${
+                    agentChannelContext.channel().id().asLongText()
+                }, heartbeat time = ${
+                    utcDataTimeString
+                }."
             }
-            val utcDataTimeString = String(originalData, Charsets.UTF_8)
-            logger.debug("Receive heartbeat form proxy channel: {}, heartbeat time: {}",
-                proxyChannelContext.channel().id().asLongText(),
-                utcDataTimeString)
-            ReferenceCountUtil.release(proxyMessage)
             return
         }
         if (ProxyMessageBodyType.CONNECT_SUCCESS === proxyMessage.body.bodyType) {

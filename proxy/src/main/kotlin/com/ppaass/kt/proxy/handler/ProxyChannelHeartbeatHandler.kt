@@ -12,6 +12,8 @@ import io.netty.handler.timeout.IdleState
 import io.netty.handler.timeout.IdleStateEvent
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
+import java.text.SimpleDateFormat
+import java.util.*
 
 @ChannelHandler.Sharable
 @Service
@@ -35,7 +37,11 @@ internal class ProxyChannelHeartbeatHandler : ChannelInboundHandlerAdapter() {
                 proxyChannelContext.channel().id().asLongText()
             }."
         }
+        val utcDateFormat = SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+        utcDateFormat.timeZone = TimeZone.getTimeZone("UTC")
+        val heartBeatOriginalData = utcDateFormat.format(Date()).toByteArray(Charsets.UTF_8)
         val heartBeatMessageBody = ProxyMessageBody(ProxyMessageBodyType.HEARTBEAT, generateUid())
+        heartBeatMessageBody.originalData = heartBeatOriginalData
         val heartBeatMessage =
             ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), heartBeatMessageBody)
         proxyChannelContext.channel().writeAndFlush(heartBeatMessage).addListener {
