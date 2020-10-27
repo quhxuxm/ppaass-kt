@@ -1,7 +1,6 @@
 package com.ppaass.kt.agent
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
-import com.ppaass.kt.agent.handler.HeartbeatHandler
 import com.ppaass.kt.agent.handler.socks.SwitchSocksVersionHandler
 import com.ppaass.kt.common.netty.handler.ExceptionHandler
 import io.netty.channel.ChannelInitializer
@@ -15,7 +14,6 @@ import org.springframework.stereotype.Service
 internal class SocksAgent(
     private val agentConfiguration: AgentConfiguration,
     private val switchSocksVersionHandler: SwitchSocksVersionHandler,
-    private val heartbeatHandler: HeartbeatHandler,
     private val exceptionHandler: ExceptionHandler) : Agent(agentConfiguration) {
     final override val channelInitializer: ChannelInitializer<SocketChannel>
 
@@ -30,7 +28,6 @@ internal class SocksAgent(
                 with(socketChannel.pipeline()) {
                     addLast(IdleStateHandler(0, 0,
                         agentConfiguration.staticAgentConfiguration.clientConnectionIdleSeconds))
-                    addLast(heartbeatHandler)
                     addLast(SocksPortUnificationServerHandler())
                     addLast(exceptionHandler)
                     addLast(switchSocksVersionHandler)
