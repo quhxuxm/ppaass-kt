@@ -1,8 +1,10 @@
 package com.ppaass.kt.agent.handler.http
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.ppaass.kt.agent.configuration.AgentConfiguration
 import com.ppaass.kt.agent.handler.socks.v5.AGENT_CHANNEL_CONTEXT
 import com.ppaass.kt.common.protocol.AgentMessageBodyType
+import com.ppaass.kt.common.protocol.Heartbeat
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import com.ppaass.kt.common.protocol.ProxyMessage
 import com.ppaass.kt.common.protocol.ProxyMessageBodyType
@@ -20,7 +22,9 @@ import org.springframework.stereotype.Service
 
 @ChannelHandler.Sharable
 @Service
-internal class HttpProxyMessageBodyTypeHandler(private val agentConfiguration: AgentConfiguration) :
+internal class HttpProxyMessageBodyTypeHandler(
+    private val objectMapper: ObjectMapper,
+    private val agentConfiguration: AgentConfiguration) :
     SimpleChannelInboundHandler<ProxyMessage>(false) {
     private companion object {
         private val logger = KotlinLogging.logger {}
@@ -32,14 +36,16 @@ internal class HttpProxyMessageBodyTypeHandler(private val agentConfiguration: A
         val agentChannelContext = proxyChannel.attr(AGENT_CHANNEL_CONTEXT).get()
         if (ProxyMessageBodyType.HEARTBEAT == proxyMessage.body.bodyType) {
             val originalData = proxyMessage.body.originalData
-            val utcDataTimeString = originalData?.toString(Charsets.UTF_8) ?: ""
+            val heartbeat = this.objectMapper.readValue(originalData, Heartbeat::class.java)
             logger.info {
                 "Discard proxy channel heartbeat, proxy channel = ${
                     proxyChannel.id().asLongText()
                 }, agent channel = ${
                     agentChannelContext.channel().id().asLongText()
+                }, heartbeat id = ${
+                    heartbeat.id
                 }, heartbeat time = ${
-                    utcDataTimeString
+                    heartbeat.utcDateTime
                 }."
             }
             return

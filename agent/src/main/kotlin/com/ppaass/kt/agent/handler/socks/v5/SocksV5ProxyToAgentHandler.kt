@@ -1,9 +1,11 @@
 package com.ppaass.kt.agent.handler.socks.v5
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.ppaass.kt.agent.configuration.AgentConfiguration
 import com.ppaass.kt.common.protocol.AgentMessage
 import com.ppaass.kt.common.protocol.AgentMessageBody
 import com.ppaass.kt.common.protocol.AgentMessageBodyType
+import com.ppaass.kt.common.protocol.Heartbeat
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import com.ppaass.kt.common.protocol.ProxyMessage
 import com.ppaass.kt.common.protocol.ProxyMessageBodyType
@@ -23,6 +25,7 @@ import org.springframework.stereotype.Service
 @ChannelHandler.Sharable
 @Service
 internal class SocksV5ProxyToAgentHandler(
+    private val objectMapper: ObjectMapper,
     private val agentConfiguration: AgentConfiguration,
     private val socksV5AgentToProxyHandler: SocksV5AgentToProxyHandler,
     private val dataTransferIoEventLoopGroup: EventLoopGroup) :
@@ -109,14 +112,16 @@ internal class SocksV5ProxyToAgentHandler(
         }
         if (msg.body.bodyType == ProxyMessageBodyType.HEARTBEAT) {
             val originalData = msg.body.originalData
-            val utcDataTimeString = originalData?.toString(Charsets.UTF_8) ?: ""
+            val heartbeat = this.objectMapper.readValue(originalData, Heartbeat::class.java)
             logger.info {
                 "Discard proxy channel heartbeat, proxy channel = ${
                     proxyChannel.id().asLongText()
                 }, agent channel = ${
                     agentChannelContext.channel().id().asLongText()
+                }, heartbeat id = ${
+                    heartbeat.id
                 }, heartbeat time = ${
-                    utcDataTimeString
+                    heartbeat.utcDateTime
                 }."
             }
             return

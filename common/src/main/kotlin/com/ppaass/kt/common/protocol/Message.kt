@@ -1,5 +1,6 @@
 package com.ppaass.kt.common.protocol
 
+import java.io.Serializable
 import java.util.*
 
 /**
@@ -132,6 +133,9 @@ enum class ProxyMessageBodyType {
      */
     CONNECT_FAIL,
 
+    /**
+     * Connect success message
+     */
     CONNECT_SUCCESS,
 }
 
@@ -155,6 +159,8 @@ class ProxyMessageBody(val bodyType: ProxyMessageBodyType, override val id: Stri
             "targetPort=$targetPort, originalData=${originalData?.contentToString()})"
     }
 }
+
+data class Heartbeat(val id: String, val utcDateTime: String) : Serializable
 
 /**
  * The type alias of proxy message

@@ -1,5 +1,7 @@
 package com.ppaass.kt.proxy.handler
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.ppaass.kt.common.protocol.Heartbeat
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import com.ppaass.kt.common.protocol.ProxyMessage
 import com.ppaass.kt.common.protocol.ProxyMessageBody
@@ -17,7 +19,8 @@ import java.util.*
 
 @ChannelHandler.Sharable
 @Service
-internal class ProxyChannelHeartbeatHandler : ChannelInboundHandlerAdapter() {
+internal class ProxyChannelHeartbeatHandler(private val objectMapper: ObjectMapper) :
+    ChannelInboundHandlerAdapter() {
     private companion object {
         private val logger = KotlinLogging.logger {}
     }
@@ -39,28 +42,39 @@ internal class ProxyChannelHeartbeatHandler : ChannelInboundHandlerAdapter() {
         }
         val utcDateFormat = SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
         utcDateFormat.timeZone = TimeZone.getTimeZone("UTC")
-        val heartBeatOriginalData = utcDateFormat.format(Date()).toByteArray(Charsets.UTF_8)
+        val utcDateString = utcDateFormat.format(Date())
+        val heartbeat = Heartbeat(generateUid(), utcDateString)
         val heartBeatMessageBody = ProxyMessageBody(ProxyMessageBodyType.HEARTBEAT, generateUid())
-        heartBeatMessageBody.originalData = heartBeatOriginalData
+        heartBeatMessageBody.originalData = objectMapper.writeValueAsBytes(heartbeat)
         val heartBeatMessage =
             ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), heartBeatMessageBody)
         proxyChannelContext.channel().writeAndFlush(heartBeatMessage).addListener {
+            val proxyChannel = proxyChannelContext.channel()
+            val targetChannel = proxyChannel.attr(TARGET_CHANNEL).get()
             if (!it.isSuccess) {
                 logger.error {
-                    "Fail to write heartbeat message from proxy to agent, close the proxy channel. Proxy channel = ${
-                        proxyChannelContext.channel().id().asLongText()
+                    "Fail to send heartbeat message from proxy to agent, proxy channel = ${
+                        proxyChannel.id().asLongText()
+                    }, target channel = ${
+                        targetChannel?.id()?.asLongText()
+                    }, heartbeat id = ${
+                        heartbeat.id
+                    }, heartbeat time = ${
+                        heartbeat.utcDateTime
                     }"
                 }
                 proxyChannelContext.close()
                 return@addListener
             }
-            val proxyChannel = proxyChannelContext.channel()
-            val targetChannel = proxyChannel.attr(TARGET_CHANNEL).get()
             logger.info {
                 "Send heartbeat message from proxy to agent success, proxy channel = ${
                     proxyChannel.id().asLongText()
                 }, target channel = ${
                     targetChannel?.id()?.asLongText()
+                }, heartbeat id = ${
+                    heartbeat.id
+                }, heartbeat time = ${
+                    heartbeat.utcDateTime
                 }"
             }
             if (targetChannel == null) {
