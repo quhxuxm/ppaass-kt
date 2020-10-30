@@ -7,21 +7,18 @@ import com.ppaass.kt.common.protocol.ProxyMessage
 import com.ppaass.kt.common.protocol.ProxyMessageBody
 import com.ppaass.kt.common.protocol.ProxyMessageBodyType
 import com.ppaass.kt.common.protocol.generateUid
-import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
 import io.netty.handler.timeout.IdleState
 import io.netty.handler.timeout.IdleStateEvent
 import mu.KotlinLogging
-import org.springframework.stereotype.Service
 import java.text.SimpleDateFormat
 import java.util.*
 
-@ChannelHandler.Sharable
-@Service
 internal class ProxyChannelHeartbeatHandler :
     ChannelInboundHandlerAdapter() {
     private val objectMapper = jacksonObjectMapper()
+    private var failureTimes = 0
 
     private companion object {
         private val logger = KotlinLogging.logger {}
@@ -65,7 +62,11 @@ internal class ProxyChannelHeartbeatHandler :
                         heartbeat.utcDateTime
                     }"
                 }
-                proxyChannelContext.close()
+                if (failureTimes >= 3) {
+                    proxyChannelContext.close()
+                    return@addListener
+                }
+                failureTimes++
                 return@addListener
             }
             logger.info {
