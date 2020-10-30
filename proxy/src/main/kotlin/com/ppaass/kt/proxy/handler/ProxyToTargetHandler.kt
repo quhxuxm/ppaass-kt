@@ -158,6 +158,5 @@ internal class ProxyToTargetHandler(private val targetBootstrap: Bootstrap) :
                 agentConnectMessage?.body?.bodyType
             }"
         }
-        proxyChannelContext.close()
     }
 }

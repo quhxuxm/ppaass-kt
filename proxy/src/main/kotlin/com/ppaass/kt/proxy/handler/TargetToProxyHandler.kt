@@ -113,6 +113,5 @@ internal class TargetToProxyHandler(
                 agentConnectMessage?.body?.bodyType
             }"
         }
-        targetChannelContext.close()
     }
 }
