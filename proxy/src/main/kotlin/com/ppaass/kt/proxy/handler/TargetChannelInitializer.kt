@@ -6,21 +6,24 @@ import io.netty.channel.ChannelInitializer
 import io.netty.channel.EventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.timeout.IdleStateHandler
-import io.netty.handler.traffic.GlobalChannelTrafficShapingHandler
+import io.netty.handler.traffic.ChannelTrafficShapingHandler
 import org.springframework.stereotype.Service
 
 @ChannelHandler.Sharable
 @Service
 internal class TargetChannelInitializer(
     private val dataTransferIoEventLoopGroup: EventLoopGroup,
-    private val targetGlobalChannelTrafficShapingHandler: GlobalChannelTrafficShapingHandler,
     private val targetToProxyHandler: TargetToProxyHandler,
     private val proxyConfiguration: ProxyConfiguration,
     private val targetChannelKeepAliveHandler: TargetChannelKeepAliveHandler
 ) : ChannelInitializer<SocketChannel>() {
     override fun initChannel(targetChannel: SocketChannel) {
         with(targetChannel.pipeline()) {
-            addLast(targetGlobalChannelTrafficShapingHandler)
+            addLast(ChannelTrafficShapingHandler(
+                proxyConfiguration.targetWriteChannelLimit,
+                proxyConfiguration.targetReadChannelLimit,
+                proxyConfiguration.targetTrafficShapingCheckInterval
+            ))
             addLast(IdleStateHandler(0, 0, proxyConfiguration.targetConnectionIdleSeconds))
             addLast(targetChannelKeepAliveHandler)
             addLast(dataTransferIoEventLoopGroup, targetToProxyHandler)

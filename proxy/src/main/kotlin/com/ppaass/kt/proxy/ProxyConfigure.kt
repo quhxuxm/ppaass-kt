@@ -8,10 +8,8 @@ import io.netty.channel.EventLoopGroup
 import io.netty.channel.WriteBufferWaterMark
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioSocketChannel
-import io.netty.handler.traffic.GlobalChannelTrafficShapingHandler
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import java.util.concurrent.Executors
 
 @Configuration
 internal class ProxyConfigure(
@@ -31,28 +29,6 @@ internal class ProxyConfigure(
     @Bean
     fun workerIoEventLoopGroup() =
         NioEventLoopGroup(this.proxyConfiguration.workerIoEventThreadNumber)
-
-    @Bean
-    fun globalChannelTrafficShapingHandler() =
-        GlobalChannelTrafficShapingHandler(
-            Executors.newSingleThreadScheduledExecutor(),
-            proxyConfiguration.writeGlobalLimit,
-            proxyConfiguration.readGlobalLimit,
-            proxyConfiguration.writeChannelLimit,
-            proxyConfiguration.readChannelLimit,
-            proxyConfiguration.trafficShapingCheckInterval
-        )
-
-    @Bean
-    fun targetGlobalChannelTrafficShapingHandler() =
-        GlobalChannelTrafficShapingHandler(
-            Executors.newSingleThreadScheduledExecutor(),
-            proxyConfiguration.targetWriteGlobalLimit,
-            proxyConfiguration.targetReadGlobalLimit,
-            proxyConfiguration.targetWriteChannelLimit,
-            proxyConfiguration.targetReadChannelLimit,
-            proxyConfiguration.targetTrafficShapingCheckInterval
-        )
 
     @Bean
     fun targetBootstrap(

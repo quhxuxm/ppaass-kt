@@ -11,7 +11,7 @@ import io.netty.handler.codec.LengthFieldPrepender
 import io.netty.handler.codec.compression.Lz4FrameDecoder
 import io.netty.handler.codec.compression.Lz4FrameEncoder
 import io.netty.handler.timeout.IdleStateHandler
-import io.netty.handler.traffic.GlobalChannelTrafficShapingHandler
+import io.netty.handler.traffic.ChannelTrafficShapingHandler
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 
@@ -22,7 +22,6 @@ import org.springframework.stereotype.Service
 @Service
 internal class ProxyChannelInitializer(
     private val proxyConfiguration: ProxyConfiguration,
-    private val globalChannelTrafficShapingHandler: GlobalChannelTrafficShapingHandler,
     private val proxyToTargetHandler: ProxyToTargetHandler) :
     ChannelInitializer<SocketChannel>() {
     private companion object {
@@ -32,7 +31,11 @@ internal class ProxyChannelInitializer(
     override fun initChannel(proxyChannel: SocketChannel) {
         proxyChannel.pipeline().apply {
             logger.debug { "Begin to initialize proxy channel ${proxyChannel.id().asLongText()}" }
-            addLast(globalChannelTrafficShapingHandler)
+            addLast(ChannelTrafficShapingHandler(
+                proxyConfiguration.writeChannelLimit,
+                proxyConfiguration.readChannelLimit,
+                proxyConfiguration.trafficShapingCheckInterval
+            ))
             addLast(IdleStateHandler(0, 0, proxyConfiguration.agentConnectionIdleSeconds))
             addLast(ProxyChannelHeartbeatHandler())
             //Inbound
