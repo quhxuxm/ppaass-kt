@@ -10,6 +10,7 @@ import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
+import io.netty.util.ReferenceCountUtil
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 
@@ -131,5 +132,6 @@ internal class TargetToProxyHandler(
                 agentConnectMessage?.body?.bodyType
             }"
         }
+        ReferenceCountUtil.safeRelease(agentConnectMessage)
     }
 }
