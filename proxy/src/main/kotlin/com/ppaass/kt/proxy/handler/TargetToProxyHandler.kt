@@ -1,6 +1,5 @@
 package com.ppaass.kt.proxy.handler
 
-import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import com.ppaass.kt.common.protocol.ProxyMessage
 import com.ppaass.kt.common.protocol.ProxyMessageBody
@@ -26,12 +25,22 @@ internal class TargetToProxyHandler(
         val targetChannel = targetChannelContext.channel()
         val proxyChannelContext = targetChannel.attr(PROXY_CHANNEL_CONTEXT).get()
         if (proxyChannelContext == null) {
-            throw PpaassException("No proxy channel context attach to target channel.")
+            logger.error {
+                "Fail to activate target channel because of no proxy channel context attached, target channel = ${
+                    targetChannel.id().asLongText()
+                }."
+            }
+            return
         }
         val proxyChannel = proxyChannelContext.channel()
         val agentConnectMessage = targetChannel.attr(AGENT_CONNECT_MESSAGE).get()
         if (agentConnectMessage == null) {
-            throw PpaassException("No agent connect message attach to target channel.")
+            logger.error {
+                "Fail to activate target channel because of no agent connect message attached, target channel = ${
+                    targetChannel.id().asLongText()
+                }."
+            }
+            return
         }
         val proxyMessageBody =
             ProxyMessageBody(ProxyMessageBodyType.CONNECT_SUCCESS, generateUid())
@@ -43,7 +52,14 @@ internal class TargetToProxyHandler(
         proxyChannel.writeAndFlush(successMessage)
             .addListener((ChannelFutureListener { proxyChannelFuture ->
                 if (!proxyChannelFuture.isSuccess) {
-                    proxyChannelContext.close()
+                    logger.error(proxyChannelFuture.cause()) {
+                        "Fail to response CONNECT_SUCCESS data from proxy to agent because of exception, proxy channel = ${
+                            proxyChannel.id().asLongText()
+                        }, target channel = ${
+                            targetChannel.id().asLongText()
+                        }."
+                    }
+                    targetChannel.close()
                     return@ChannelFutureListener
                 }
                 if (proxyChannel.isWritable) {
@@ -67,18 +83,22 @@ internal class TargetToProxyHandler(
         proxyMessageBody.originalData = originalDataByteArray
         val proxyMessage =
             ProxyMessage(generateUid(), MessageBodyEncryptionType.random(), proxyMessageBody)
-        if (logger.isDebugEnabled) {
-            logger.debug("Transfer data from target to proxy server, proxyMessage:\n{}\n",
-                proxyMessage)
-        }
-        proxyChannel.write(proxyMessage).addListener {
+        proxyChannel.writeAndFlush(proxyMessage).addListener {
+            if (!it.isSuccess) {
+                logger.error(it.cause()) {
+                    "Fail to transfer data from target to proxy because of exception, proxy channel = ${
+                        proxyChannel.id().asLongText()
+                    }, target channel = ${
+                        targetChannel.id().asLongText()
+                    }."
+                }
+            }
             if (proxyChannel.isWritable) {
                 targetChannel.read()
             } else {
                 proxyChannel.flush()
             }
         }
-        proxyChannel.flush()
     }
 
     override fun channelWritabilityChanged(targetChannelContext: ChannelHandlerContext) {
@@ -86,11 +106,6 @@ internal class TargetToProxyHandler(
         val proxyChannelContext = targetChannel.attr(PROXY_CHANNEL_CONTEXT).get()
         val proxyChannel = proxyChannelContext.channel()
         if (targetChannel.isWritable) {
-            logger.debug {
-                "Recover auto read on proxy channel: ${
-                    proxyChannelContext.channel().id().asLongText()
-                }"
-            }
             proxyChannel.read()
         } else {
             targetChannel.flush()
@@ -100,16 +115,19 @@ internal class TargetToProxyHandler(
     override fun exceptionCaught(targetChannelContext: ChannelHandlerContext, cause: Throwable) {
         val targetChannel = targetChannelContext.channel()
         val agentConnectMessage = targetChannel.attr(AGENT_CONNECT_MESSAGE).get()
+        val proxyChannelContext = targetChannel.attr(PROXY_CHANNEL_CONTEXT).get()
         logger.error(cause) {
-            "Exception happen on target channel ${
+            "Exception happen on target channel, proxy channel = ${
+                proxyChannelContext?.channel()?.id()?.asLongText()
+            },target channel = ${
                 targetChannelContext.channel().id().asLongText()
-            }, remote address: ${
+            }, remote address = ${
                 targetChannelContext.channel().remoteAddress()
-            }, targetAddress=${
+            }, target address = ${
                 agentConnectMessage?.body?.targetAddress
-            }, targetPort=${
+            }, target port = ${
                 agentConnectMessage?.body?.targetPort
-            }, targetConnectionType=${
+            }, target connection type = ${
                 agentConnectMessage?.body?.bodyType
             }"
         }

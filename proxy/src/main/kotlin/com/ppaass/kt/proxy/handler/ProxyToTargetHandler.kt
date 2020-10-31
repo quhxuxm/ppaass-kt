@@ -180,7 +180,7 @@ internal class ProxyToTargetHandler(private val targetBootstrap: Bootstrap) :
         val targetChannel = proxyChannel.attr(TARGET_CHANNEL).get()
         val agentConnectMessage = targetChannel?.attr(AGENT_CONNECT_MESSAGE)?.get()
         logger.error(cause) {
-            "Exception happen, proxy channel = ${
+            "Exception happen on proxy channel, proxy channel = ${
                 proxyChannelContext.channel().id().asLongText()
             }, target channel = ${
                 targetChannel?.id()?.asLongText()
