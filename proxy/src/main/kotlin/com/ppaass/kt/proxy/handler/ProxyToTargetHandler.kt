@@ -1,6 +1,5 @@
 package com.ppaass.kt.proxy.handler
 
-import com.ppaass.kt.common.exception.PpaassException
 import com.ppaass.kt.common.protocol.AgentMessage
 import com.ppaass.kt.common.protocol.AgentMessageBodyType
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
@@ -38,12 +37,29 @@ internal class ProxyToTargetHandler(private val targetBootstrap: Bootstrap) :
                 val proxyChannel = proxyChannelContext.channel();
                 val targetChannel = proxyChannel.attr(TARGET_CHANNEL).get()
                 if (targetChannel == null) {
-                    logger.error { "Fail to transfer data from proxy to target because of no target channel attached, agent message: ${agentMessage}" }
+                    logger.error {
+                        "Fail to transfer data from proxy to target because of no target channel attached, proxy channel = ${
+                            proxyChannel.id().asLongText()
+                        }, agent message: \n${
+                            agentMessage
+                        }.\n"
+                    }
                     proxyChannelContext.close()
                     return
                 }
                 targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData))
                     .addListener {
+                        if (!it.isSuccess) {
+                            logger.error(it.cause()) {
+                                "Fail to transfer data from proxy to target because of exception, proxy channel = ${
+                                    proxyChannel.id().asLongText()
+                                }, target channel = ${
+                                    targetChannel.id().asLongText()
+                                }, agent message: \n${
+                                    agentMessage
+                                }.\n"
+                            }
+                        }
                         if (targetChannel.isWritable) {
                             proxyChannel.read()
                         } else {
@@ -57,27 +73,43 @@ internal class ProxyToTargetHandler(private val targetBootstrap: Bootstrap) :
                 val targetPort = agentMessage.body.targetPort
                 if (targetAddress == null) {
                     logger.error(
-                        "Return because of targetAddress is null, message id=${agentMessage.body.id}")
-                    throw PpaassException(
-                        "Return because of targetAddress is null, message id=${agentMessage.body.id}")
+                        "Fail to connect to target because of no target address, proxy channel = ${
+                            proxyChannelContext.channel().id().asLongText()
+                        }, agent message = \n${
+                            agentMessage
+                        }.\n")
+                    proxyChannelContext.close()
+                    return
                 }
                 if (targetPort == null) {
                     logger.error(
-                        "Return because of targetPort is null, message id=${agentMessage.body.id}")
-                    throw PpaassException(
-                        "Return because of targetPort is null, message id=${agentMessage.body.id}")
+                        "Fail to connect to target because of no target port, proxy channel = ${
+                            proxyChannelContext.channel().id().asLongText()
+                        }, agent message = \n${
+                            agentMessage
+                        }.\n")
+                    proxyChannelContext.close()
+                    return
                 }
                 logger.debug(
-                    "Begin to connect ${targetAddress}:${targetPort}, message id=${agentMessage.body.id}")
+                    "Begin to connect ${targetAddress}:${targetPort}, proxy channel = ${
+                        proxyChannelContext.channel().id().asLongText()
+                    }, agent message = \n${
+                        agentMessage
+                    }.\n")
                 val targetConnectFuture = this.targetBootstrap.connect(targetAddress, targetPort)
                 targetConnectFuture
                     .addListener((ChannelFutureListener { targetChannelFuture ->
                         val targetChannel = targetChannelFuture.channel()
                         val proxyChannel = proxyChannelContext.channel()
                         if (!targetChannelFuture.isSuccess) {
-                            logger.error(
-                                "Fail connect to ${targetAddress}:${targetPort}.",
-                                targetChannelFuture.cause())
+                            logger.error(targetChannelFuture.cause()) {
+                                "Fail to connect to target because of exception, proxy channel = ${
+                                    proxyChannelContext.channel().id().asLongText()
+                                }, agent message = \n${
+                                    agentMessage
+                                }.\n"
+                            }
                             val proxyMessageBody =
                                 ProxyMessageBody(ProxyMessageBodyType.CONNECT_FAIL,
                                     agentMessage.body.id)
@@ -88,7 +120,6 @@ internal class ProxyToTargetHandler(private val targetBootstrap: Bootstrap) :
                                     proxyMessageBody)
                             proxyChannel.writeAndFlush(failProxyMessage)
                                 .addListener(ChannelFutureListener.CLOSE)
-                            targetChannel.close()
                             return@ChannelFutureListener
                         }
                         when (agentMessage.body.bodyType) {
@@ -113,8 +144,16 @@ internal class ProxyToTargetHandler(private val targetBootstrap: Bootstrap) :
                                 }
                             }
                             else -> {
-                                throw PpaassException(
-                                    "A wrong body type should not happen for setup connection.")
+                                "Fail to connect to target because of incorrect body type, proxy channel = ${
+                                    proxyChannelContext.channel().id().asLongText()
+                                }, target channel = ${
+                                    targetChannel.id().asLongText()
+                                }, agent message = \n${
+                                    agentMessage
+                                }.\n"
+                                proxyChannelContext.close()
+                                targetChannel.close()
+                                return@ChannelFutureListener
                             }
                         }
                         targetChannel.attr(PROXY_CHANNEL_CONTEXT).setIfAbsent(proxyChannelContext)
@@ -130,11 +169,6 @@ internal class ProxyToTargetHandler(private val targetBootstrap: Bootstrap) :
         val proxyChannel = proxyChannelContext.channel();
         val targetChannel = proxyChannel.attr(TARGET_CHANNEL).get()
         if (proxyChannel.isWritable) {
-            logger.debug {
-                "Recover auto read on target channel: ${
-                    targetChannel.id().asLongText()
-                }"
-            }
             targetChannel.read()
         } else {
             proxyChannel.flush()
@@ -146,15 +180,17 @@ internal class ProxyToTargetHandler(private val targetBootstrap: Bootstrap) :
         val targetChannel = proxyChannel.attr(TARGET_CHANNEL).get()
         val agentConnectMessage = targetChannel?.attr(AGENT_CONNECT_MESSAGE)?.get()
         logger.error(cause) {
-            "Exception happen on proxy channel ${
+            "Exception happen, proxy channel = ${
                 proxyChannelContext.channel().id().asLongText()
-            }, remote address: ${
+            }, target channel = ${
+                targetChannel?.id()?.asLongText()
+            }, remote address = ${
                 proxyChannelContext.channel().remoteAddress()
-            }, targetAddress=${
+            }, target address = ${
                 agentConnectMessage?.body?.targetAddress
-            }, targetPort=${
+            }, target port = ${
                 agentConnectMessage?.body?.targetPort
-            }, targetConnectionType=${
+            }, target connection type = ${
                 agentConnectMessage?.body?.bodyType
             }"
         }
