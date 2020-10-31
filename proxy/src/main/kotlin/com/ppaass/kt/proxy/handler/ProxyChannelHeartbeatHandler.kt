@@ -69,6 +69,7 @@ internal class ProxyChannelHeartbeatHandler :
                 failureTimes++
                 return@addListener
             }
+            failureTimes = 0
             logger.info {
                 "Send heartbeat message from proxy to agent success, proxy channel = ${
                     proxyChannel.id().asLongText()

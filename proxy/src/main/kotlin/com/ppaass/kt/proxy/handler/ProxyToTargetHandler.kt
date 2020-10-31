@@ -39,8 +39,8 @@ internal class ProxyToTargetHandler(private val targetBootstrap: Bootstrap) :
                 val targetChannel = proxyChannel.attr(TARGET_CHANNEL).get()
                 if (targetChannel == null) {
                     logger.error { "Fail to transfer data from proxy to target because of no target channel attached, agent message: ${agentMessage}" }
-                    throw PpaassException(
-                        "Fail to transfer data from proxy to target because of no target channel attached")
+                    proxyChannelContext.close()
+                    return
                 }
                 targetChannel.writeAndFlush(Unpooled.wrappedBuffer(agentMessage.body.originalData))
                     .addListener {
