@@ -132,4 +132,17 @@ internal class SocksV5ProtocolHandler(
     override fun channelReadComplete(agentChannelContext: ChannelHandlerContext) {
         agentChannelContext.flush()
     }
+
+    override fun exceptionCaught(agentChannelContext: ChannelHandlerContext, cause: Throwable) {
+        val agentChannel = agentChannelContext.channel()
+        val proxyChannelContext = agentChannel.attr(PROXY_CHANNEL_CONTEXT).get()
+        val proxyChannel = proxyChannelContext?.channel()
+        logger.error(cause) {
+            "Exception happen on agent channel, agent channel = ${
+                agentChannel.id().asLongText()
+            }, proxy channel = ${
+                proxyChannel?.id()?.asLongText()
+            }."
+        }
+    }
 }

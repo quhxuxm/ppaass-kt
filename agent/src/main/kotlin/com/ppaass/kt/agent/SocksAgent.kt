@@ -2,7 +2,6 @@ package com.ppaass.kt.agent
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
 import com.ppaass.kt.agent.handler.socks.SwitchSocksVersionHandler
-import com.ppaass.kt.common.netty.handler.ExceptionHandler
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler
@@ -13,8 +12,7 @@ import org.springframework.stereotype.Service
 @Service
 internal class SocksAgent(
     private val agentConfiguration: AgentConfiguration,
-    private val switchSocksVersionHandler: SwitchSocksVersionHandler,
-    private val exceptionHandler: ExceptionHandler) : Agent(agentConfiguration) {
+    private val switchSocksVersionHandler: SwitchSocksVersionHandler) : Agent(agentConfiguration) {
     final override val channelInitializer: ChannelInitializer<SocketChannel>
 
     private companion object {
@@ -29,7 +27,6 @@ internal class SocksAgent(
                     addLast(IdleStateHandler(0, 0,
                         agentConfiguration.staticAgentConfiguration.clientConnectionIdleSeconds))
                     addLast(SocksPortUnificationServerHandler())
-                    addLast(exceptionHandler)
                     addLast(switchSocksVersionHandler)
                 }
             }

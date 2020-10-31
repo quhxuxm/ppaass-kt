@@ -1,6 +1,5 @@
 package com.ppaass.kt.proxy
 
-import com.ppaass.kt.common.netty.handler.ExceptionHandler
 import com.ppaass.kt.proxy.handler.TargetChannelInitializer
 import io.netty.bootstrap.Bootstrap
 import io.netty.channel.AdaptiveRecvByteBufAllocator
@@ -32,9 +31,6 @@ internal class ProxyConfigure(
     @Bean
     fun workerIoEventLoopGroup() =
         NioEventLoopGroup(this.proxyConfiguration.workerIoEventThreadNumber)
-
-    @Bean
-    fun resourceClearHandler() = ExceptionHandler()
 
     @Bean
     fun globalChannelTrafficShapingHandler() =

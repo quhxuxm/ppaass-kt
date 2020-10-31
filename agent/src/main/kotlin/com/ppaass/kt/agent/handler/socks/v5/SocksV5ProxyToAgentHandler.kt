@@ -88,47 +88,68 @@ internal class SocksV5ProxyToAgentHandler(
         }
         proxyChannel.writeAndFlush(agentMessage)
             .addListener((ChannelFutureListener { proxyChannelFuture ->
-                if (!proxyChannelFuture.isSuccess) {
-                    proxyChannelContext.close()
-                    agentChannel.writeAndFlush(
-                        DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE,
-                            socks5CommandRequest.dstAddrType()))
-                        .addListener(ChannelFutureListener.CLOSE)
-                    logger.debug(
-                        "Fail to send connect message from agent to proxy because of exception.",
-                        proxyChannelFuture.cause())
+                if (proxyChannelFuture.isSuccess) {
                     return@ChannelFutureListener
+                }
+                agentChannel.writeAndFlush(
+                    DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE,
+                        socks5CommandRequest.dstAddrType()))
+                    .addListener(ChannelFutureListener.CLOSE)
+                proxyChannelContext.close()
+                logger.error(proxyChannelFuture.cause()) {
+                    "Fail to send connect message from agent to proxy because of exception, agent channel = ${
+                        agentChannel.id().asLongText()
+                    }"
                 }
             }))
     }
 
-    override fun channelInactive(proxyChannelContext: ChannelHandlerContext) {
-        val proxyChannel = proxyChannelContext.channel();
-        proxyChannel.attr(AGENT_CHANNEL_CONTEXT).set(null)
-        proxyChannel.attr(SOCKS_V5_COMMAND_REQUEST).set(null)
-    }
-
-    override fun channelRead0(proxyChannelContext: ChannelHandlerContext, msg: ProxyMessage) {
+    override fun channelRead0(proxyChannelContext: ChannelHandlerContext,
+                              proxyMessage: ProxyMessage) {
         val proxyChannel = proxyChannelContext.channel();
         val agentChannelContext = proxyChannel.attr(AGENT_CHANNEL_CONTEXT).get()
         val agentChannel = agentChannelContext.channel()
-        if (msg.body.bodyType == ProxyMessageBodyType.CONNECT_SUCCESS) {
+        if (proxyMessage.body.bodyType == ProxyMessageBodyType.CONNECT_SUCCESS) {
             val socks5CommandRequest = proxyChannel.attr(SOCKS_V5_COMMAND_REQUEST).get()
-            logger.debug(
-                "Success connect to target server: {}:{}", socks5CommandRequest.dstAddr(),
-                socks5CommandRequest.dstPort())
+            logger.debug {
+                "Success connect to target server: ${
+                    socks5CommandRequest.dstAddr()
+                }:${
+                    socks5CommandRequest.dstPort()
+                }, agent channel = ${
+                    agentChannel.id().asLongText()
+                }, proxy channel = ${
+                    proxyChannel.id().asLongText()
+                }"
+            }
             agentChannel.writeAndFlush(DefaultSocks5CommandResponse(
                 Socks5CommandStatus.SUCCESS,
                 socks5CommandRequest.dstAddrType(),
                 socks5CommandRequest.dstAddr(),
                 socks5CommandRequest.dstPort()))
-                .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
+                .addListener {
+                    if (it.isSuccess) {
+                        return@addListener
+                    }
+                    logger.error(it.cause()) {
+                        "Fail write socks command response to client because of exception, target server: ${
+                            socks5CommandRequest.dstAddr()
+                        }:${
+                            socks5CommandRequest.dstPort()
+                        }, agent channel = ${
+                            agentChannel.id().asLongText()
+                        }, proxy channel = ${
+                            proxyChannel.id().asLongText()
+                        }"
+                    }
+                    agentChannel.close()
+                }
             return
         }
-        if (msg.body.bodyType == ProxyMessageBodyType.HEARTBEAT) {
-            val originalData = msg.body.originalData
+        if (proxyMessage.body.bodyType == ProxyMessageBodyType.HEARTBEAT) {
+            val originalData = proxyMessage.body.originalData
             val heartbeat = this.objectMapper.readValue(originalData, Heartbeat::class.java)
-            logger.info {
+            logger.debug {
                 "Discard proxy channel heartbeat, proxy channel = ${
                     proxyChannel.id().asLongText()
                 }, agent channel = ${
@@ -141,26 +162,41 @@ internal class SocksV5ProxyToAgentHandler(
             }
             return
         }
-        if (!agentChannel.isActive) {
-            proxyChannelContext.close()
-            agentChannel.close()
-            logger.debug(
-                "Fail to send message from proxy to agent because of agent channel not active, proxy channel=${
-                    proxyChannel.id().asLongText()
-                }, agent channel=${
-                    agentChannel.id().asLongText()
-                }.")
-            return
-        }
-        val originalDataBuf = Unpooled.wrappedBuffer(msg.body.originalData)
-        agentChannel.writeAndFlush(originalDataBuf)
+        agentChannel.writeAndFlush(Unpooled.wrappedBuffer(proxyMessage.body.originalData))
+            .addListener {
+                if (it.isSuccess) {
+                    return@addListener
+                }
+                logger.error(it.cause()) {
+                    "Fail write proxy message to agent because of exception, agent channel = ${
+                        agentChannel.id().asLongText()
+                    }, proxy channel = ${
+                        proxyChannel.id().asLongText()
+                    }, proxy message = \n${
+                        proxyMessage
+                    }.\n"
+                }
+            }
     }
 
     override fun channelReadComplete(proxyChannelContext: ChannelHandlerContext) {
         val proxyChannel = proxyChannelContext.channel();
         val agentChannelContext = proxyChannel.attr(AGENT_CHANNEL_CONTEXT).get()
-        val agentChannel = agentChannelContext.channel()
-        agentChannel.flush()
+        val agentChannel = agentChannelContext?.channel()
+        agentChannel?.flush()
         proxyChannelContext.flush()
+    }
+
+    override fun exceptionCaught(proxyChannelContext: ChannelHandlerContext, cause: Throwable) {
+        val proxyChannel = proxyChannelContext.channel();
+        val agentChannelContext = proxyChannel.attr(AGENT_CHANNEL_CONTEXT).get()
+        val agentChannel = agentChannelContext?.channel()
+        logger.error(cause) {
+            "Exception happen on proxy channel, agent channel = ${
+                agentChannel?.id()?.asLongText()
+            }, proxy channel = ${
+                proxyChannel.id().asLongText()
+            }."
+        }
     }
 }

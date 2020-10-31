@@ -1,6 +1,5 @@
 package com.ppaass.kt.proxy.handler
 
-import com.ppaass.kt.common.netty.handler.ExceptionHandler
 import com.ppaass.kt.proxy.ProxyConfiguration
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelInitializer
@@ -16,7 +15,6 @@ internal class TargetChannelInitializer(
     private val dataTransferIoEventLoopGroup: EventLoopGroup,
     private val targetGlobalChannelTrafficShapingHandler: GlobalChannelTrafficShapingHandler,
     private val targetToProxyHandler: TargetToProxyHandler,
-    private val exceptionHandler: ExceptionHandler,
     private val proxyConfiguration: ProxyConfiguration,
     private val targetChannelKeepAliveHandler: TargetChannelKeepAliveHandler
 ) : ChannelInitializer<SocketChannel>() {
@@ -26,7 +24,6 @@ internal class TargetChannelInitializer(
             addLast(IdleStateHandler(0, 0, proxyConfiguration.targetConnectionIdleSeconds))
             addLast(targetChannelKeepAliveHandler)
             addLast(dataTransferIoEventLoopGroup, targetToProxyHandler)
-            addLast(exceptionHandler)
         }
     }
 }

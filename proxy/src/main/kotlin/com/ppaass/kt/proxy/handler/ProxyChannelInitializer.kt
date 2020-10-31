@@ -2,7 +2,6 @@ package com.ppaass.kt.proxy.handler
 
 import com.ppaass.kt.common.netty.codec.AgentMessageDecoder
 import com.ppaass.kt.common.netty.codec.ProxyMessageEncoder
-import com.ppaass.kt.common.netty.handler.ExceptionHandler
 import com.ppaass.kt.proxy.ProxyConfiguration
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelInitializer
@@ -24,8 +23,7 @@ import org.springframework.stereotype.Service
 internal class ProxyChannelInitializer(
     private val proxyConfiguration: ProxyConfiguration,
     private val globalChannelTrafficShapingHandler: GlobalChannelTrafficShapingHandler,
-    private val proxyToTargetHandler: ProxyToTargetHandler,
-    private val exceptionHandler: ExceptionHandler) :
+    private val proxyToTargetHandler: ProxyToTargetHandler) :
     ChannelInitializer<SocketChannel>() {
     private companion object {
         private val logger = KotlinLogging.logger {}
@@ -50,7 +48,6 @@ internal class ProxyChannelInitializer(
             }
             addLast(LengthFieldPrepender(4))
             addLast(ProxyMessageEncoder(proxyConfiguration.agentPublicKey))
-            addLast(exceptionHandler)
         }
     }
 }

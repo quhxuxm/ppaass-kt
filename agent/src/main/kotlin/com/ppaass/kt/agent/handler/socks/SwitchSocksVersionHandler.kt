@@ -1,5 +1,6 @@
 package com.ppaass.kt.agent.handler.socks
 
+import com.ppaass.kt.agent.handler.socks.v5.PROXY_CHANNEL_CONTEXT
 import com.ppaass.kt.agent.handler.socks.v5.SocksV5ProtocolHandler
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
@@ -46,5 +47,18 @@ internal class SwitchSocksVersionHandler(
 
     override fun channelReadComplete(agentChannelContext: ChannelHandlerContext) {
         agentChannelContext.flush()
+    }
+
+    override fun exceptionCaught(agentChannelContext: ChannelHandlerContext, cause: Throwable) {
+        val agentChannel = agentChannelContext.channel()
+        val proxyChannelContext = agentChannel.attr(PROXY_CHANNEL_CONTEXT).get()
+        val proxyChannel = proxyChannelContext?.channel()
+        logger.error(cause) {
+            "Exception happen on agent channel, agent channel = ${
+                agentChannel.id().asLongText()
+            }, proxy channel = ${
+                proxyChannel?.id()?.asLongText()
+            }."
+        }
     }
 }

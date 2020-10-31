@@ -3,7 +3,6 @@ package com.ppaass.kt.agent.handler.socks.v5
 import com.ppaass.kt.agent.configuration.AgentConfiguration
 import com.ppaass.kt.common.netty.codec.AgentMessageEncoder
 import com.ppaass.kt.common.netty.codec.ProxyMessageDecoder
-import com.ppaass.kt.common.netty.handler.ExceptionHandler
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.EventLoopGroup
@@ -19,8 +18,7 @@ import org.springframework.stereotype.Service
 internal class SocksV5ProxyChannelInitializer(
     private val agentConfiguration: AgentConfiguration,
     private val dataTransferIoEventLoopGroup: EventLoopGroup,
-    private val socksV5ProxyToAgentHandler: SocksV5ProxyToAgentHandler,
-    private val exceptionHandler: ExceptionHandler
+    private val socksV5ProxyToAgentHandler: SocksV5ProxyToAgentHandler
 ) : ChannelInitializer<SocketChannel>() {
     override fun initChannel(proxyChannel: SocketChannel) {
         with(proxyChannel.pipeline()) {
@@ -38,7 +36,6 @@ internal class SocksV5ProxyChannelInitializer(
             }
             addLast(LengthFieldPrepender(4))
             addLast(AgentMessageEncoder(agentConfiguration.staticAgentConfiguration.proxyPublicKey))
-            addLast(exceptionHandler)
         }
     }
 }

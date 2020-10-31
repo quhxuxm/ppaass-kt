@@ -11,7 +11,21 @@ internal class ExtractProxyMessageOriginalDataDecoder : MessageToMessageDecoder<
         private val logger = KotlinLogging.logger {}
     }
 
-    override fun decode(ctx: ChannelHandlerContext, msg: ProxyMessage, out: MutableList<Any>) {
-        out.add(Unpooled.wrappedBuffer(msg.body.originalData))
+    override fun decode(proxyChannelContext: ChannelHandlerContext, proxyMessage: ProxyMessage,
+                        out: MutableList<Any>) {
+        out.add(Unpooled.wrappedBuffer(proxyMessage.body.originalData))
+    }
+
+    override fun exceptionCaught(proxyChannelContext: ChannelHandlerContext, cause: Throwable) {
+        val proxyChannel = proxyChannelContext.channel();
+        val agentChannelContext = proxyChannel.attr(AGENT_CHANNEL_CONTEXT).get()
+        val agentChannel = agentChannelContext?.channel()
+        logger.error(cause) {
+            "Exception happen on proxy channel, agent channel = ${
+                agentChannel?.id()?.asLongText()
+            }, proxy channel = ${
+                proxyChannel.id().asLongText()
+            }."
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.ppaass.kt.agent.handler.http
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
+import com.ppaass.kt.agent.handler.socks.v5.PROXY_CHANNEL_CONTEXT
 import com.ppaass.kt.common.protocol.AgentMessageBodyType
 import com.ppaass.kt.common.protocol.MessageBodyEncryptionType
 import io.netty.bootstrap.Bootstrap
@@ -8,15 +9,10 @@ import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
-import io.netty.handler.codec.http.DefaultFullHttpResponse
 import io.netty.handler.codec.http.FullHttpRequest
 import io.netty.handler.codec.http.HttpHeaderNames
 import io.netty.handler.codec.http.HttpHeaderValues
 import io.netty.handler.codec.http.HttpMethod
-import io.netty.handler.codec.http.HttpObjectAggregator
-import io.netty.handler.codec.http.HttpResponseStatus
-import io.netty.handler.codec.http.HttpServerCodec
-import io.netty.handler.codec.http.HttpVersion
 import io.netty.util.ReferenceCountUtil
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
@@ -141,9 +137,6 @@ internal class HttpProxySetupConnectionHandler(
                     .setIfAbsent(connectionKeepAlive)
                 proxyChannelFuture.channel().attr(HTTP_CONNECTION_IS_HTTPS).setIfAbsent(false)
                 proxyChannelFuture.channel().attr(HTTP_MESSAGE).setIfAbsent(msg)
-
-
-
             })
     }
 
@@ -161,11 +154,18 @@ internal class HttpProxySetupConnectionHandler(
             ChannelInfoCache.getChannelInfoByClientChannelId(
                 agentChannelContext.channel().id().asLongText())
         if (channelCacheInfo != null) {
-            channelCacheInfo.agentChannel.close()
-            channelCacheInfo.proxyChannel.close()
             ChannelInfoCache.removeChannelInfo(
                 agentChannelContext.channel().id().asLongText())
         }
-        logger.error("Exception happen when setup the proxy connection.", cause)
+        val agentChannel = agentChannelContext.channel()
+        val proxyChannelContext = agentChannel.attr(PROXY_CHANNEL_CONTEXT).get()
+        val proxyChannel = proxyChannelContext?.channel()
+        logger.error(cause) {
+            "Exception happen on agent channel, agent channel = ${
+                agentChannel.id().asLongText()
+            }, proxy channel = ${
+                proxyChannel?.id()?.asLongText()
+            }."
+        }
     }
 }

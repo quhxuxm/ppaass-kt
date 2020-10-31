@@ -1,7 +1,6 @@
 package com.ppaass.kt.agent
 
 import com.ppaass.kt.agent.configuration.AgentConfiguration
-import com.ppaass.kt.common.netty.handler.ExceptionHandler
 import io.netty.channel.nio.NioEventLoopGroup
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -25,7 +24,4 @@ internal class AgentConfigure(private val agentConfiguration: AgentConfiguration
     @Bean
     fun agentWorkerIoEventLoopGroup() =
         NioEventLoopGroup(agentConfiguration.staticAgentConfiguration.workerIoEventThreadNumber)
-
-    @Bean
-    fun resourceClearHandler() = ExceptionHandler()
 }

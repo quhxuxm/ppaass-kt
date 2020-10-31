@@ -40,29 +40,40 @@ internal class SocksV5AgentToProxyHandler(
             encryptionToken = generateUid(),
             messageBodyEncryptionType = MessageBodyEncryptionType.random(),
             body = agentMessageBody)
-        if (!proxyChannel.isActive) {
-            proxyChannel.close()
-            agentChannelContext.close()
-            logger.debug(
-                "Fail to send connect message from agent to proxy because of proxy channel not active.")
-            return
+        proxyChannel.writeAndFlush(agentMessage).addListener {
+            if (it.isSuccess) {
+                return@addListener
+            }
+            logger.error(it.cause()) {
+                "Fail write agent message to proxy because of exception, agent channel = ${
+                    agentChannel.id().asLongText()
+                }, proxy channel = ${
+                    proxyChannel.id().asLongText()
+                }, agent message = \n${
+                    agentMessage
+                }.\n"
+            }
         }
-        proxyChannel.writeAndFlush(agentMessage)
     }
 
     override fun channelReadComplete(agentChannelContext: ChannelHandlerContext) {
         val agentChannel = agentChannelContext.channel()
         val proxyChannelContext = agentChannel.attr(PROXY_CHANNEL_CONTEXT).get()
-        val proxyChannel = proxyChannelContext.channel()
-        proxyChannel.flush()
+        val proxyChannel = proxyChannelContext?.channel()
+        proxyChannel?.flush()
         agentChannelContext.flush()
     }
 
-    override fun channelInactive(agentChannelContext: ChannelHandlerContext) {
+    override fun exceptionCaught(agentChannelContext: ChannelHandlerContext, cause: Throwable) {
         val agentChannel = agentChannelContext.channel()
         val proxyChannelContext = agentChannel.attr(PROXY_CHANNEL_CONTEXT).get()
-        val proxyChannel = proxyChannelContext.channel()
-        proxyChannel.close()
-        agentChannel.attr(PROXY_CHANNEL_CONTEXT).set(null)
+        val proxyChannel = proxyChannelContext?.channel()
+        logger.error(cause) {
+            "Exception happen on agent channel, agent channel = ${
+                agentChannel.id().asLongText()
+            }, proxy channel = ${
+                proxyChannel?.id()?.asLongText()
+            }."
+        }
     }
 }

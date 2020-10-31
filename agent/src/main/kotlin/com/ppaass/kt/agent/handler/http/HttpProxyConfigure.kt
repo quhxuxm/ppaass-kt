@@ -3,7 +3,6 @@ package com.ppaass.kt.agent.handler.http
 import com.ppaass.kt.agent.configuration.AgentConfiguration
 import com.ppaass.kt.common.netty.codec.AgentMessageEncoder
 import com.ppaass.kt.common.netty.codec.ProxyMessageDecoder
-import com.ppaass.kt.common.netty.handler.ExceptionHandler
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.ChannelInitializer
@@ -26,7 +25,6 @@ internal class HttpProxyConfigure {
     fun proxyBootstrapForHttp(proxyBootstrapIoEventLoopGroup: EventLoopGroup,
                               dataTransferIoEventLoopGroup: EventLoopGroup,
                               transferDataFromProxyToAgentHandler: TransferDataFromProxyToAgentHandler,
-                              exceptionHandler: ExceptionHandler,
                               agentConfiguration: AgentConfiguration,
                               httpProxyMessageBodyTypeHandler: HttpProxyMessageBodyTypeHandler): Bootstrap {
         val proxyBootstrap = Bootstrap()
@@ -67,7 +65,6 @@ internal class HttpProxyConfigure {
                         addLast(LengthFieldPrepender(4))
                         addLast(AgentMessageEncoder(
                             agentConfiguration.staticAgentConfiguration.proxyPublicKey))
-                        addLast(exceptionHandler)
                     }
                 }
             })
@@ -79,7 +76,6 @@ internal class HttpProxyConfigure {
     fun proxyBootstrapForHttps(proxyBootstrapIoEventLoopGroup: EventLoopGroup,
                                dataTransferIoEventLoopGroup: EventLoopGroup,
                                transferDataFromProxyToAgentHandler: TransferDataFromProxyToAgentHandler,
-                               exceptionHandler: ExceptionHandler,
                                agentConfiguration: AgentConfiguration,
                                httpProxyMessageBodyTypeHandler: HttpProxyMessageBodyTypeHandler): Bootstrap {
         val proxyBootstrap = Bootstrap()
@@ -120,7 +116,6 @@ internal class HttpProxyConfigure {
                         addLast(LengthFieldPrepender(4))
                         addLast(AgentMessageEncoder(
                             agentConfiguration.staticAgentConfiguration.proxyPublicKey))
-                        addLast(exceptionHandler)
                     }
                 }
             })

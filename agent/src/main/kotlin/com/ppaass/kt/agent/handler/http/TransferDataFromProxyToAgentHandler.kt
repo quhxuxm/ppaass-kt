@@ -108,4 +108,17 @@ internal class TransferDataFromProxyToAgentHandler(
             "Current client channel to receive the proxy response (read complete), clientChannelId=$agentChannelId")
         agentChannel.flush()
     }
+
+    override fun exceptionCaught(proxyChannelContext: ChannelHandlerContext, cause: Throwable) {
+        val proxyChannel = proxyChannelContext.channel();
+        val agentChannelContext = proxyChannel.attr(AGENT_CHANNEL_CONTEXT).get()
+        val agentChannel = agentChannelContext?.channel()
+        logger.error(cause) {
+            "Exception happen on proxy channel, agent channel = ${
+                agentChannel?.id()?.asLongText()
+            }, proxy channel = ${
+                proxyChannel.id().asLongText()
+            }."
+        }
+    }
 }
