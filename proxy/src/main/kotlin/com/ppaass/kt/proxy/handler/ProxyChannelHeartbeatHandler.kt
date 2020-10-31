@@ -51,18 +51,18 @@ internal class ProxyChannelHeartbeatHandler :
             val proxyChannel = proxyChannelContext.channel()
             val targetChannel = proxyChannel.attr(TARGET_CHANNEL).get()
             if (!it.isSuccess) {
-                logger.error {
-                    "Fail to send heartbeat message from proxy to agent, proxy channel = ${
-                        proxyChannel.id().asLongText()
-                    }, target channel = ${
-                        targetChannel?.id()?.asLongText()
-                    }, heartbeat id = ${
-                        heartbeat.id
-                    }, heartbeat time = ${
-                        heartbeat.utcDateTime
-                    }"
-                }
                 if (failureTimes >= 3) {
+                    logger.error {
+                        "Fail to send heartbeat message from proxy to agent, proxy channel will close, proxy channel = ${
+                            proxyChannel.id().asLongText()
+                        }, target channel = ${
+                            targetChannel?.id()?.asLongText()
+                        }, heartbeat id = ${
+                            heartbeat.id
+                        }, heartbeat time = ${
+                            heartbeat.utcDateTime
+                        }"
+                    }
                     proxyChannelContext.close()
                     return@addListener
                 }
@@ -70,7 +70,7 @@ internal class ProxyChannelHeartbeatHandler :
                 return@addListener
             }
             failureTimes = 0
-            logger.info {
+            logger.debug {
                 "Send heartbeat message from proxy to agent success, proxy channel = ${
                     proxyChannel.id().asLongText()
                 }, target channel = ${
