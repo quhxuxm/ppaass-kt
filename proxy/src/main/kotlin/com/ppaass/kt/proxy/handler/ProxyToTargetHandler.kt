@@ -56,8 +56,12 @@ internal class ProxyToTargetHandler(private val targetBootstrap: Bootstrap) :
                                     proxyChannel.id().asLongText()
                                 }, target channel = ${
                                     targetChannel.id().asLongText()
-                                }, agent message: \n${
-                                    agentMessage
+                                }, target address = ${
+                                    agentMessage.body.targetAddress
+                                }, target port = ${
+                                    agentMessage.body.targetPort
+                                }, target connection type = ${
+                                    agentMessage.body.bodyType
                                 }.\n"
                             }
                         }
@@ -76,8 +80,12 @@ internal class ProxyToTargetHandler(private val targetBootstrap: Bootstrap) :
                     logger.error(
                         "Fail to connect to target because of no target address, proxy channel = ${
                             proxyChannelContext.channel().id().asLongText()
-                        }, agent message = \n${
-                            agentMessage
+                        }, target address = ${
+                            agentMessage.body.targetAddress
+                        }, target port = ${
+                            agentMessage.body.targetPort
+                        }, target connection type = ${
+                            agentMessage.body.bodyType
                         }.\n")
                     proxyChannelContext.close()
                     return
@@ -86,8 +94,12 @@ internal class ProxyToTargetHandler(private val targetBootstrap: Bootstrap) :
                     logger.error(
                         "Fail to connect to target because of no target port, proxy channel = ${
                             proxyChannelContext.channel().id().asLongText()
-                        }, agent message = \n${
-                            agentMessage
+                        }, target address = ${
+                            agentMessage.body.targetAddress
+                        }, target port = ${
+                            agentMessage.body.targetPort
+                        }, target connection type = ${
+                            agentMessage.body.bodyType
                         }.\n")
                     proxyChannelContext.close()
                     return
@@ -107,8 +119,12 @@ internal class ProxyToTargetHandler(private val targetBootstrap: Bootstrap) :
                             logger.error(targetChannelFuture.cause()) {
                                 "Fail to connect to target because of exception, proxy channel = ${
                                     proxyChannelContext.channel().id().asLongText()
-                                }, agent message = \n${
-                                    agentMessage
+                                }, target address = ${
+                                    agentMessage.body.targetAddress
+                                }, target port = ${
+                                    agentMessage.body.targetPort
+                                }, target connection type = ${
+                                    agentMessage.body.bodyType
                                 }.\n"
                             }
                             val proxyMessageBody =
@@ -149,8 +165,12 @@ internal class ProxyToTargetHandler(private val targetBootstrap: Bootstrap) :
                                     proxyChannelContext.channel().id().asLongText()
                                 }, target channel = ${
                                     targetChannel.id().asLongText()
-                                }, agent message = \n${
-                                    agentMessage
+                                }, target address = ${
+                                    agentMessage.body.targetAddress
+                                }, target port = ${
+                                    agentMessage.body.targetPort
+                                }, target connection type = ${
+                                    agentMessage.body.bodyType
                                 }.\n"
                                 proxyChannelContext.close()
                                 targetChannel.close()
