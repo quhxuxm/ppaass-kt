@@ -49,8 +49,12 @@ internal class SocksV5AgentToProxyHandler(
                     agentChannel.id().asLongText()
                 }, proxy channel = ${
                     proxyChannel.id().asLongText()
-                }, agent message = \n${
-                    agentMessage
+                }, target address = ${
+                    agentMessage.body.targetAddress
+                }, target port = ${
+                    agentMessage.body.targetPort
+                }, target connection type = ${
+                    agentMessage.body.bodyType
                 }.\n"
             }
         }

@@ -172,9 +172,7 @@ internal class SocksV5ProxyToAgentHandler(
                         agentChannel.id().asLongText()
                     }, proxy channel = ${
                         proxyChannel.id().asLongText()
-                    }, proxy message = \n${
-                        proxyMessage
-                    }.\n"
+                    }."
                 }
             }
     }
