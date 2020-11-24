@@ -1,5 +1,7 @@
 package com.ppaass.kt.common
 
+import io.netty.buffer.ByteBufUtil
+import io.netty.buffer.Unpooled
 import java.util.*
 
 /**
@@ -39,7 +41,13 @@ class MessageBody<T>(
     /**
      * The data in bytes
      */
-    val data: ByteArray) where T : MessageBodyType, T : Enum<T>
+    val data: ByteArray) where T : MessageBodyType, T : Enum<T> {
+    override fun toString(): String {
+        return "MessageBody(id='$id', userToken='$userToken', targetHost='$targetHost', targetPort=$targetPort, bodyType=$bodyType, data=${
+            ByteBufUtil.prettyHexDump(Unpooled.wrappedBuffer(data))
+        })"
+    }
+}
 
 /**
  * The message exchange between agent and proxy.
@@ -56,7 +64,11 @@ class Message<T>(
     /**
      * The message body
      */
-    val body: MessageBody<T>) where T : Enum<T>, T : MessageBodyType
+    val body: MessageBody<T>) where T : Enum<T>, T : MessageBodyType {
+    override fun toString(): String {
+        return "Message(encryptionToken='$encryptionToken', encryptionType=$encryptionType, body=$body)"
+    }
+}
 
 /**
  * The agent message body type
