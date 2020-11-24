@@ -1,5 +1,7 @@
 package com.ppaass.kt.common
 
+import java.util.*
+
 /**
  * The message body type
  */
@@ -17,7 +19,7 @@ class MessageBody<T>(
     /**
      * Message id
      */
-    val id: String,
+    val id: String = UUID.randomUUID().toString().replace("-", ""),
     /**
      * User token
      */
@@ -46,7 +48,7 @@ class Message<T>(
     /**
      * The encryption token
      */
-    val encryptionToken: String,
+    val encryptionToken: String = UUID.randomUUID().toString().replace("-", ""),
     /**
      * The encryption type
      */

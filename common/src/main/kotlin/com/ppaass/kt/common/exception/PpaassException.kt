@@ -5,5 +5,6 @@ class PpaassException(message: String?, cause: Throwable?,
                       writableStackTrace: Boolean) :
     Exception(message, cause, enableSuppression, writableStackTrace) {
     constructor() : this(null, null, false, false)
+    constructor(message: String) : this(message, null, false, false)
     constructor(message: String, e: Exception) : this(message, e, false, false)
 }
