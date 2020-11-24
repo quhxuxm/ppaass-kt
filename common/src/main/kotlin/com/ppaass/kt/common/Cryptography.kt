@@ -1,6 +1,5 @@
 package com.ppaass.kt.common
 
-import com.ppaass.kt.common.exception.PpaassException
 import mu.KotlinLogging
 import org.apache.commons.codec.binary.Base64
 import java.security.KeyFactory

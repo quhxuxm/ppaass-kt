@@ -1,6 +1,5 @@
 package com.ppaass.kt.common
 
-import com.ppaass.kt.common.exception.PpaassException
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
 import mu.KotlinLogging
@@ -153,13 +152,20 @@ private fun decodeProxyMessageBody(messageBytes: ByteArray,
         targetPort = targetPort, data = originalData)
 }
 
+/**
+ * Encode a message to byte buffer.
+ *
+ * @param message The message to encode.
+ * @param publicKeyString The public key base64 string
+ * @param output The output byte buffer
+ */
 fun <T> encodeMessage(message: Message<T>,
-                      proxyPublicKeyString: String,
+                      publicKeyString: String,
                       output: ByteBuf) where T : Enum<T>, T : MessageBodyType {
     val originalMessageBodyEncryptionToken: String =
         DigestUtils.md5Hex(UUID.randomUUID().toString())
     val encryptedMessageBodyEncryptionToken = rsaEncrypt(originalMessageBodyEncryptionToken,
-        proxyPublicKeyString)
+        publicKeyString)
     output.writeBytes(MAGIC_CODE)
     output.writeInt(encryptedMessageBodyEncryptionToken.length)
     output.writeBytes(encryptedMessageBodyEncryptionToken.toByteArray(Charsets.UTF_8))
@@ -170,6 +176,12 @@ fun <T> encodeMessage(message: Message<T>,
     output.writeBytes(bodyByteBuf)
 }
 
+/**
+ * Decode agent message from input byte buffer.
+ * @param input The input byte buffer.
+ * @param proxyPrivateKeyString The proxy private key base64 string
+ * @return The agent message
+ */
 fun decodeAgentMessage(input: ByteBuf,
                        proxyPrivateKeyString: String): AgentMessage {
     val magicCodeByteBuf = input.readBytes(MAGIC_CODE.size)
@@ -198,6 +210,12 @@ fun decodeAgentMessage(input: ByteBuf,
             messageBodyEncryptionToken = messageBodyEncryptionToken))
 }
 
+/**
+ * Decode proxy message from input byte buffer.
+ * @param input The input byte buffer.
+ * @param proxyPrivateKeyString The agent private key base64 string
+ * @return The proxy message
+ */
 fun decodeProxyMessage(input: ByteBuf,
                        agentPrivateKeyString: String): ProxyMessage {
     val magicCodeByteBuf = input.readBytes(MAGIC_CODE.size)

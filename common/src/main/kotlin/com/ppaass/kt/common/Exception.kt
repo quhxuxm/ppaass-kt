@@ -1,4 +1,4 @@
-package com.ppaass.kt.common.exception
+package com.ppaass.kt.common
 
 class PpaassException(message: String?, cause: Throwable?,
                       enableSuppression: Boolean,
