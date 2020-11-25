@@ -33,9 +33,9 @@ import javax.swing.JTextField
 import javax.swing.border.EmptyBorder
 
 @Service
-class MainFrame(private val messageSource: MessageSource,
-                private val agentConfiguration: AgentConfiguration,
-                private val agent: Agent) : JFrame() {
+internal class MainFrame(private val messageSource: MessageSource,
+                         private val agentConfiguration: AgentConfiguration,
+                         private val agent: Agent) : JFrame() {
     private companion object {
         private val logger = KotlinLogging.logger { }
         private val TOKEN_LABEL_MESSAGE_KEY = "mainFrame.tokenLabel"
