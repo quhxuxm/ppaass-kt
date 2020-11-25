@@ -1,5 +1,6 @@
 package com.ppaass.kt.common
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
 import mu.KotlinLogging
@@ -153,6 +154,16 @@ private fun decodeProxyMessageBody(messageBytes: ByteArray,
 }
 
 /**
+ * Generate a random UUID
+ */
+fun generateUuid() = UUID.randomUUID().toString().replace("-", "")
+
+/**
+ * Json object mapper
+ */
+val JSON_OBJECT_MAPPER = jacksonObjectMapper()
+
+/**
  * Encode a message to byte buffer.
  *
  * @param message The message to encode.
@@ -163,7 +174,7 @@ fun <T> encodeMessage(message: Message<T>,
                       publicKeyString: String,
                       output: ByteBuf) where T : Enum<T>, T : MessageBodyType {
     val originalMessageBodyEncryptionToken: String =
-        DigestUtils.md5Hex(UUID.randomUUID().toString())
+        DigestUtils.md5Hex(generateUuid())
     val encryptedMessageBodyEncryptionToken = rsaEncrypt(originalMessageBodyEncryptionToken,
         publicKeyString)
     output.writeBytes(MAGIC_CODE)

@@ -2,7 +2,6 @@ package com.ppaass.kt.common
 
 import io.netty.buffer.ByteBufUtil
 import io.netty.buffer.Unpooled
-import java.util.*
 
 /**
  * The message body type
@@ -21,7 +20,7 @@ class MessageBody<T>(
     /**
      * Message id
      */
-    val id: String = UUID.randomUUID().toString().replace("-", ""),
+    val id: String = generateUuid(),
     /**
      * User token
      */
@@ -56,7 +55,7 @@ class Message<T>(
     /**
      * The encryption token
      */
-    val encryptionToken: String = UUID.randomUUID().toString().replace("-", ""),
+    val encryptionToken: String = generateUuid(),
     /**
      * The encryption type
      */
@@ -129,6 +128,14 @@ enum class ProxyMessageBodyType(private val value: Byte) : MessageBodyType {
         return this.value
     }
 }
+/**
+ * The type alias of agent message body
+ */
+typealias AgentMessageBody = MessageBody<AgentMessageBodyType>
+/**
+ * The type alias of proxy message body
+ */
+typealias ProxyMessageBody = MessageBody<ProxyMessageBodyType>
 /**
  * The type alias of agent message
  */
