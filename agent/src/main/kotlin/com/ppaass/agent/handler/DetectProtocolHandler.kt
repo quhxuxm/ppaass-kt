@@ -37,16 +37,17 @@ internal class DetectProtocolHandler(
             logger.debug { "Incoming request reader index is the same as writer index." }
             return
         }
-        val currentByte = messageBuf.getByte(readerIndex)
-        val agentChannelPipeline = agentChannel.pipeline()
-        if (SocksVersion.SOCKS4a.byteValue() == currentByte || SocksVersion.SOCKS5.byteValue() == currentByte) {
+        val protocolVersionByte = messageBuf.getByte(readerIndex)
+        val agentChannelPipeline = agentChannelContext.pipeline()
+        if (SocksVersion.SOCKS4a.byteValue() == protocolVersionByte ||
+            SocksVersion.SOCKS5.byteValue() == protocolVersionByte) {
             logger.debug { "Incoming request is a socks request." }
             agentChannel.attr(CHANNEL_PROTOCOL_CATEGORY)
                 .setIfAbsent(ChannelProtocolCategory.SOCKS)
             agentChannelPipeline.apply {
                 remove(this@DetectProtocolHandler)
-                agentChannelPipeline.addLast(SocksPortUnificationServerHandler())
-                agentChannelPipeline.addLast(socksProtocolHandler)
+                addLast(SocksPortUnificationServerHandler())
+                addLast(socksProtocolHandler)
             }
             agentChannelContext.fireChannelRead(messageBuf)
             return

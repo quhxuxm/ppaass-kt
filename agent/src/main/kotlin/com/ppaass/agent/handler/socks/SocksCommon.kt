@@ -24,19 +24,22 @@ const val LOCAL_IP_ADDRESS = "127.0.0.1"
 @Configuration
 private class SocksConfigure(private val agentConfiguration: AgentConfiguration) {
     @Bean
-    fun socksProxyUdpBootstrap() = Bootstrap().apply {
-        val socksProxyUdpLoopGroup = NioEventLoopGroup(
-            agentConfiguration.agentUdpThreadNumber)
-        group(socksProxyUdpLoopGroup)
-            .channel(NioDatagramChannel::class.java)
-            .option(ChannelOption.SO_BROADCAST, true)
-            .handler(object : ChannelInitializer<NioDatagramChannel>() {
-                override fun initChannel(agentUdpChannel: NioDatagramChannel) {
-                    agentUdpChannel.pipeline().addLast(SASocks5UdpMessageDecoder())
-                    agentUdpChannel.pipeline().addLast(saForwardUdpMessageHandler)
-                }
-            })
-    }
+    fun socksProxyUdpBootstrap(
+        socksForwardUdpMessageToProxyTcpChannelHandler: SocksForwardUdpMessageToProxyTcpChannelHandler) =
+        Bootstrap().apply {
+            val socksProxyUdpLoopGroup = NioEventLoopGroup(
+                agentConfiguration.agentUdpThreadNumber)
+            group(socksProxyUdpLoopGroup)
+                .channel(NioDatagramChannel::class.java)
+                .option(ChannelOption.SO_BROADCAST, true)
+                .handler(object : ChannelInitializer<NioDatagramChannel>() {
+                    override fun initChannel(agentUdpChannel: NioDatagramChannel) {
+                        agentUdpChannel.pipeline().addLast(SocksUdpMessageDecoder())
+                        agentUdpChannel.pipeline()
+                            .addLast(socksForwardUdpMessageToProxyTcpChannelHandler)
+                    }
+                })
+        }
 
     @Bean
     fun socksProxyBootstrap(proxyTcpLoopGroup: EventLoopGroup,

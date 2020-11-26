@@ -1,5 +1,7 @@
 package com.ppaass.agent
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.ppaass.kt.common.JSON_OBJECT_MAPPER
 import io.netty.channel.EventLoopGroup
 import io.netty.channel.nio.NioEventLoopGroup
@@ -13,11 +15,15 @@ import org.springframework.core.io.Resource
 import java.nio.file.Path
 import java.util.*
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class AgentDynamicConfiguration(
+    @JsonProperty(required = false)
     var userToken: String?,
+    @JsonProperty(required = false)
     var tcpPort: Int?,
-    var udpPort: Int?,
+    @JsonProperty(required = false)
     var proxyHost: String?,
+    @JsonProperty(required = false)
     var proxyPort: Int?,
 )
 
@@ -26,7 +32,6 @@ data class AgentDynamicConfiguration(
 class AgentConfiguration(
     var userToken: String?,
     var tcpPort: Int?,
-    var udpPort: Int?,
     var proxyHost: String?,
     var proxyPort: Int?,
     var defaultLocal: Locale?,
@@ -38,9 +43,9 @@ class AgentConfiguration(
     val agentTcpSoRcvbuf: Int,
     val agentTcpSoSndbuf: Int,
     val agentToProxyTcpChannelConnectRetry: Int,
+    val agentToProxyTcpChannelWriteRetry: Int,
     val proxyTcpThreadNumber: Int,
     val proxyTcpConnectionTimeout: Int,
-    val proxyTcpSoBacklog: Int,
     val proxyTcpSoLinger: Int,
     val proxyTcpSoRcvbuf: Int,
     val proxyTcpSoSndbuf: Int,
@@ -65,7 +70,6 @@ class AgentConfiguration(
                 JSON_OBJECT_MAPPER.readValue(agentDynamicConfigurationFile,
                     AgentDynamicConfiguration::class.java)
             this.tcpPort = agentDynamicConfiguration.tcpPort ?: this.tcpPort
-            this.udpPort = agentDynamicConfiguration.udpPort ?: this.udpPort
             this.proxyHost = agentDynamicConfiguration.proxyHost ?: this.proxyHost
             this.proxyPort = agentDynamicConfiguration.proxyPort ?: this.proxyPort
             this.userToken = agentDynamicConfiguration.userToken ?: this.userToken
@@ -82,7 +86,6 @@ class AgentConfiguration(
         agentDynamicConfigurationFile.createNewFile()
         val agentDynamicConfiguration = AgentDynamicConfiguration(
             userToken = this.userToken,
-            udpPort = this.udpPort,
             tcpPort = this.tcpPort,
             proxyHost = this.proxyHost,
             proxyPort = this.proxyPort

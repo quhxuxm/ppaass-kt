@@ -1,6 +1,7 @@
 package com.ppaass.proxy.handler
 
 import com.ppaass.kt.common.EncryptionType
+import com.ppaass.kt.common.Heartbeat
 import com.ppaass.kt.common.JSON_OBJECT_MAPPER
 import com.ppaass.kt.common.ProxyMessage
 import com.ppaass.kt.common.ProxyMessageBody

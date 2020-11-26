@@ -8,11 +8,6 @@ internal val TCP_CONNECTION_INFO: AttributeKey<TcpConnectionInfo> =
 internal val UDP_CONNECTION_INFO: AttributeKey<UdpConnectionInfo> =
     AttributeKey.valueOf("UDP_CONNECTION_INFO")
 
-data class Heartbeat(
-    val id: String,
-    val utcDateTime: Long
-)
-
 data class UdpConnectionInfo(
     val targetHost: String,
     val targetPort: Int,

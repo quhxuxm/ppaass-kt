@@ -144,3 +144,11 @@ typealias AgentMessage = Message<AgentMessageBodyType>
  * The type alias of proxy message
  */
 typealias ProxyMessage = Message<ProxyMessageBodyType>
+
+/**
+ * The heartbeat object
+ */
+data class Heartbeat(
+    val id: String,
+    val utcDateTime: Long
+)
