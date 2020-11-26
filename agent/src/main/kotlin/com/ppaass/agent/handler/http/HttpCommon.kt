@@ -6,6 +6,7 @@ import com.ppaass.kt.common.AgentMessageBody
 import com.ppaass.kt.common.AgentMessageBodyType
 import com.ppaass.kt.common.AgentMessageEncoder
 import com.ppaass.kt.common.EncryptionType
+import com.ppaass.kt.common.PrintExceptionHandler
 import com.ppaass.kt.common.ProxyMessageDecoder
 import com.ppaass.kt.common.generateUuid
 import io.netty.bootstrap.Bootstrap
@@ -123,8 +124,8 @@ fun parseConnectionInfo(uri: String): HttpConnectionInfo? {
 fun writeAgentMessageToProxy(bodyType: AgentMessageBodyType, userToken: String,
                              proxyChannel: Channel, input: Any?,
                              targetHost: String, targetPort: Int,
-                             writeCallback: ChannelFutureListener = ChannelFutureListener { }) {
-    var data = byteArrayOf()
+                             writeCallback: ChannelFutureListener?) {
+    var data: ByteArray = byteArrayOf()
     if (input != null) {
         if (input is HttpRequest) {
             val tempChannel = EmbeddedChannel(HttpRequestEncoder())
@@ -148,8 +149,10 @@ fun writeAgentMessageToProxy(bodyType: AgentMessageBodyType, userToken: String,
             encryptionToken = generateUuid(),
             encryptionType = EncryptionType.choose(),
             body = agentMessageBody)
-    val result = proxyChannel.writeAndFlush(agentMessage)
-    result.addListener(writeCallback)
+    val writeResultFuture = proxyChannel.writeAndFlush(agentMessage)
+    if (writeCallback != null) {
+        writeResultFuture.addListener(writeCallback)
+    }
 }
 
 @Configuration
@@ -157,6 +160,7 @@ private class HttpConfigure {
     @Bean
     fun proxyBootstrapForHttp(proxyTcpLoopGroup: EventLoopGroup,
                               httpProxyToAgentHandler: HttpProxyToAgentHandler,
+                              printExceptionHandler: PrintExceptionHandler,
                               agentConfiguration: AgentConfiguration,
                               httpProxyMessageBodyTypeHandler: HttpProxyMessageBodyTypeHandler): Bootstrap {
         val proxyBootstrap = Bootstrap()
@@ -199,6 +203,7 @@ private class HttpConfigure {
                 proxyChannelPipeline.addLast(LengthFieldPrepender(4))
                 proxyChannelPipeline.addLast(AgentMessageEncoder(
                     agentConfiguration.proxyPublicKey))
+                proxyChannelPipeline.addLast(printExceptionHandler)
             }
         })
         return proxyBootstrap
@@ -207,6 +212,7 @@ private class HttpConfigure {
     @Bean
     fun proxyBootstrapForHttps(proxyIoEventLoopGroup: EventLoopGroup?,
                                httpProxyToAgentHandler: HttpProxyToAgentHandler,
+                               printExceptionHandler: PrintExceptionHandler,
                                agentConfiguration: AgentConfiguration,
                                httpProxyMessageBodyTypeHandler: HttpProxyMessageBodyTypeHandler): Bootstrap {
         val proxyBootstrap = Bootstrap()
@@ -247,6 +253,7 @@ private class HttpConfigure {
                 proxyChannelPipeline.addLast(LengthFieldPrepender(4))
                 proxyChannelPipeline.addLast(AgentMessageEncoder(
                     agentConfiguration.proxyPublicKey))
+                proxyChannelPipeline.addLast(printExceptionHandler)
             }
         })
         return proxyBootstrap

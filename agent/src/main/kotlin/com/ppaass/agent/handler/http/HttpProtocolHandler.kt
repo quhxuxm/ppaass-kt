@@ -3,7 +3,6 @@ package com.ppaass.agent.handler.http
 import com.ppaass.agent.AgentConfiguration
 import com.ppaass.kt.common.AgentMessageBodyType
 import io.netty.bootstrap.Bootstrap
-import io.netty.buffer.Unpooled
 import io.netty.channel.Channel
 import io.netty.channel.ChannelFuture
 import io.netty.channel.ChannelFutureListener
@@ -84,10 +83,10 @@ private class HttpProxyConnectListener constructor(
             bodyType = bodyType,
             userToken = connectionInfo.userToken!!,
             proxyChannel = proxyChannel,
-            input = Unpooled.EMPTY_BUFFER,
+            input = null,
             targetHost = connectionInfo.targetHost,
             targetPort = connectionInfo.targetPort) { proxyWriteChannelFuture ->
-            if (!proxyWriteChannelFuture.isSuccess()) {
+            if (!proxyWriteChannelFuture.isSuccess) {
                 agentChannel.close()
             }
         }
@@ -196,10 +195,15 @@ internal class HttpProtocolHandler(private val agentConfiguration: AgentConfigur
         }
         val connectionKeepAlive =
             HttpHeaderValues.KEEP_ALIVE.contentEqualsIgnoreCase(connectionHeader)
-        if (HttpMethod.CONNECT === httpRequest.method()) {
+        if (HttpMethod.CONNECT == httpRequest.method()) {
             //A https request to setup the connection
             val connectionInfo = parseConnectionInfo(httpRequest.uri())
             if (connectionInfo == null) {
+                logger.error {
+                    "Can not parse connection information from incoming uri (1), uri = ${
+                        httpRequest.uri()
+                    }."
+                }
                 agentChannel.close()
                 return
             }
@@ -215,9 +219,14 @@ internal class HttpProtocolHandler(private val agentConfiguration: AgentConfigur
         ReferenceCountUtil.retain<Any>(msg, 1)
         var connectionInfo = agentChannel.attr(HTTP_CONNECTION_INFO).get()
         if (connectionInfo == null) {
+            //First time create http connection
             connectionInfo = parseConnectionInfo(httpRequest.uri())
             if (connectionInfo == null) {
-                logger.error { "Can not parse connection information from uri." }
+                logger.error {
+                    "Can not parse connection information from incoming uri (2), uri = ${
+                        httpRequest.uri()
+                    }."
+                }
                 return
             }
             connectionInfo.isKeepAlive = connectionKeepAlive
@@ -228,6 +237,7 @@ internal class HttpProtocolHandler(private val agentConfiguration: AgentConfigur
                         proxyBootstrapForHttp))
             return
         }
+        //Http connection created already
         writeAgentMessageToProxy(
             bodyType = AgentMessageBodyType.TCP_DATA,
             userToken = connectionInfo.userToken!!,

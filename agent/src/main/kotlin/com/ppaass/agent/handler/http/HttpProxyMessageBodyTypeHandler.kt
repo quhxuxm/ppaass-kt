@@ -5,7 +5,6 @@ import com.ppaass.kt.common.Heartbeat
 import com.ppaass.kt.common.JSON_OBJECT_MAPPER
 import com.ppaass.kt.common.ProxyMessage
 import com.ppaass.kt.common.ProxyMessageBodyType
-import io.netty.channel.ChannelFuture
 import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel.ChannelHandlerContext
@@ -30,7 +29,15 @@ internal class HttpProxyMessageBodyTypeHandler : SimpleChannelInboundHandler<Pro
                               proxyMessage: ProxyMessage) {
         val proxyChannel = proxyChannelContext.channel()
         val connectionInfo = proxyChannel.attr(HTTP_CONNECTION_INFO).get()
-            ?: return
+        if (connectionInfo == null) {
+            logger.error {
+                "Close proxy channel because of no connection information attached, proxy channel = ${
+                    proxyChannel.id().asLongText()
+                }"
+            }
+            proxyChannel.close()
+            return
+        }
         val agentChannel = connectionInfo.agentChannel!!
         if (ProxyMessageBodyType.HEARTBEAT == proxyMessage.body.bodyType) {
             val originalData = proxyMessage.body.data
@@ -54,7 +61,7 @@ internal class HttpProxyMessageBodyTypeHandler : SimpleChannelInboundHandler<Pro
                 val okResponse =
                     DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
                 agentChannel.writeAndFlush(okResponse)
-                    .addListener(ChannelFutureListener { agentChannelFuture: ChannelFuture ->
+                    .addListener(ChannelFutureListener { agentChannelFuture ->
                         if (agentChannelFuture.isSuccess) {
                             val agentChannelPipeline = agentChannel.pipeline()
                             if (agentChannelPipeline.get(
@@ -106,7 +113,7 @@ internal class HttpProxyMessageBodyTypeHandler : SimpleChannelInboundHandler<Pro
                 connectionInfo.targetHost,
                 connectionInfo.targetPort
             ) { proxyChannelFuture ->
-                if (proxyChannelFuture.isSuccess()) {
+                if (proxyChannelFuture.isSuccess) {
                     return@writeAgentMessageToProxy
                 }
                 if (proxyChannelFuture.cause() is ClosedChannelException) {
@@ -139,7 +146,6 @@ internal class HttpProxyMessageBodyTypeHandler : SimpleChannelInboundHandler<Pro
                         AgentMessageBodyType.TCP_DATA
                     }"
                 }
-
                 agentChannel.close()
             }
             return
