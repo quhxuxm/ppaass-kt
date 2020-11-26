@@ -151,7 +151,12 @@ internal class HttpProxyMessageBodyTypeHandler : SimpleChannelInboundHandler<Pro
         val proxyChannel = proxyChannelContext.channel()
         val connectionInfo = proxyChannel.attr(HTTP_CONNECTION_INFO).get()
         val agentChannel = connectionInfo?.agentChannel
-        logger.error("Exception happen on proxy channel, agent channel = {}, proxy channel = {}",
-            agentChannel?.id()?.asLongText() ?: "", proxyChannel.id().asLongText(), cause)
+        logger.error(cause) {
+            "Exception happen on proxy channel, agent channel = ${
+                agentChannel?.id()?.asLongText()
+            }, proxy channel = ${
+                proxyChannel.id().asLongText()
+            }"
+        }
     }
 }

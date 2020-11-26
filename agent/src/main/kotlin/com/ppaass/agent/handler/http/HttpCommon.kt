@@ -35,7 +35,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.web.util.UriComponentsBuilder
 
 internal val HTTP_CONNECTION_INFO: AttributeKey<HttpConnectionInfo> =
-    AttributeKey.valueOf<HttpConnectionInfo>("HTTP_CONNECTION_INFO")
+    AttributeKey.valueOf("HTTP_CONNECTION_INFO")
 private val logger = KotlinLogging.logger { }
 private const val HTTP_SCHEMA = "http://"
 private const val HTTPS_SCHEMA = "https://"
@@ -124,13 +124,16 @@ fun writeAgentMessageToProxy(bodyType: AgentMessageBodyType, userToken: String,
                              proxyChannel: Channel, input: Any?,
                              targetHost: String, targetPort: Int,
                              writeCallback: ChannelFutureListener = ChannelFutureListener { }) {
-    val data = if (input is HttpRequest) {
-        val tempChannel = EmbeddedChannel(HttpRequestEncoder())
-        tempChannel.writeOutbound(input)
-        val httpRequestByteBuf = tempChannel.readOutbound<ByteBuf>()
-        ByteBufUtil.getBytes(httpRequestByteBuf)
-    } else {
-        ByteBufUtil.getBytes(input as ByteBuf?)
+    var data = byteArrayOf()
+    if (input != null) {
+        if (input is HttpRequest) {
+            val tempChannel = EmbeddedChannel(HttpRequestEncoder())
+            tempChannel.writeOutbound(input)
+            val httpRequestByteBuf = tempChannel.readOutbound<ByteBuf>()
+            data = ByteBufUtil.getBytes(httpRequestByteBuf)
+        } else {
+            data = ByteBufUtil.getBytes(input as ByteBuf)
+        }
     }
     val agentMessageBody =
         AgentMessageBody(

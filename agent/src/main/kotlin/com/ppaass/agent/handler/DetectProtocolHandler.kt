@@ -9,6 +9,8 @@ import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
+import io.netty.handler.codec.http.HttpObjectAggregator
+import io.netty.handler.codec.http.HttpServerCodec
 import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler
 import io.netty.handler.codec.socksx.SocksVersion
 import mu.KotlinLogging
@@ -59,6 +61,9 @@ internal class DetectProtocolHandler(
         agentChannel.attr(CHANNEL_PROTOCOL_CATEGORY)
             .setIfAbsent(ChannelProtocolCategory.HTTP)
         agentChannelPipeline.apply {
+            addLast(HttpServerCodec::class.java.name, HttpServerCodec())
+            addLast(HttpObjectAggregator::class.java.name,
+                HttpObjectAggregator(Int.MAX_VALUE, true))
             addLast(httpProtocolHandler)
             remove(this@DetectProtocolHandler)
         }

@@ -3,6 +3,7 @@ package com.ppaass.agent.handler.http
 import com.ppaass.agent.AgentConfiguration
 import com.ppaass.kt.common.AgentMessageBodyType
 import io.netty.bootstrap.Bootstrap
+import io.netty.buffer.Unpooled
 import io.netty.channel.Channel
 import io.netty.channel.ChannelFuture
 import io.netty.channel.ChannelFutureListener
@@ -83,7 +84,7 @@ private class HttpProxyConnectListener constructor(
             bodyType = bodyType,
             userToken = connectionInfo.userToken!!,
             proxyChannel = proxyChannel,
-            input = byteArrayOf(),
+            input = Unpooled.EMPTY_BUFFER,
             targetHost = connectionInfo.targetHost,
             targetPort = connectionInfo.targetPort) { proxyWriteChannelFuture ->
             if (!proxyWriteChannelFuture.isSuccess()) {
@@ -104,7 +105,6 @@ private class HttpWriteDataToProxyListener constructor(
 
     private var failureTimes = 0
 
-    @Throws(Exception::class)
     override fun operationComplete(proxyChannelFuture: ChannelFuture) {
         if (proxyChannelFuture.isSuccess) {
             return
