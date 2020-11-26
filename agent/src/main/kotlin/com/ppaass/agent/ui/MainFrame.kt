@@ -39,7 +39,7 @@ internal class MainFrame(private val messageSource: MessageSource,
     private companion object {
         private val logger = KotlinLogging.logger { }
         private val TOKEN_LABEL_MESSAGE_KEY = "mainFrame.tokenLabel"
-        private val AGENT_PORT_LABEL_MESSAGE_KEY = "mainFrame.agentPortLabel"
+        private val AGENT_TCP_PORT_LABEL_MESSAGE_KEY = "mainFrame.agentTcpPortLabel"
         private val PROXY_ADDRESS_LABEL_MESSAGE_KEY = "mainFrame.proxyAddressLabel"
         private val PROXY_PORT_LABEL_MESSAGE_KEY = "mainFrame.proxyPortLabel"
         private val SYSTEM_TRAY_TOOLTIP_MESSAGE_KEY = "mainFrame.systemTray.tooltip"
@@ -132,22 +132,22 @@ internal class MainFrame(private val messageSource: MessageSource,
         tokenInputScrollPane.horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
         tokenTextFieldPanel.add(tokenInputScrollPane)
         contentPanel.add(tokenTextFieldPanel)
-        val agentPortLabelPanel = JPanel()
-        agentPortLabelPanel.preferredSize = Dimension(PANEL_WIDTH, 30)
-        agentPortLabelPanel.layout = FlowLayout(FlowLayout.LEFT)
-        agentPortLabelPanel.border = EmptyBorder(5, 0, 5, 0)
-        val agentPortLabel = JLabel(this.getMessage(AGENT_PORT_LABEL_MESSAGE_KEY))
-        agentPortLabelPanel.add(agentPortLabel)
-        contentPanel.add(agentPortLabelPanel)
-        val agentPortTextFieldPanel = JPanel()
-        agentPortTextFieldPanel.preferredSize = Dimension(PANEL_WIDTH, 50)
-        agentPortTextFieldPanel.layout = BoxLayout(agentPortTextFieldPanel, BoxLayout.Y_AXIS)
-        agentPortTextFieldPanel.border = EmptyBorder(5, 0, 10, 0)
-        val agentPortInput = JTextField()
-        agentPortInput.text = this.agentConfiguration.port.toString()
-        agentPortInput.disabledTextColor = Color(200, 200, 200)
-        agentPortTextFieldPanel.add(agentPortInput)
-        contentPanel.add(agentPortTextFieldPanel)
+        val agentTcpPortLabelPanel = JPanel()
+        agentTcpPortLabelPanel.preferredSize = Dimension(PANEL_WIDTH, 30)
+        agentTcpPortLabelPanel.layout = FlowLayout(FlowLayout.LEFT)
+        agentTcpPortLabelPanel.border = EmptyBorder(5, 0, 5, 0)
+        val agentTcpPortLabel = JLabel(this.getMessage(AGENT_TCP_PORT_LABEL_MESSAGE_KEY))
+        agentTcpPortLabelPanel.add(agentTcpPortLabel)
+        contentPanel.add(agentTcpPortLabelPanel)
+        val agentTcpPortTextFieldPanel = JPanel()
+        agentTcpPortTextFieldPanel.preferredSize = Dimension(PANEL_WIDTH, 50)
+        agentTcpPortTextFieldPanel.layout = BoxLayout(agentTcpPortTextFieldPanel, BoxLayout.Y_AXIS)
+        agentTcpPortTextFieldPanel.border = EmptyBorder(5, 0, 10, 0)
+        val agentTcpPortInput = JTextField()
+        agentTcpPortInput.text = this.agentConfiguration.tcpPort.toString()
+        agentTcpPortInput.disabledTextColor = Color(200, 200, 200)
+        agentTcpPortTextFieldPanel.add(agentTcpPortInput)
+        contentPanel.add(agentTcpPortTextFieldPanel)
         val proxyAddressLabelPanel = JPanel()
         proxyAddressLabelPanel.preferredSize = Dimension(PANEL_WIDTH, 30)
         proxyAddressLabelPanel.layout = FlowLayout(FlowLayout.LEFT)
@@ -187,7 +187,6 @@ internal class MainFrame(private val messageSource: MessageSource,
         val stopAllProxyBtn = JButton(this.getMessage(BUTTON_STOP_PROXY_MESSAGE_KEY))
         val startProxyBtn = JButton(
             this.getMessage(BUTTON_START_PROXY_MESSAGE_KEY))
-
         stopAllProxyBtn.isEnabled = false
         stopAllProxyBtn.addActionListener { e: ActionEvent? ->
             try {
@@ -199,9 +198,9 @@ internal class MainFrame(private val messageSource: MessageSource,
             tokenInput.isEnabled = true
             tokenInput.isFocusable = true
             tokenInput.isEditable = true
-            agentPortInput.isEnabled = true
-            agentPortInput.isFocusable = true
-            agentPortInput.isEditable = true
+            agentTcpPortInput.isEnabled = true
+            agentTcpPortInput.isFocusable = true
+            agentTcpPortInput.isEditable = true
             proxyAddressInput.isEnabled = true
             proxyAddressInput.isFocusable = true
             proxyAddressInput.isEditable = true
@@ -220,14 +219,14 @@ internal class MainFrame(private val messageSource: MessageSource,
             if (this.agentConfiguration.userToken.isNullOrBlank()) {
                 this.agentConfiguration.userToken = generateUuid()
             }
-            var port = -1
+            var tcpPort = -1
             try {
-                port = agentPortInput.text.toInt()
+                tcpPort = agentTcpPortInput.text.toInt()
             } catch (exception: Exception) {
                 statusLabel.text = this.getMessage(STATUS_PORT_VALIDATION_FAIL_MESSAGE_KEY)
                 return@addActionListener
             }
-            this.agentConfiguration.port = port
+            this.agentConfiguration.tcpPort = tcpPort
             var proxyPort = -1
             try {
                 proxyPort = proxyPortInput.text.toInt()
@@ -248,9 +247,9 @@ internal class MainFrame(private val messageSource: MessageSource,
             tokenInput.isEditable = false
             tokenInput.isFocusable = false
             tokenInput.isEnabled = false
-            agentPortInput.isEditable = false
-            agentPortInput.isFocusable = false
-            agentPortInput.isEnabled = false
+            agentTcpPortInput.isEditable = false
+            agentTcpPortInput.isFocusable = false
+            agentTcpPortInput.isEnabled = false
             proxyAddressInput.isEditable = false
             proxyAddressInput.isFocusable = false
             proxyAddressInput.isEnabled = false

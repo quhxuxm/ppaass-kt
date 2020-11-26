@@ -1,6 +1,6 @@
 package com.ppaass.agent
 
-import com.ppaass.agent.handler.SwitchProtocolHandler
+import com.ppaass.agent.handler.DetectProtocolHandler
 import com.ppaass.kt.common.PpaassException
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.PooledByteBufAllocator
@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service
 
 @Service
 internal class Agent(private val agentConfiguration: AgentConfiguration,
-                     private val switchProtocolHandler: SwitchProtocolHandler) {
+                     private val detectProtocolHandler: DetectProtocolHandler) {
     private companion object {
         private val logger = KotlinLogging.logger { }
     }
@@ -27,11 +27,11 @@ internal class Agent(private val agentConfiguration: AgentConfiguration,
 
     fun start() {
         val newServerBootstrap = ServerBootstrap()
-        val newMasterThreadGroup = NioEventLoopGroup(
+        val newTcpMasterThreadGroup = NioEventLoopGroup(
             this.agentConfiguration.agentTcpMasterThreadNumber)
-        val newWorkerThreadGroup = NioEventLoopGroup(
+        val newTcpWorkerThreadGroup = NioEventLoopGroup(
             agentConfiguration.agentTcpWorkerThreadNumber)
-        newServerBootstrap.group(newMasterThreadGroup, newWorkerThreadGroup)
+        newServerBootstrap.group(newTcpMasterThreadGroup, newTcpWorkerThreadGroup)
         newServerBootstrap.channel(NioServerSocketChannel::class.java)
         newServerBootstrap
             .option(ChannelOption.SO_BACKLOG,
@@ -50,23 +50,23 @@ internal class Agent(private val agentConfiguration: AgentConfiguration,
                 agentConfiguration.agentTcpSoSndbuf)
         val channelInitializer = object : ChannelInitializer<SocketChannel>() {
             override fun initChannel(agentChannel: SocketChannel) {
-                agentChannel.pipeline().addLast(switchProtocolHandler)
+                agentChannel.pipeline().addLast(detectProtocolHandler)
             }
         }
         newServerBootstrap.childHandler(channelInitializer)
-        val agentPort = this.agentConfiguration.port
-        if (agentPort == null) {
+        val agentTcpPort = this.agentConfiguration.tcpPort
+        if (agentTcpPort == null) {
             throw PpaassException("Fail to start ppaass agent because of port is empty.")
         }
         val channelFuture = try {
-            newServerBootstrap.bind(agentPort).sync()
+            newServerBootstrap.bind(agentTcpPort).sync()
         } catch (e: InterruptedException) {
             logger.error("Fail to start ppaass because of exception", e)
             throw PpaassException("Fail to start ppaass because of exception", e)
         }
         this.serverSocketChannel = channelFuture.channel()
-        this.masterThreadGroup = newMasterThreadGroup
-        this.workerThreadGroup = newWorkerThreadGroup
+        this.masterThreadGroup = newTcpMasterThreadGroup
+        this.workerThreadGroup = newTcpWorkerThreadGroup
     }
 
     fun stop() {

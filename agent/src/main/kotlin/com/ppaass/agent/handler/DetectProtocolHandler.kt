@@ -1,20 +1,23 @@
 package com.ppaass.agent.handler
 
-import com.ppaass.agent.handler.http.HttpChannelInitializer
-import com.ppaass.agent.handler.socks.SocksChannelInitializer
+import com.ppaass.agent.CHANNEL_PROTOCOL_CATEGORY
+import com.ppaass.agent.ChannelProtocolCategory
+import com.ppaass.agent.handler.http.HttpProtocolHandler
+import com.ppaass.agent.handler.socks.SocksProtocolHandler
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
+import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler
 import io.netty.handler.codec.socksx.SocksVersion
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 
 @ChannelHandler.Sharable
 @Service
-internal class SwitchProtocolHandler(
-    private val socksChannelInitializer: SocksChannelInitializer,
-    private val httpChannelInitializer: HttpChannelInitializer) :
+internal class DetectProtocolHandler(
+    private val socksProtocolHandler: SocksProtocolHandler,
+    private val httpProtocolHandler: HttpProtocolHandler) :
     ChannelInboundHandlerAdapter() {
     private companion object {
         private val logger = KotlinLogging.logger { }
@@ -41,7 +44,9 @@ internal class SwitchProtocolHandler(
             agentChannel.attr(CHANNEL_PROTOCOL_CATEGORY)
                 .setIfAbsent(ChannelProtocolCategory.SOCKS)
             agentChannelPipeline.apply {
-                addLast(socksChannelInitializer)
+                remove(this@DetectProtocolHandler)
+                agentChannelPipeline.addLast(SocksPortUnificationServerHandler())
+                agentChannelPipeline.addLast(socksProtocolHandler)
             }
             agentChannelContext.fireChannelRead(messageBuf)
             return
@@ -50,7 +55,8 @@ internal class SwitchProtocolHandler(
         agentChannel.attr(CHANNEL_PROTOCOL_CATEGORY)
             .setIfAbsent(ChannelProtocolCategory.HTTP)
         agentChannelPipeline.apply {
-            addLast(httpChannelInitializer)
+            remove(this@DetectProtocolHandler)
+            addLast(httpProtocolHandler)
         }
         agentChannelContext.fireChannelRead(messageBuf)
     }

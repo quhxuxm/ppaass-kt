@@ -1,9 +1,13 @@
 package com.ppaass.agent
 
 import com.ppaass.kt.common.JSON_OBJECT_MAPPER
+import io.netty.channel.EventLoopGroup
+import io.netty.channel.nio.NioEventLoopGroup
+import io.netty.util.AttributeKey
 import org.apache.commons.io.FileUtils
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.io.Resource
 import java.nio.file.Path
@@ -11,7 +15,8 @@ import java.util.*
 
 data class AgentDynamicConfiguration(
     var userToken: String?,
-    var port: Int?,
+    var tcpPort: Int?,
+    var udpPort: Int?,
     var proxyHost: String?,
     var proxyPort: Int?,
 )
@@ -20,16 +25,26 @@ data class AgentDynamicConfiguration(
 @ConfigurationProperties("ppaass.agent")
 class AgentConfiguration(
     var userToken: String?,
-    var port: Int?,
+    var tcpPort: Int?,
+    var udpPort: Int?,
     var proxyHost: String?,
     var proxyPort: Int?,
     var defaultLocal: Locale?,
     val agentTcpMasterThreadNumber: Int,
     val agentTcpWorkerThreadNumber: Int,
+    val agentUdpThreadNumber: Int,
     val agentTcpSoBacklog: Int,
     val agentTcpSoLinger: Int,
     val agentTcpSoRcvbuf: Int,
     val agentTcpSoSndbuf: Int,
+    val agentToProxyTcpChannelConnectRetry: Int,
+    val proxyTcpThreadNumber: Int,
+    val proxyTcpConnectionTimeout: Int,
+    val proxyTcpSoBacklog: Int,
+    val proxyTcpSoLinger: Int,
+    val proxyTcpSoRcvbuf: Int,
+    val proxyTcpSoSndbuf: Int,
+    val proxyTcpCompressEnable: Boolean,
     agentPrivateKeyFile: Resource,
     proxyPublicKeyFile: Resource,
 ) {
@@ -49,7 +64,8 @@ class AgentConfiguration(
             val agentDynamicConfiguration =
                 JSON_OBJECT_MAPPER.readValue(agentDynamicConfigurationFile,
                     AgentDynamicConfiguration::class.java)
-            this.port = agentDynamicConfiguration.port ?: this.port
+            this.tcpPort = agentDynamicConfiguration.tcpPort ?: this.tcpPort
+            this.udpPort = agentDynamicConfiguration.udpPort ?: this.udpPort
             this.proxyHost = agentDynamicConfiguration.proxyHost ?: this.proxyHost
             this.proxyPort = agentDynamicConfiguration.proxyPort ?: this.proxyPort
             this.userToken = agentDynamicConfiguration.userToken ?: this.userToken
@@ -66,7 +82,8 @@ class AgentConfiguration(
         agentDynamicConfigurationFile.createNewFile()
         val agentDynamicConfiguration = AgentDynamicConfiguration(
             userToken = this.userToken,
-            port = this.port,
+            udpPort = this.udpPort,
+            tcpPort = this.tcpPort,
             proxyHost = this.proxyHost,
             proxyPort = this.proxyPort
         )
@@ -74,6 +91,16 @@ class AgentConfiguration(
     }
 }
 
+enum class ChannelProtocolCategory {
+    HTTP, SOCKS
+}
+
+internal val CHANNEL_PROTOCOL_CATEGORY: AttributeKey<ChannelProtocolCategory> =
+    AttributeKey.valueOf("CHANNEL_PROTOCOL_TYPE")
+
 @Configuration
 private class Configure(private val agentConfiguration: AgentConfiguration) {
+    @Bean
+    fun proxyTcpLoopGroup(): EventLoopGroup = NioEventLoopGroup(
+        agentConfiguration.proxyTcpThreadNumber)
 }
