@@ -1,6 +1,7 @@
 package com.ppaass.proxy
 
 import com.ppaass.kt.common.AgentMessageDecoder
+import com.ppaass.kt.common.PrintExceptionHandler
 import com.ppaass.kt.common.ProxyMessageEncoder
 import com.ppaass.proxy.handler.ProxyTcpChannelHeartbeatHandler
 import com.ppaass.proxy.handler.ProxyTcpChannelToTargetHandler
@@ -82,6 +83,8 @@ internal class ProxyConfiguration(
     var agentPublicKey = FileUtils.readFileToString(agentPublicKeyFile.file, Charsets.UTF_8)
 }
 
+internal val LAST_INBOUND_HANDLER = "LAST_INBOUND_HANDLER"
+
 @Configuration
 private class Configure(private val proxyConfiguration: ProxyConfiguration) {
     @Bean
@@ -105,10 +108,14 @@ private class Configure(private val proxyConfiguration: ProxyConfiguration) {
         this.proxyConfiguration.targetTcpThreadNumber)
 
     @Bean
+    fun printExceptionHandler() = PrintExceptionHandler()
+
+    @Bean
     fun targetTcpBootstrap(
         targetTcpLoopGroup: EventLoopGroup,
         targetTcpChannelToProxyHandler: TargetTcpChannelToProxyHandler,
-        targetTcpChannelHeartbeatHandler: TargetTcpChannelHeartbeatHandler) = Bootstrap().apply {
+        targetTcpChannelHeartbeatHandler: TargetTcpChannelHeartbeatHandler,
+        printExceptionHandler: PrintExceptionHandler) = Bootstrap().apply {
         group(targetTcpLoopGroup)
         channel(NioSocketChannel::class.java)
         option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
@@ -146,6 +153,7 @@ private class Configure(private val proxyConfiguration: ProxyConfiguration) {
                             proxyConfiguration.targetTcpChannelWriteIdleSeconds,
                             proxyConfiguration.targetTcpChannelAllIdleSeconds))
                     addLast(targetTcpChannelHeartbeatHandler)
+                    addLast(LAST_INBOUND_HANDLER, printExceptionHandler)
                 }
             }
         }
@@ -154,7 +162,8 @@ private class Configure(private val proxyConfiguration: ProxyConfiguration) {
 
     @Bean
     fun targetUdpBootstrap(targetUdpLoopGroup: EventLoopGroup,
-                           targetUdpChannelTpProxyTcpChannelHandler: TargetUdpChannelTpProxyTcpChannelHandler) =
+                           targetUdpChannelTpProxyTcpChannelHandler: TargetUdpChannelTpProxyTcpChannelHandler,
+                           printExceptionHandler: PrintExceptionHandler) =
         Bootstrap().apply {
             group(targetUdpLoopGroup)
             channel(NioDatagramChannel::class.java)
@@ -163,6 +172,7 @@ private class Configure(private val proxyConfiguration: ProxyConfiguration) {
                 override fun initChannel(proxyUdpChannel: NioDatagramChannel) {
                     val proxyUdpChannelPipeline = proxyUdpChannel.pipeline()
                     proxyUdpChannelPipeline.addLast(targetUdpChannelTpProxyTcpChannelHandler)
+                    proxyUdpChannelPipeline.addLast(LAST_INBOUND_HANDLER, printExceptionHandler)
                 }
             }
             handler(channelInitializer)
@@ -172,7 +182,8 @@ private class Configure(private val proxyConfiguration: ProxyConfiguration) {
     fun proxyTcpServerBootstrap(proxyTcpMasterLoopGroup: EventLoopGroup,
                                 proxyTcpWorkerLoopGroup: EventLoopGroup,
                                 proxyTcpChannelHeartbeatHandler: ProxyTcpChannelHeartbeatHandler,
-                                proxyTcpChannelToTargetHandler: ProxyTcpChannelToTargetHandler) =
+                                proxyTcpChannelToTargetHandler: ProxyTcpChannelToTargetHandler,
+                                printExceptionHandler: PrintExceptionHandler) =
         ServerBootstrap().apply {
             group(proxyTcpMasterLoopGroup, proxyTcpWorkerLoopGroup)
             channel(NioServerSocketChannel::class.java)
@@ -224,6 +235,7 @@ private class Configure(private val proxyConfiguration: ProxyConfiguration) {
                         addLast(LengthFieldPrepender(4))
                         addLast(
                             ProxyMessageEncoder(proxyConfiguration.agentPublicKey))
+                        addLast(LAST_INBOUND_HANDLER, printExceptionHandler)
                     }
                 }
             }

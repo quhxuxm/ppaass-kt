@@ -3,6 +3,7 @@ package com.ppaass.agent
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.ppaass.kt.common.JSON_OBJECT_MAPPER
+import com.ppaass.kt.common.PrintExceptionHandler
 import io.netty.channel.EventLoopGroup
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.util.AttributeKey
@@ -101,9 +102,14 @@ enum class ChannelProtocolCategory {
 internal val CHANNEL_PROTOCOL_CATEGORY: AttributeKey<ChannelProtocolCategory> =
     AttributeKey.valueOf("CHANNEL_PROTOCOL_TYPE")
 
+internal val LAST_INBOUND_HANDLER="LAST_INBOUND_HANDLER"
+
 @Configuration
 private class Configure(private val agentConfiguration: AgentConfiguration) {
     @Bean
     fun proxyTcpLoopGroup(): EventLoopGroup = NioEventLoopGroup(
         agentConfiguration.proxyTcpThreadNumber)
+
+    @Bean
+    fun printExceptionHandler() = PrintExceptionHandler()
 }

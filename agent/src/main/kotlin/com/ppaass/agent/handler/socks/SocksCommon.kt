@@ -2,6 +2,7 @@ package com.ppaass.agent.handler.socks
 
 import com.ppaass.agent.AgentConfiguration
 import com.ppaass.kt.common.AgentMessageEncoder
+import com.ppaass.kt.common.PrintExceptionHandler
 import com.ppaass.kt.common.ProxyMessageDecoder
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.PooledByteBufAllocator
@@ -25,7 +26,9 @@ const val LOCAL_IP_ADDRESS = "127.0.0.1"
 private class SocksConfigure(private val agentConfiguration: AgentConfiguration) {
     @Bean
     fun socksProxyUdpBootstrap(
-        socksForwardUdpMessageToProxyTcpChannelHandler: SocksForwardUdpMessageToProxyTcpChannelHandler) =
+        socksForwardUdpMessageToProxyTcpChannelHandler: SocksForwardUdpMessageToProxyTcpChannelHandler,
+        printExceptionHandler: PrintExceptionHandler,
+    ) =
         Bootstrap().apply {
             val socksProxyUdpLoopGroup = NioEventLoopGroup(
                 agentConfiguration.agentUdpThreadNumber)
@@ -34,9 +37,12 @@ private class SocksConfigure(private val agentConfiguration: AgentConfiguration)
                 .option(ChannelOption.SO_BROADCAST, true)
                 .handler(object : ChannelInitializer<NioDatagramChannel>() {
                     override fun initChannel(agentUdpChannel: NioDatagramChannel) {
-                        agentUdpChannel.pipeline().addLast(SocksUdpMessageDecoder())
-                        agentUdpChannel.pipeline()
-                            .addLast(socksForwardUdpMessageToProxyTcpChannelHandler)
+                        val agentUdpChannelPipeline = agentUdpChannel.pipeline()
+                        agentUdpChannelPipeline.apply {
+                            addLast(SocksUdpMessageDecoder())
+                            addLast(socksForwardUdpMessageToProxyTcpChannelHandler)
+                            addLast(printExceptionHandler)
+                        }
                     }
                 })
         }
@@ -44,6 +50,7 @@ private class SocksConfigure(private val agentConfiguration: AgentConfiguration)
     @Bean
     fun socksProxyBootstrap(proxyTcpLoopGroup: EventLoopGroup,
                             socksProxyToAgentTcpChannelHandler: SocksProxyToAgentTcpChannelHandler,
+                            printExceptionHandler: PrintExceptionHandler,
                             agentConfiguration: AgentConfiguration) = Bootstrap().apply {
         group(proxyTcpLoopGroup)
         channel(NioSocketChannel::class.java)
@@ -76,6 +83,7 @@ private class SocksConfigure(private val agentConfiguration: AgentConfiguration)
                     }
                     addLast(LengthFieldPrepender(4))
                     addLast(AgentMessageEncoder(agentConfiguration.proxyPublicKey))
+                    addLast(printExceptionHandler)
                 }
             }
         }

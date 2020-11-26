@@ -1,7 +1,9 @@
 package com.ppaass.kt.common
 
 import io.netty.buffer.ByteBuf
+import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
+import io.netty.channel.ChannelInboundHandlerAdapter
 import io.netty.handler.codec.ByteToMessageDecoder
 import io.netty.handler.codec.MessageToByteEncoder
 import mu.KotlinLogging
@@ -75,5 +77,21 @@ class ProxyMessageEncoder(private val agentPublicKeyString: String) :
     override fun encode(ctx: ChannelHandlerContext, msg: ProxyMessage, out: ByteBuf) {
         logger.debug("Begin to encode message:\n{}\n", msg)
         encodeMessage(msg, agentPublicKeyString, out)
+    }
+}
+
+@ChannelHandler.Sharable
+class PrintExceptionHandler : ChannelInboundHandlerAdapter() {
+    private companion object {
+        private val logger = KotlinLogging.logger { }
+    }
+
+    override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
+        logger.error(cause) {
+            "Exception in the channel pipeline, channel = ${
+                ctx.channel().id()
+            }"
+        }
+        ctx.fireExceptionCaught(cause)
     }
 }

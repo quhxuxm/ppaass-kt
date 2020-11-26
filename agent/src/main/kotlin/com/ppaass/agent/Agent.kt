@@ -2,6 +2,7 @@ package com.ppaass.agent
 
 import com.ppaass.agent.handler.DetectProtocolHandler
 import com.ppaass.kt.common.PpaassException
+import com.ppaass.kt.common.PrintExceptionHandler
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.Channel
@@ -16,7 +17,8 @@ import org.springframework.stereotype.Service
 
 @Service
 internal class Agent(private val agentConfiguration: AgentConfiguration,
-                     private val detectProtocolHandler: DetectProtocolHandler) {
+                     private val detectProtocolHandler: DetectProtocolHandler,
+                     private val printExceptionHandler: PrintExceptionHandler) {
     private companion object {
         private val logger = KotlinLogging.logger { }
     }
@@ -51,6 +53,7 @@ internal class Agent(private val agentConfiguration: AgentConfiguration,
         val channelInitializer = object : ChannelInitializer<SocketChannel>() {
             override fun initChannel(agentChannel: SocketChannel) {
                 agentChannel.pipeline().addLast(detectProtocolHandler)
+                agentChannel.pipeline().addLast(LAST_INBOUND_HANDLER, printExceptionHandler)
             }
         }
         newServerBootstrap.childHandler(channelInitializer)

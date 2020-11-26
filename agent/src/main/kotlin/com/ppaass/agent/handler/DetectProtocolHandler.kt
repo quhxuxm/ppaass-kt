@@ -2,6 +2,7 @@ package com.ppaass.agent.handler
 
 import com.ppaass.agent.CHANNEL_PROTOCOL_CATEGORY
 import com.ppaass.agent.ChannelProtocolCategory
+import com.ppaass.agent.LAST_INBOUND_HANDLER
 import com.ppaass.agent.handler.http.HttpProtocolHandler
 import com.ppaass.agent.handler.socks.SocksProtocolHandler
 import io.netty.buffer.ByteBuf
@@ -45,8 +46,11 @@ internal class DetectProtocolHandler(
             agentChannel.attr(CHANNEL_PROTOCOL_CATEGORY)
                 .setIfAbsent(ChannelProtocolCategory.SOCKS)
             agentChannelPipeline.apply {
-                addLast(SocksPortUnificationServerHandler())
-                addLast(socksProtocolHandler)
+                addBefore(LAST_INBOUND_HANDLER, SocksPortUnificationServerHandler::class.simpleName,
+                    SocksPortUnificationServerHandler())
+                addBefore(LAST_INBOUND_HANDLER, SocksProtocolHandler::class.simpleName,
+                    socksProtocolHandler)
+                remove(this@DetectProtocolHandler)
             }
             agentChannelContext.fireChannelRead(messageBuf)
             return
@@ -55,8 +59,8 @@ internal class DetectProtocolHandler(
         agentChannel.attr(CHANNEL_PROTOCOL_CATEGORY)
             .setIfAbsent(ChannelProtocolCategory.HTTP)
         agentChannelPipeline.apply {
-            remove(this@DetectProtocolHandler)
             addLast(httpProtocolHandler)
+            remove(this@DetectProtocolHandler)
         }
         agentChannelContext.fireChannelRead(messageBuf)
     }
