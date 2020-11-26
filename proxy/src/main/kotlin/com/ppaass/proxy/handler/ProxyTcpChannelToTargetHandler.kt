@@ -191,6 +191,21 @@ internal class ProxyTcpChannelToTargetHandler(private val targetTcpBootstrap: Bo
         private val logger = KotlinLogging.logger { }
     }
 
+    override fun channelActive(proxyChannelContext: ChannelHandlerContext) {
+        val proxyChannel = proxyChannelContext.channel()
+        val agentConnectionInfo = proxyChannel.attr(TCP_CONNECTION_INFO).get()
+        val targetChannel = agentConnectionInfo?.targetTcpChannel
+        if (targetChannel != null) {
+            if (targetChannel.isWritable) {
+                proxyChannel.read()
+            } else {
+                targetChannel.flush()
+            }
+        } else {
+            proxyChannel.read()
+        }
+    }
+
     override fun channelRead0(proxyChannelContext: ChannelHandlerContext,
                               agentMessage: AgentMessage) {
         val proxyChannel = proxyChannelContext.channel();
@@ -274,5 +289,36 @@ internal class ProxyTcpChannelToTargetHandler(private val targetTcpBootstrap: Bo
                 agentTcpConnectionInfo.targetTcpChannel.close();
             }
         }
+    }
+
+    override fun channelReadComplete(proxyChannelContext: ChannelHandlerContext) {
+        val proxyChannel = proxyChannelContext.channel()
+        val agentConnectionInfo = proxyChannel.attr(TCP_CONNECTION_INFO).get()
+        val targetChannel = agentConnectionInfo?.targetTcpChannel
+        if (targetChannel != null) {
+            if (targetChannel.isWritable) {
+                proxyChannel.read()
+            } else {
+                targetChannel.flush()
+            }
+        } else {
+            proxyChannel.read()
+        }
+    }
+
+    override fun channelWritabilityChanged(proxyChannelContext: ChannelHandlerContext) {
+        val proxyChannel = proxyChannelContext.channel()
+        val agentConnectionInfo = proxyChannel.attr(TCP_CONNECTION_INFO).get()
+        if (proxyChannel.isWritable) {
+            agentConnectionInfo?.targetTcpChannel?.read()
+        } else {
+            proxyChannel.flush()
+        }
+    }
+
+    override fun channelInactive(proxyChannelContext: ChannelHandlerContext) {
+        val proxyChannel = proxyChannelContext.channel()
+        val udpConnectionInfo = proxyChannel.attr(UDP_CONNECTION_INFO).get()
+        udpConnectionInfo?.targetUdpChannel?.close()
     }
 }
