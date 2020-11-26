@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service
 
 @ChannelHandler.Sharable
 @Service
-internal class TargetTcpChannelToProxyTcpChannelHandler(private val proxyConfiguration: ProxyConfiguration) :
+internal class TargetTcpChannelToProxyHandler(private val proxyConfiguration: ProxyConfiguration) :
     SimpleChannelInboundHandler<ByteBuf>() {
     private companion object {
         private val logger = KotlinLogging.logger { }

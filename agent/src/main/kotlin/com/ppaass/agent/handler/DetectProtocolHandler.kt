@@ -45,7 +45,6 @@ internal class DetectProtocolHandler(
             agentChannel.attr(CHANNEL_PROTOCOL_CATEGORY)
                 .setIfAbsent(ChannelProtocolCategory.SOCKS)
             agentChannelPipeline.apply {
-                remove(this@DetectProtocolHandler)
                 addLast(SocksPortUnificationServerHandler())
                 addLast(socksProtocolHandler)
             }

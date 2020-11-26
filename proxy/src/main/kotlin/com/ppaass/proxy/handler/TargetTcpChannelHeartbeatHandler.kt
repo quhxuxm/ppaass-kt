@@ -16,8 +16,7 @@ internal class TargetTcpChannelHeartbeatHandler :
         private val logger = KotlinLogging.logger { }
     }
 
-    @Throws(Exception::class)
-    override fun userEventTriggered(targetChannelContext: ChannelHandlerContext, evt: Any?) {
+    override fun userEventTriggered(targetChannelContext: ChannelHandlerContext, evt: Any) {
         if (evt !is IdleStateEvent) {
             logger.debug(
                 "Return because of it is not a connection idle event.")

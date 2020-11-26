@@ -5,7 +5,7 @@ import com.ppaass.kt.common.ProxyMessageEncoder
 import com.ppaass.proxy.handler.ProxyTcpChannelHeartbeatHandler
 import com.ppaass.proxy.handler.ProxyTcpChannelToTargetHandler
 import com.ppaass.proxy.handler.TargetTcpChannelHeartbeatHandler
-import com.ppaass.proxy.handler.TargetTcpChannelToProxyTcpChannelHandler
+import com.ppaass.proxy.handler.TargetTcpChannelToProxyHandler
 import com.ppaass.proxy.handler.TargetUdpChannelTpProxyTcpChannelHandler
 import io.netty.bootstrap.Bootstrap
 import io.netty.bootstrap.ServerBootstrap
@@ -107,7 +107,7 @@ private class Configure(private val proxyConfiguration: ProxyConfiguration) {
     @Bean
     fun targetTcpBootstrap(
         targetTcpLoopGroup: EventLoopGroup,
-        targetTcpChannelToProxyTcpChannelHandler: TargetTcpChannelToProxyTcpChannelHandler,
+        targetTcpChannelToProxyHandler: TargetTcpChannelToProxyHandler,
         targetTcpChannelHeartbeatHandler: TargetTcpChannelHeartbeatHandler) = Bootstrap().apply {
         group(targetTcpLoopGroup)
         channel(NioSocketChannel::class.java)
@@ -140,7 +140,7 @@ private class Configure(private val proxyConfiguration: ProxyConfiguration) {
                         proxyConfiguration.targetTcpTrafficShapingReadChannelLimit,
                         proxyConfiguration.targetTcpTrafficShapingCheckInterval
                     ))
-                    addLast(targetTcpChannelToProxyTcpChannelHandler)
+                    addLast(targetTcpChannelToProxyHandler)
                     addLast(
                         IdleStateHandler(proxyConfiguration.targetTcpChannelReadIdleSeconds,
                             proxyConfiguration.targetTcpChannelWriteIdleSeconds,
