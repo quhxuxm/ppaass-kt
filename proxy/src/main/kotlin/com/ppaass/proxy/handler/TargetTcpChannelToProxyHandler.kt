@@ -24,47 +24,48 @@ internal class TargetTcpChannelToProxyHandler(private val proxyConfiguration: Pr
                               targetOriginalMessageBuf: ByteBuf) {
         val targetChannel = targetChannelContext.channel()
         val agentTcpConnectionInfo = targetChannel.attr(TCP_CONNECTION_INFO).get()
-        if (agentTcpConnectionInfo == null) {
-            logger.error {
-                "Fail to transfer data from target to proxy because of no agent connection information attached, target channel = ${
-                    targetChannel.id().asLongText()
-                }."
-            }
-            targetChannel.close()
-            return;
+        agentTcpConnectionInfo?.let {
+            val proxyTcpChannel = agentTcpConnectionInfo.proxyTcpChannel
+            val originalDataByteArray = ByteArray(targetOriginalMessageBuf.readableBytes())
+            targetOriginalMessageBuf.readBytes(originalDataByteArray);
+            val proxyMessageBody =
+                ProxyMessageBody(
+                    bodyType = ProxyMessageBodyType.OK_TCP,
+                    userToken = agentTcpConnectionInfo.userToken,
+                    targetHost = agentTcpConnectionInfo.targetHost,
+                    targetPort = agentTcpConnectionInfo.targetPort,
+                    data =
+                    originalDataByteArray);
+            val proxyMessage = ProxyMessage(
+                encryptionType = EncryptionType.choose(),
+                body = proxyMessageBody);
+            proxyTcpChannel.writeAndFlush(proxyMessage)
+                .addListener(WriteDataToProxyListener(targetChannel, proxyConfiguration,
+                    proxyMessage));
+            return
         }
-        val proxyTcpChannel = agentTcpConnectionInfo.proxyTcpChannel
-        val originalDataByteArray = ByteArray(targetOriginalMessageBuf.readableBytes())
-        targetOriginalMessageBuf.readBytes(originalDataByteArray);
-        val proxyMessageBody =
-            ProxyMessageBody(
-                bodyType = ProxyMessageBodyType.OK_TCP,
-                userToken = agentTcpConnectionInfo.userToken,
-                targetHost = agentTcpConnectionInfo.targetHost,
-                targetPort = agentTcpConnectionInfo.targetPort,
-                data =
-                originalDataByteArray);
-        val proxyMessage = ProxyMessage(
-            encryptionType = EncryptionType.choose(),
-            body = proxyMessageBody);
-        proxyTcpChannel.writeAndFlush(proxyMessage)
-            .addListener(WriteDataToProxyListener(targetChannel, proxyConfiguration,
-                proxyMessage));
+        logger.error {
+            "Fail to transfer data from target to proxy because of no agent connection information attached, target channel = ${
+                targetChannel.id().asLongText()
+            }."
+        }
+        targetChannel.close()
+        return;
     }
 
     override fun channelReadComplete(targetChannelContext: ChannelHandlerContext) {
         val targetChannel = targetChannelContext.channel();
         val agentTcpConnectionInfo = targetChannel.attr(TCP_CONNECTION_INFO).get();
-        val proxyChannel = agentTcpConnectionInfo?.proxyTcpChannel
-        if (proxyChannel != null) {
+        agentTcpConnectionInfo?.let {
+            val proxyChannel = agentTcpConnectionInfo?.proxyTcpChannel
             if (proxyChannel.isWritable) {
                 targetChannel.read();
             } else {
                 proxyChannel.flush();
             }
-        } else {
-            targetChannel.read();
+            return
         }
+        targetChannel.read();
     }
 
     override fun channelWritabilityChanged(targetChannelContext: ChannelHandlerContext) {
