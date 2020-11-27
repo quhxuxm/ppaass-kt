@@ -12,9 +12,13 @@ import io.netty.channel.socket.DatagramPacket
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 
+/**
+ * Forward the target udp channel data to proxy tcp channel.
+ */
 @Sharable
 @Service
-class TargetUdpChannelTpProxyTcpChannelHandler : SimpleChannelInboundHandler<DatagramPacket>() {
+internal class TargetUdpChannelToProxyTcpChannelHandler :
+    SimpleChannelInboundHandler<DatagramPacket>() {
     private companion object {
         private val logger = KotlinLogging.logger { }
     }

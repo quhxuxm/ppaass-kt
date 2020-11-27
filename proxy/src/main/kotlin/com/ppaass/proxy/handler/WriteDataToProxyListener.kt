@@ -8,6 +8,9 @@ import io.netty.channel.ChannelFutureListener
 import mu.KotlinLogging
 import java.nio.channels.ClosedChannelException
 
+/**
+ * The listener of write data from target to proxy
+ */
 internal class WriteDataToProxyListener(
     private val targetChannel: Channel,
     private val proxyConfiguration: ProxyConfiguration,
@@ -17,6 +20,9 @@ internal class WriteDataToProxyListener(
         private val logger = KotlinLogging.logger { }
     }
 
+    /**
+     * Failure retry times.
+     */
     private var failureTimes = 0
 
     override fun operationComplete(proxyChannelFuture: ChannelFuture) {

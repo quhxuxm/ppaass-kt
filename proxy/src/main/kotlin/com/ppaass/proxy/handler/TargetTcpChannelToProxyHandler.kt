@@ -57,7 +57,7 @@ internal class TargetTcpChannelToProxyHandler(private val proxyConfiguration: Pr
         val targetChannel = targetChannelContext.channel();
         val agentTcpConnectionInfo = targetChannel.attr(TCP_CONNECTION_INFO).get();
         agentTcpConnectionInfo?.let {
-            val proxyChannel = agentTcpConnectionInfo?.proxyTcpChannel
+            val proxyChannel = agentTcpConnectionInfo.proxyTcpChannel
             if (proxyChannel.isWritable) {
                 targetChannel.read();
             } else {

@@ -19,6 +19,9 @@ import mu.KotlinLogging
 import org.springframework.stereotype.Service
 import java.util.*
 
+/**
+ * Do heartbeat from proxy to agent handler
+ */
 @Service
 @ChannelHandler.Sharable
 internal class ProxyTcpChannelHeartbeatHandler(private val proxyConfiguration: ProxyConfiguration) :

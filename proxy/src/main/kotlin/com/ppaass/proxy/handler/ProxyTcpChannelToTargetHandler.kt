@@ -273,20 +273,19 @@ internal class ProxyTcpChannelToTargetHandler(private val targetTcpBootstrap: Bo
             else -> {
                 val agentTcpConnectionInfo =
                     proxyChannel.attr(TCP_CONNECTION_INFO).get();
-                if (agentTcpConnectionInfo == null) {
-                    return
+                agentTcpConnectionInfo?.let {
+                    logger.error {
+                        "Fail to transfer data from proxy to target because of the body type is unknown, proxy channel = ${
+                            proxyChannel.id().asLongText()
+                        }, target channel = ${
+                            agentTcpConnectionInfo.targetTcpChannel.id().asLongText()
+                        }, body type = ${
+                            agentMessageBodyType
+                        }"
+                    };
+                    proxyChannel.close();
+                    agentTcpConnectionInfo.targetTcpChannel.close();
                 }
-                logger.error {
-                    "Fail to transfer data from proxy to target because of the body type is unknown, proxy channel = ${
-                        proxyChannel.id().asLongText()
-                    }, target channel = ${
-                        agentTcpConnectionInfo.targetTcpChannel.id().asLongText()
-                    }, body type = ${
-                        agentMessageBodyType
-                    }"
-                };
-                proxyChannel.close();
-                agentTcpConnectionInfo.targetTcpChannel.close();
             }
         }
     }

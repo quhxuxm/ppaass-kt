@@ -7,7 +7,7 @@ import com.ppaass.proxy.handler.ProxyTcpChannelHeartbeatHandler
 import com.ppaass.proxy.handler.ProxyTcpChannelToTargetHandler
 import com.ppaass.proxy.handler.TargetTcpChannelHeartbeatHandler
 import com.ppaass.proxy.handler.TargetTcpChannelToProxyHandler
-import com.ppaass.proxy.handler.TargetUdpChannelTpProxyTcpChannelHandler
+import com.ppaass.proxy.handler.TargetUdpChannelToProxyTcpChannelHandler
 import io.netty.bootstrap.Bootstrap
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.channel.AdaptiveRecvByteBufAllocator
@@ -98,8 +98,14 @@ internal class ProxyConfiguration(
     }
 }
 
+/**
+ * The name of the last handler in the handler chain
+ */
 internal val LAST_INBOUND_HANDLER = "LAST_INBOUND_HANDLER"
 
+/**
+ * The spring configure
+ */
 @Configuration
 private class Configure(private val proxyConfiguration: ProxyConfiguration) {
     @Bean
@@ -177,7 +183,7 @@ private class Configure(private val proxyConfiguration: ProxyConfiguration) {
 
     @Bean
     fun targetUdpBootstrap(targetUdpLoopGroup: EventLoopGroup,
-                           targetUdpChannelTpProxyTcpChannelHandler: TargetUdpChannelTpProxyTcpChannelHandler,
+                           targetUdpChannelToProxyTcpChannelHandler: TargetUdpChannelToProxyTcpChannelHandler,
                            printExceptionHandler: PrintExceptionHandler) =
         Bootstrap().apply {
             group(targetUdpLoopGroup)
@@ -186,7 +192,7 @@ private class Configure(private val proxyConfiguration: ProxyConfiguration) {
             val channelInitializer = object : ChannelInitializer<NioDatagramChannel>() {
                 override fun initChannel(proxyUdpChannel: NioDatagramChannel) {
                     val proxyUdpChannelPipeline = proxyUdpChannel.pipeline()
-                    proxyUdpChannelPipeline.addLast(targetUdpChannelTpProxyTcpChannelHandler)
+                    proxyUdpChannelPipeline.addLast(targetUdpChannelToProxyTcpChannelHandler)
                     proxyUdpChannelPipeline.addLast(LAST_INBOUND_HANDLER, printExceptionHandler)
                 }
             }

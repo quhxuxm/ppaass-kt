@@ -8,6 +8,9 @@ import io.netty.handler.timeout.IdleStateEvent
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 
+/**
+ * Do heartbeat with target handler
+ */
 @Service
 @ChannelHandler.Sharable
 internal class TargetTcpChannelHeartbeatHandler :
