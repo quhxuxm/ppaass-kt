@@ -194,16 +194,16 @@ internal class ProxyTcpChannelToTargetHandler(private val targetTcpBootstrap: Bo
     override fun channelActive(proxyChannelContext: ChannelHandlerContext) {
         val proxyChannel = proxyChannelContext.channel()
         val agentConnectionInfo = proxyChannel.attr(TCP_CONNECTION_INFO).get()
-        val targetChannel = agentConnectionInfo?.targetTcpChannel
-        if (targetChannel != null) {
+        agentConnectionInfo?.let {
+            val targetChannel = it.targetTcpChannel
             if (targetChannel.isWritable) {
                 proxyChannel.read()
             } else {
                 targetChannel.flush()
             }
-        } else {
-            proxyChannel.read()
+            return
         }
+        proxyChannel.read()
     }
 
     override fun channelRead0(proxyChannelContext: ChannelHandlerContext,
@@ -294,16 +294,16 @@ internal class ProxyTcpChannelToTargetHandler(private val targetTcpBootstrap: Bo
     override fun channelReadComplete(proxyChannelContext: ChannelHandlerContext) {
         val proxyChannel = proxyChannelContext.channel()
         val agentConnectionInfo = proxyChannel.attr(TCP_CONNECTION_INFO).get()
-        val targetChannel = agentConnectionInfo?.targetTcpChannel
-        if (targetChannel != null) {
+        agentConnectionInfo?.let {
+            val targetChannel = it.targetTcpChannel
             if (targetChannel.isWritable) {
                 proxyChannel.read()
             } else {
                 targetChannel.flush()
             }
-        } else {
-            proxyChannel.read()
+            return
         }
+        proxyChannel.read()
     }
 
     override fun channelWritabilityChanged(proxyChannelContext: ChannelHandlerContext) {

@@ -162,100 +162,97 @@ private class HttpConfigure {
                               httpProxyToAgentHandler: HttpProxyToAgentHandler,
                               printExceptionHandler: PrintExceptionHandler,
                               agentConfiguration: AgentConfiguration,
-                              httpProxyMessageBodyTypeHandler: HttpProxyMessageBodyTypeHandler): Bootstrap {
-        val proxyBootstrap = Bootstrap()
-        proxyBootstrap.group(proxyTcpLoopGroup)
-        proxyBootstrap.channel(NioSocketChannel::class.java)
-        proxyBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
-            agentConfiguration.proxyTcpConnectionTimeout)
-        proxyBootstrap.option(ChannelOption.SO_KEEPALIVE, true)
-        proxyBootstrap.option(ChannelOption.SO_REUSEADDR, true)
-        proxyBootstrap.option(ChannelOption.AUTO_READ, true)
-        proxyBootstrap.option(ChannelOption.AUTO_CLOSE, false)
-        proxyBootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-        proxyBootstrap.option(ChannelOption.TCP_NODELAY, true)
-        proxyBootstrap
-            .option(ChannelOption.SO_LINGER,
+                              httpProxyMessageBodyTypeHandler: HttpProxyMessageBodyTypeHandler) =
+        Bootstrap().apply {
+            group(proxyTcpLoopGroup)
+            channel(NioSocketChannel::class.java)
+            option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
+                agentConfiguration.proxyTcpConnectionTimeout)
+            option(ChannelOption.SO_KEEPALIVE, true)
+            option(ChannelOption.SO_REUSEADDR, true)
+            option(ChannelOption.AUTO_READ, true)
+            option(ChannelOption.AUTO_CLOSE, false)
+            option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+            option(ChannelOption.TCP_NODELAY, true)
+            option(ChannelOption.SO_LINGER,
                 agentConfiguration.proxyTcpSoLinger)
-        proxyBootstrap.option(ChannelOption.SO_RCVBUF,
-            agentConfiguration.proxyTcpSoRcvbuf)
-        proxyBootstrap.option(ChannelOption.SO_SNDBUF,
-            agentConfiguration.proxyTcpSoSndbuf)
-        proxyBootstrap.handler(object : ChannelInitializer<SocketChannel>() {
-            override fun initChannel(proxyChannel: SocketChannel) {
-                val proxyChannelPipeline = proxyChannel.pipeline()
-                if (agentConfiguration.proxyTcpCompressEnable) {
-                    proxyChannelPipeline.addLast(Lz4FrameDecoder())
+            option(ChannelOption.SO_RCVBUF,
+                agentConfiguration.proxyTcpSoRcvbuf)
+            option(ChannelOption.SO_SNDBUF,
+                agentConfiguration.proxyTcpSoSndbuf)
+            handler(object : ChannelInitializer<SocketChannel>() {
+                override fun initChannel(proxyChannel: SocketChannel) {
+                    val proxyChannelPipeline = proxyChannel.pipeline()
+                    if (agentConfiguration.proxyTcpCompressEnable) {
+                        proxyChannelPipeline.addLast(Lz4FrameDecoder())
+                    }
+                    proxyChannelPipeline.addLast(LengthFieldBasedFrameDecoder(Int.MAX_VALUE,
+                        0, 4, 0,
+                        4))
+                    proxyChannelPipeline.addLast(ProxyMessageDecoder(
+                        agentConfiguration.agentPrivateKey))
+                    proxyChannelPipeline.addLast(httpProxyMessageBodyTypeHandler)
+                    proxyChannelPipeline.addLast(HttpProxyMessageConvertToOriginalDataDecoder())
+                    proxyChannelPipeline.addLast(HttpResponseDecoder())
+                    proxyChannelPipeline.addLast(HttpObjectAggregator(Int.MAX_VALUE, true))
+                    proxyChannelPipeline.addLast(httpProxyToAgentHandler)
+                    if (agentConfiguration.proxyTcpCompressEnable) {
+                        proxyChannelPipeline.addLast(Lz4FrameEncoder())
+                    }
+                    proxyChannelPipeline.addLast(LengthFieldPrepender(4))
+                    proxyChannelPipeline.addLast(AgentMessageEncoder(
+                        agentConfiguration.proxyPublicKey))
+                    proxyChannelPipeline.addLast(printExceptionHandler)
                 }
-                proxyChannelPipeline.addLast(LengthFieldBasedFrameDecoder(Int.MAX_VALUE,
-                    0, 4, 0,
-                    4))
-                proxyChannelPipeline.addLast(ProxyMessageDecoder(
-                    agentConfiguration.agentPrivateKey))
-                proxyChannelPipeline.addLast(httpProxyMessageBodyTypeHandler)
-                proxyChannelPipeline.addLast(HttpProxyMessageConvertToOriginalDataDecoder())
-                proxyChannelPipeline.addLast(HttpResponseDecoder())
-                proxyChannelPipeline.addLast(HttpObjectAggregator(Int.MAX_VALUE, true))
-                proxyChannelPipeline.addLast(httpProxyToAgentHandler)
-                if (agentConfiguration.proxyTcpCompressEnable) {
-                    proxyChannelPipeline.addLast(Lz4FrameEncoder())
-                }
-                proxyChannelPipeline.addLast(LengthFieldPrepender(4))
-                proxyChannelPipeline.addLast(AgentMessageEncoder(
-                    agentConfiguration.proxyPublicKey))
-                proxyChannelPipeline.addLast(printExceptionHandler)
-            }
-        })
-        return proxyBootstrap
-    }
+            })
+        }
 
     @Bean
     fun proxyBootstrapForHttps(proxyIoEventLoopGroup: EventLoopGroup?,
                                httpProxyToAgentHandler: HttpProxyToAgentHandler,
                                printExceptionHandler: PrintExceptionHandler,
                                agentConfiguration: AgentConfiguration,
-                               httpProxyMessageBodyTypeHandler: HttpProxyMessageBodyTypeHandler): Bootstrap {
-        val proxyBootstrap = Bootstrap()
-        proxyBootstrap.group(proxyIoEventLoopGroup)
-        proxyBootstrap.channel(NioSocketChannel::class.java)
-        proxyBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
-            agentConfiguration.proxyTcpConnectionTimeout)
-        proxyBootstrap.option(ChannelOption.SO_KEEPALIVE, true)
-        proxyBootstrap.option(ChannelOption.SO_REUSEADDR, true)
-        proxyBootstrap.option(ChannelOption.AUTO_READ, true)
-        proxyBootstrap.option(ChannelOption.AUTO_CLOSE, false)
-        proxyBootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-        proxyBootstrap.option(ChannelOption.TCP_NODELAY, true)
-        proxyBootstrap
-            .option(ChannelOption.SO_LINGER,
+                               httpProxyMessageBodyTypeHandler: HttpProxyMessageBodyTypeHandler) =
+        Bootstrap().apply {
+            group(proxyIoEventLoopGroup)
+            channel(NioSocketChannel::class.java)
+            option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
+                agentConfiguration.proxyTcpConnectionTimeout)
+            option(ChannelOption.SO_KEEPALIVE, true)
+            option(ChannelOption.SO_REUSEADDR, true)
+            option(ChannelOption.AUTO_READ, true)
+            option(ChannelOption.AUTO_CLOSE, false)
+            option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+            option(ChannelOption.TCP_NODELAY, true)
+
+            option(ChannelOption.SO_LINGER,
                 agentConfiguration.proxyTcpSoLinger)
-        proxyBootstrap.option(ChannelOption.SO_RCVBUF,
-            agentConfiguration.proxyTcpSoRcvbuf)
-        proxyBootstrap.option(ChannelOption.SO_SNDBUF,
-            agentConfiguration.proxyTcpSoSndbuf)
-        proxyBootstrap.handler(object : ChannelInitializer<SocketChannel>() {
-            override fun initChannel(proxyChannel: SocketChannel) {
-                val proxyChannelPipeline = proxyChannel.pipeline()
-                if (agentConfiguration.proxyTcpCompressEnable) {
-                    proxyChannelPipeline.addLast(Lz4FrameDecoder())
+            option(ChannelOption.SO_RCVBUF,
+                agentConfiguration.proxyTcpSoRcvbuf)
+            option(ChannelOption.SO_SNDBUF,
+                agentConfiguration.proxyTcpSoSndbuf)
+            handler(object : ChannelInitializer<SocketChannel>() {
+                override fun initChannel(proxyChannel: SocketChannel) {
+                    val proxyChannelPipeline = proxyChannel.pipeline()
+                    if (agentConfiguration.proxyTcpCompressEnable) {
+                        proxyChannelPipeline.addLast(Lz4FrameDecoder())
+                    }
+                    proxyChannelPipeline.addLast(LengthFieldBasedFrameDecoder(Int.MAX_VALUE,
+                        0, 4, 0,
+                        4))
+                    proxyChannelPipeline.addLast(ProxyMessageDecoder(
+                        agentConfiguration.agentPrivateKey))
+                    proxyChannelPipeline.addLast(httpProxyMessageBodyTypeHandler)
+                    proxyChannelPipeline.addLast(HttpProxyMessageConvertToOriginalDataDecoder())
+                    proxyChannelPipeline.addLast(httpProxyToAgentHandler)
+                    if (agentConfiguration.proxyTcpCompressEnable) {
+                        proxyChannelPipeline.addLast(Lz4FrameEncoder())
+                    }
+                    proxyChannelPipeline.addLast(LengthFieldPrepender(4))
+                    proxyChannelPipeline.addLast(AgentMessageEncoder(
+                        agentConfiguration.proxyPublicKey))
+                    proxyChannelPipeline.addLast(printExceptionHandler)
                 }
-                proxyChannelPipeline.addLast(LengthFieldBasedFrameDecoder(Int.MAX_VALUE,
-                    0, 4, 0,
-                    4))
-                proxyChannelPipeline.addLast(ProxyMessageDecoder(
-                    agentConfiguration.agentPrivateKey))
-                proxyChannelPipeline.addLast(httpProxyMessageBodyTypeHandler)
-                proxyChannelPipeline.addLast(HttpProxyMessageConvertToOriginalDataDecoder())
-                proxyChannelPipeline.addLast(httpProxyToAgentHandler)
-                if (agentConfiguration.proxyTcpCompressEnable) {
-                    proxyChannelPipeline.addLast(Lz4FrameEncoder())
-                }
-                proxyChannelPipeline.addLast(LengthFieldPrepender(4))
-                proxyChannelPipeline.addLast(AgentMessageEncoder(
-                    agentConfiguration.proxyPublicKey))
-                proxyChannelPipeline.addLast(printExceptionHandler)
-            }
-        })
-        return proxyBootstrap
-    }
+            })
+        }
 }

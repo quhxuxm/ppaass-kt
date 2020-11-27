@@ -29,54 +29,61 @@ internal class HttpProxyMessageBodyTypeHandler : SimpleChannelInboundHandler<Pro
                               proxyMessage: ProxyMessage) {
         val proxyChannel = proxyChannelContext.channel()
         val connectionInfo = proxyChannel.attr(HTTP_CONNECTION_INFO).get()
-        if (connectionInfo == null) {
-            logger.error {
-                "Close proxy channel because of no connection information attached, proxy channel = ${
-                    proxyChannel.id().asLongText()
-                }"
+        connectionInfo?.let {
+            val agentChannel = connectionInfo.agentChannel!!
+            if (ProxyMessageBodyType.HEARTBEAT == proxyMessage.body.bodyType) {
+                val originalData = proxyMessage.body.data
+                val heartbeat = JSON_OBJECT_MAPPER.readValue(originalData, Heartbeat::class.java)
+                logger.debug {
+                    "Discard proxy channel heartbeat, proxy channel = ${
+                        proxyChannel.id().asLongText()
+                    }, agent channel = ${
+                        agentChannel.id().asLongText()
+                    }, heartbeat id = ${
+                        heartbeat.id
+                    }, heartbeat time = ${
+                        heartbeat.utcDateTime
+                    }."
+                }
+                return
             }
-            proxyChannel.close()
-            return
-        }
-        val agentChannel = connectionInfo.agentChannel!!
-        if (ProxyMessageBodyType.HEARTBEAT == proxyMessage.body.bodyType) {
-            val originalData = proxyMessage.body.data
-            val heartbeat = JSON_OBJECT_MAPPER.readValue(originalData, Heartbeat::class.java)
-            logger.debug {
-                "Discard proxy channel heartbeat, proxy channel = ${
-                    proxyChannel.id().asLongText()
-                }, agent channel = ${
-                    agentChannel.id().asLongText()
-                }, heartbeat id = ${
-                    heartbeat.id
-                }, heartbeat time = ${
-                    heartbeat.utcDateTime
-                }."
-            }
-            return
-        }
-        if (ProxyMessageBodyType.CONNECT_SUCCESS == proxyMessage.body.bodyType) {
-            if (connectionInfo.isHttps) {
-                //HTTPS
-                val okResponse =
-                    DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
-                agentChannel.writeAndFlush(okResponse)
-                    .addListener(ChannelFutureListener { agentChannelFuture ->
-                        if (agentChannelFuture.isSuccess) {
-                            val agentChannelPipeline = agentChannel.pipeline()
-                            if (agentChannelPipeline.get(
-                                    HttpServerCodec::class.java.name) != null) {
-                                agentChannelPipeline.remove(HttpServerCodec::class.java.name)
+            if (ProxyMessageBodyType.CONNECT_SUCCESS == proxyMessage.body.bodyType) {
+                if (connectionInfo.isHttps) {
+                    //HTTPS
+                    val okResponse =
+                        DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
+                    agentChannel.writeAndFlush(okResponse)
+                        .addListener(ChannelFutureListener { agentChannelFuture ->
+                            if (agentChannelFuture.isSuccess) {
+                                val agentChannelPipeline = agentChannel.pipeline()
+                                if (agentChannelPipeline.get(
+                                        HttpServerCodec::class.java.name) != null) {
+                                    agentChannelPipeline.remove(HttpServerCodec::class.java.name)
+                                }
+                                if (agentChannelPipeline.get(
+                                        HttpObjectAggregator::class.java.name) != null) {
+                                    agentChannelPipeline.remove(
+                                        HttpObjectAggregator::class.java.name)
+                                }
+                                return@ChannelFutureListener
                             }
-                            if (agentChannelPipeline.get(
-                                    HttpObjectAggregator::class.java.name) != null) {
-                                agentChannelPipeline.remove(HttpObjectAggregator::class.java.name)
+                            if (agentChannelFuture.cause() is ClosedChannelException) {
+                                logger.error {
+                                    "Fail to transfer data from agent to client because of agent channel closed already, agent channel = ${
+                                        agentChannel.id().asLongText()
+                                    }, proxy channel = ${
+                                        proxyChannel.id().asLongText()
+                                    }, target address = ${
+                                        connectionInfo.targetHost
+                                    }, target port = ${
+                                        connectionInfo.targetPort
+                                    }"
+                                }
+                                proxyChannel.close()
+                                return@ChannelFutureListener
                             }
-                            return@ChannelFutureListener
-                        }
-                        if (agentChannelFuture.cause() is ClosedChannelException) {
-                            logger.error {
-                                "Fail to transfer data from agent to client because of agent channel closed already, agent channel = ${
+                            logger.error(agentChannelFuture.cause()) {
+                                "Fail to transfer data from agent to client because of exception, agent channel = ${
                                     agentChannel.id().asLongText()
                                 }, proxy channel = ${
                                     proxyChannel.id().asLongText()
@@ -84,45 +91,47 @@ internal class HttpProxyMessageBodyTypeHandler : SimpleChannelInboundHandler<Pro
                                     connectionInfo.targetHost
                                 }, target port = ${
                                     connectionInfo.targetPort
-                                }"
+                                }."
                             }
                             proxyChannel.close()
-                            return@ChannelFutureListener
-                        }
-                        logger.error(agentChannelFuture.cause()) {
-                            "Fail to transfer data from agent to client because of exception, agent channel = ${
+                        })
+                    return
+                }
+                //HTTP
+                writeAgentMessageToProxy(
+                    bodyType = AgentMessageBodyType.TCP_DATA,
+                    userToken = connectionInfo.userToken!!,
+                    proxyChannel = proxyChannel,
+                    input = connectionInfo.httpMessageCarriedOnConnectTime,
+                    connectionInfo.targetHost,
+                    connectionInfo.targetPort
+                ) { proxyChannelFuture ->
+                    if (proxyChannelFuture.isSuccess) {
+                        return@writeAgentMessageToProxy
+                    }
+                    if (proxyChannelFuture.cause() is ClosedChannelException) {
+                        logger.error {
+                            "Fail write agent original message to proxy because of proxy channel closed already, agent channel = ${
                                 agentChannel.id().asLongText()
                             }, proxy channel = ${
                                 proxyChannel.id().asLongText()
-                            }, target address = ${
+                            },target address = ${
                                 connectionInfo.targetHost
                             }, target port = ${
                                 connectionInfo.targetPort
-                            }."
+                            }, target connection type = ${
+                                AgentMessageBodyType.TCP_DATA
+                            }"
                         }
-                        proxyChannel.close()
-                    })
-                return
-            }
-            //HTTP
-            writeAgentMessageToProxy(
-                bodyType = AgentMessageBodyType.TCP_DATA,
-                userToken = connectionInfo.userToken!!,
-                proxyChannel = proxyChannel,
-                input = connectionInfo.httpMessageCarriedOnConnectTime,
-                connectionInfo.targetHost,
-                connectionInfo.targetPort
-            ) { proxyChannelFuture ->
-                if (proxyChannelFuture.isSuccess) {
-                    return@writeAgentMessageToProxy
-                }
-                if (proxyChannelFuture.cause() is ClosedChannelException) {
-                    logger.error {
-                        "Fail write agent original message to proxy because of proxy channel closed already, agent channel = ${
+                        agentChannel.close()
+                        return@writeAgentMessageToProxy
+                    }
+                    logger.error(proxyChannelFuture.cause()) {
+                        "Fail write agent original message to proxy because of exception, agent channel = ${
                             agentChannel.id().asLongText()
                         }, proxy channel = ${
                             proxyChannel.id().asLongText()
-                        },target address = ${
+                        }, target address = ${
                             connectionInfo.targetHost
                         }, target port = ${
                             connectionInfo.targetPort
@@ -131,26 +140,19 @@ internal class HttpProxyMessageBodyTypeHandler : SimpleChannelInboundHandler<Pro
                         }"
                     }
                     agentChannel.close()
-                    return@writeAgentMessageToProxy
                 }
-                logger.error(proxyChannelFuture.cause()) {
-                    "Fail write agent original message to proxy because of exception, agent channel = ${
-                        agentChannel.id().asLongText()
-                    }, proxy channel = ${
-                        proxyChannel.id().asLongText()
-                    }, target address = ${
-                        connectionInfo.targetHost
-                    }, target port = ${
-                        connectionInfo.targetPort
-                    }, target connection type = ${
-                        AgentMessageBodyType.TCP_DATA
-                    }"
-                }
-                agentChannel.close()
+                return
             }
+            proxyChannelContext.fireChannelRead(proxyMessage)
             return
         }
-        proxyChannelContext.fireChannelRead(proxyMessage)
+        logger.error {
+            "Close proxy channel because of no connection information attached, proxy channel = ${
+                proxyChannel.id().asLongText()
+            }"
+        }
+        proxyChannel.close()
+        return
     }
 
     override fun exceptionCaught(proxyChannelContext: ChannelHandlerContext, cause: Throwable) {

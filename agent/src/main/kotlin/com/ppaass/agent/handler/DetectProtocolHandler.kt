@@ -29,7 +29,7 @@ internal class DetectProtocolHandler(
     override fun channelRead(agentChannelContext: ChannelHandlerContext, msg: Any) {
         val agentChannel = agentChannelContext.channel()
         val channelProtocolType = agentChannel.attr(CHANNEL_PROTOCOL_CATEGORY).get()
-        if (channelProtocolType != null) {
+        channelProtocolType?.let {
             logger.debug { "Incoming request protocol is: ${channelProtocolType}." }
             agentChannelContext.fireChannelRead(msg)
             return

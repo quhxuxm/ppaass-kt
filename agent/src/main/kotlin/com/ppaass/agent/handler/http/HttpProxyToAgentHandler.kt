@@ -19,22 +19,30 @@ internal class HttpProxyToAgentHandler : ChannelInboundHandlerAdapter() {
     override fun channelRead(proxyChannelContext: ChannelHandlerContext, msg: Any) {
         val proxyChannel = proxyChannelContext.channel()
         val connectionInfo = proxyChannel.attr(HTTP_CONNECTION_INFO).get()
-        if (connectionInfo == null) {
-            logger.error(
-                "Fail to transfer data from proxy to agent because of no connection information attached, proxy channel = {}.",
-                proxyChannel.id().asLongText())
-            proxyChannel.close()
-            return
-        }
-        val agentChannel = connectionInfo.agentChannel!!
-        agentChannel.writeAndFlush(msg).addListener(
-            ChannelFutureListener { agentChannelFuture: ChannelFuture ->
-                if (agentChannelFuture.isSuccess) {
-                    return@ChannelFutureListener
-                }
-                if (agentChannelFuture.cause() is ClosedChannelException) {
-                    logger.error {
-                        "Fail to transfer data from agent to client because of agent channel closed already, agent channel = ${
+        connectionInfo?.let {
+            val agentChannel = connectionInfo.agentChannel!!
+            agentChannel.writeAndFlush(msg).addListener(
+                ChannelFutureListener { agentChannelFuture: ChannelFuture ->
+                    if (agentChannelFuture.isSuccess) {
+                        return@ChannelFutureListener
+                    }
+                    if (agentChannelFuture.cause() is ClosedChannelException) {
+                        logger.error {
+                            "Fail to transfer data from agent to client because of agent channel closed already, agent channel = ${
+                                agentChannel.id().asLongText()
+                            }, proxy channel = ${
+                                proxyChannel.id().asLongText()
+                            }, target address = ${
+                                connectionInfo.targetHost
+                            }, target port = ${
+                                connectionInfo.targetPort
+                            }"
+                        }
+                        proxyChannel.close()
+                        return@ChannelFutureListener
+                    }
+                    logger.error(agentChannelFuture.cause()) {
+                        "Fail to transfer data from agent to client because of exception, agent channel = ${
                             agentChannel.id().asLongText()
                         }, proxy channel = ${
                             proxyChannel.id().asLongText()
@@ -42,24 +50,17 @@ internal class HttpProxyToAgentHandler : ChannelInboundHandlerAdapter() {
                             connectionInfo.targetHost
                         }, target port = ${
                             connectionInfo.targetPort
-                        }"
+                        }."
                     }
                     proxyChannel.close()
-                    return@ChannelFutureListener
-                }
-                logger.error(agentChannelFuture.cause()) {
-                    "Fail to transfer data from agent to client because of exception, agent channel = ${
-                        agentChannel.id().asLongText()
-                    }, proxy channel = ${
-                        proxyChannel.id().asLongText()
-                    }, target address = ${
-                        connectionInfo.targetHost
-                    }, target port = ${
-                        connectionInfo.targetPort
-                    }."
-                }
-                proxyChannel.close()
-            })
+                })
+            return
+        }
+        logger.error(
+            "Fail to transfer data from proxy to agent because of no connection information attached, proxy channel = {}.",
+            proxyChannel.id().asLongText())
+        proxyChannel.close()
+        return
     }
 
     @Throws(Exception::class)
