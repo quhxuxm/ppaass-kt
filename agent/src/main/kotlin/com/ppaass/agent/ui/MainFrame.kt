@@ -51,6 +51,7 @@ internal class MainFrame(private val messageSource: MessageSource,
         private val STATUS_LABEL_DEFAULT_MESSAGE_KEY = "mainFrame.statusLabel.default"
         private val BUTTON_START_PROXY_MESSAGE_KEY = "mainFrame.button.startProxy"
         private val BUTTON_ADJUST_LOGGER_MESSAGE_KEY = "mainFrame.button.adjustLogger"
+        private val DIALOG_ADJUST_LOGGER_TITLE_MESSAGE_KEY = "mainFrame.dialog.adjustLogger.title"
         private val BUTTON_STOP_PROXY_MESSAGE_KEY = "mainFrame.button.stopProxy"
         private val STATUS_TOKEN_VALIDATION_FAIL_MESSAGE_KEY =
             "mainFrame.status.tokenValidationFail"
@@ -267,7 +268,8 @@ internal class MainFrame(private val messageSource: MessageSource,
             this.agentConfiguration.save()
         }
         val adjustLoggerButton = JButton(this.getMessage(BUTTON_ADJUST_LOGGER_MESSAGE_KEY))
-        val adjustLoggerDialog = JDialog()
+        val adjustLoggerDialog =
+            JDialog(this, this.getMessage(DIALOG_ADJUST_LOGGER_TITLE_MESSAGE_KEY), true)
         this.initializeAdjustLoggerDialog(adjustLoggerDialog)
         adjustLoggerButton.addActionListener {
             adjustLoggerDialog.isVisible = true
@@ -317,7 +319,7 @@ internal class MainFrame(private val messageSource: MessageSource,
                     }
                 }
                 loggerPanel.add(selectLogLevelComboBox)
-                loggerPanel.add(JLabel(":: "+it.name.substring(it.name.lastIndexOf(".") + 1)))
+                loggerPanel.add(JLabel(":: " + it.name.substring(it.name.lastIndexOf(".") + 1)))
                 selectLogLevelComboBox.addActionListener { event ->
                     it.level = Level.getLevel(selectLogLevelComboBox.selectedItem as String)
                 }
