@@ -11,5 +11,5 @@ while True:
     print >>sys.stderr, 'connection from', client_address
     print >>sys.stderr, 'received "%s"' % message
     print >>sys.stderr, 'sending data back to the client'
-    sock.sendto(message, client_address)
+    sock.sendto(message+"(server echo)", client_address)
     print >>sys.stderr, 'finish', client_address

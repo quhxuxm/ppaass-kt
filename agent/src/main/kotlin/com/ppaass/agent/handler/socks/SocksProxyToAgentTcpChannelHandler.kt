@@ -34,7 +34,7 @@ internal class SocksProxyToAgentTcpChannelHandler(
                               proxyMessage: ProxyMessage) {
         val proxyChannel = proxyChannelContext.channel()
         val tcpConnectionInfo = proxyChannel.attr(SOCKS_TCP_CONNECTION_INFO).get()
-        if (tcpConnectionInfo == null) {
+        if (tcpConnectionInfo == null && proxyMessage.body.bodyType != ProxyMessageBodyType.OK_UDP) {
             logger.error {
                 "Fail to send proxy message to agent because of no connection information attached, proxy channel = ${
                     proxyChannel.id().asLongText()
