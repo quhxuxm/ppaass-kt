@@ -3,6 +3,7 @@ package com.ppaass.kt.common
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
+import io.netty.util.ReferenceCountUtil
 import mu.KotlinLogging
 import org.apache.commons.codec.digest.DigestUtils
 import java.util.*
@@ -236,6 +237,7 @@ fun decodeProxyMessage(input: ByteBuf,
         }
         throw PpaassException("Incoming message is not follow Ppaass protocol.")
     }
+    ReferenceCountUtil.release(magicCodeByteBuf)
     val encryptedMessageBodyEncryptionTokenLength = input.readInt()
     val encryptedMessageBodyEncryptionToken =
         input.readCharSequence(encryptedMessageBodyEncryptionTokenLength, Charsets.UTF_8)
