@@ -7,7 +7,7 @@ import com.ppaass.kt.common.PrintExceptionHandler
 import io.netty.channel.EventLoopGroup
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.util.AttributeKey
-import org.apache.commons.io.FileUtils
+import org.apache.commons.io.IOUtils
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.context.annotation.Bean
@@ -59,8 +59,14 @@ class AgentConfiguration(
         private const val USER_HOME_PROPERTY = "user.home"
     }
 
-    var proxyPublicKey = FileUtils.readFileToString(proxyPublicKeyFile.file, Charsets.UTF_8)
-    var agentPrivateKey = FileUtils.readFileToString(agentPrivateKeyFile.file, Charsets.UTF_8)
+    var proxyPublicKey =
+        IOUtils.readLines(proxyPublicKeyFile.inputStream, Charsets.UTF_8).reduce { a, b ->
+            return@reduce a + b
+        }
+    var agentPrivateKey =
+        IOUtils.readLines(agentPrivateKeyFile.inputStream, Charsets.UTF_8).reduce { a, b ->
+            return@reduce a + b
+        }
 
     init {
         val userDirectory = System.getProperty(USER_HOME_PROPERTY)
@@ -101,8 +107,7 @@ enum class ChannelProtocolCategory {
 
 internal val CHANNEL_PROTOCOL_CATEGORY: AttributeKey<ChannelProtocolCategory> =
     AttributeKey.valueOf("CHANNEL_PROTOCOL_TYPE")
-
-internal val LAST_INBOUND_HANDLER="LAST_INBOUND_HANDLER"
+internal val LAST_INBOUND_HANDLER = "LAST_INBOUND_HANDLER"
 
 @Configuration
 private class Configure(private val agentConfiguration: AgentConfiguration) {

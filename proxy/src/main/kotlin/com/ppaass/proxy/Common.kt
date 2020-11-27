@@ -26,7 +26,7 @@ import io.netty.handler.codec.compression.Lz4FrameDecoder
 import io.netty.handler.codec.compression.Lz4FrameEncoder
 import io.netty.handler.timeout.IdleStateHandler
 import io.netty.handler.traffic.ChannelTrafficShapingHandler
-import org.apache.commons.io.FileUtils
+import org.apache.commons.io.IOUtils
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.context.annotation.Bean
@@ -79,8 +79,14 @@ internal class ProxyConfiguration(
     proxyPrivateKeyFile: Resource,
     agentPublicKeyFile: Resource,
 ) {
-    var proxyPrivateKey = FileUtils.readFileToString(proxyPrivateKeyFile.file, Charsets.UTF_8)
-    var agentPublicKey = FileUtils.readFileToString(agentPublicKeyFile.file, Charsets.UTF_8)
+    var proxyPrivateKey =
+        IOUtils.readLines(proxyPrivateKeyFile.inputStream, Charsets.UTF_8).reduce { a, b ->
+            return@reduce a + b
+        }
+    var agentPublicKey =
+        IOUtils.readLines(agentPublicKeyFile.inputStream, Charsets.UTF_8).reduce { a, b ->
+            return@reduce a + b
+        }
 }
 
 internal val LAST_INBOUND_HANDLER = "LAST_INBOUND_HANDLER"
