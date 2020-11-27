@@ -8,6 +8,9 @@ import kotlin.concurrent.thread
 
 private val logger = KotlinLogging.logger { }
 
+/**
+ * The launchser of the proxy server
+ */
 @SpringBootApplication
 @EnableConfigurationProperties(ProxyConfiguration::class)
 class Launcher

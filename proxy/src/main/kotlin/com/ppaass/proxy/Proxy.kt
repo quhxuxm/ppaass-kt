@@ -4,6 +4,12 @@ import io.netty.bootstrap.ServerBootstrap
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 
+/**
+ * The proxy server class.
+ *
+ * @param proxyConfiguration The proxy configuration.
+ * @param proxyServerBootstrap The server bootstrap of the proxy.
+ */
 @Service
 internal class Proxy(private val proxyConfiguration: ProxyConfiguration,
                      private val proxyServerBootstrap: ServerBootstrap) {
@@ -11,6 +17,9 @@ internal class Proxy(private val proxyConfiguration: ProxyConfiguration,
         private val logger = KotlinLogging.logger { }
     }
 
+    /**
+     * Start the proxy server.
+     */
     fun start() {
         logger.info {
             "Begin to start ppaass tcp proxy server on port: ${
@@ -32,6 +41,9 @@ internal class Proxy(private val proxyConfiguration: ProxyConfiguration,
         }
     }
 
+    /**
+     * Stop the proxy server.
+     */
     fun stop() {
         logger.info { "Begin to stop ppaass tcp proxy server..." }
         proxyServerBootstrap.config().group().shutdownGracefully()
