@@ -79,14 +79,20 @@ internal class ProxyConfiguration(
     proxyPrivateKeyFile: Resource,
     agentPublicKeyFile: Resource,
 ) {
-    var proxyPrivateKey =
-        IOUtils.readLines(proxyPrivateKeyFile.inputStream, Charsets.UTF_8).reduce { a, b ->
-            return@reduce a + b
-        }
-    var agentPublicKey =
-        IOUtils.readLines(agentPublicKeyFile.inputStream, Charsets.UTF_8).reduce { a, b ->
-            return@reduce a + b
-        }
+    val proxyPrivateKey: String by lazy {
+        val result =
+            IOUtils.readLines(proxyPrivateKeyFile.inputStream, Charsets.UTF_8).reduce { a, b ->
+                return@reduce a + b
+            }
+        result
+    }
+    val agentPublicKey: String by lazy {
+        val result =
+            IOUtils.readLines(agentPublicKeyFile.inputStream, Charsets.UTF_8).reduce { a, b ->
+                return@reduce a + b
+            }
+        result
+    }
 }
 
 internal val LAST_INBOUND_HANDLER = "LAST_INBOUND_HANDLER"
