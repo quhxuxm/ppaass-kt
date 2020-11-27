@@ -4,6 +4,9 @@ import com.ppaass.agent.Agent
 import com.ppaass.agent.AgentConfiguration
 import com.ppaass.kt.common.generateUuid
 import mu.KotlinLogging
+import org.apache.logging.log4j.Level
+import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.core.LoggerContext
 import org.springframework.context.MessageSource
 import org.springframework.stereotype.Service
 import org.springframework.util.StringUtils
@@ -24,6 +27,8 @@ import java.awt.event.WindowEvent
 import java.util.*
 import javax.swing.BoxLayout
 import javax.swing.JButton
+import javax.swing.JComboBox
+import javax.swing.JDialog
 import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.JPanel
@@ -45,6 +50,7 @@ internal class MainFrame(private val messageSource: MessageSource,
         private val SYSTEM_TRAY_TOOLTIP_MESSAGE_KEY = "mainFrame.systemTray.tooltip"
         private val STATUS_LABEL_DEFAULT_MESSAGE_KEY = "mainFrame.statusLabel.default"
         private val BUTTON_START_PROXY_MESSAGE_KEY = "mainFrame.button.startProxy"
+        private val BUTTON_ADJUST_LOGGER_MESSAGE_KEY = "mainFrame.button.adjustLogger"
         private val BUTTON_STOP_PROXY_MESSAGE_KEY = "mainFrame.button.stopProxy"
         private val STATUS_TOKEN_VALIDATION_FAIL_MESSAGE_KEY =
             "mainFrame.status.tokenValidationFail"
@@ -180,7 +186,7 @@ internal class MainFrame(private val messageSource: MessageSource,
         proxyPortInput.disabledTextColor = Color(200, 200, 200)
         proxyPortTextFieldPanel.add(proxyPortInput)
         contentPanel.add(proxyPortTextFieldPanel)
-        val buttonPanelLayout = GridLayout(1, 3, 10, 0)
+        val buttonPanelLayout = GridLayout(1, 2, 10, 0)
         val buttonPanel = JPanel(buttonPanelLayout)
         buttonPanel.preferredSize = Dimension(PANEL_WIDTH, 50)
         val statusLabel = JLabel(this.getMessage(STATUS_LABEL_DEFAULT_MESSAGE_KEY))
@@ -260,9 +266,15 @@ internal class MainFrame(private val messageSource: MessageSource,
             startProxyBtn.isEnabled = false
             this.agentConfiguration.save()
         }
-
+        val adjustLoggerButton = JButton(this.getMessage(BUTTON_ADJUST_LOGGER_MESSAGE_KEY))
+        val adjustLoggerDialog = JDialog()
+        this.initializeAdjustLoggerDialog(adjustLoggerDialog)
+        adjustLoggerButton.addActionListener {
+            adjustLoggerDialog.isVisible = true
+        }
         buttonPanel.add(startProxyBtn)
         buttonPanel.add(stopAllProxyBtn)
+        buttonPanel.add(adjustLoggerButton)
         buttonPanel.border = EmptyBorder(0, 0, 10, 0)
         contentPanel.add(buttonPanel)
         val statusPanel = JPanel(CardLayout())
@@ -270,6 +282,49 @@ internal class MainFrame(private val messageSource: MessageSource,
         statusPanel.add(statusLabel)
         contentPanel.add(statusPanel)
         return contentPanel
+    }
+
+    private fun initializeAdjustLoggerDialog(adjustLoggerDialog: JDialog) {
+        adjustLoggerDialog.isResizable = false
+        val contentPanel = JPanel()
+        val contentPanelLayout = BoxLayout(contentPanel, BoxLayout.Y_AXIS)
+        contentPanel.layout = contentPanelLayout
+        adjustLoggerDialog.addWindowListener(object : WindowAdapter() {
+            override fun windowClosed(e: WindowEvent?) {
+                adjustLoggerDialog.isVisible = false
+            }
+        })
+        adjustLoggerDialog.contentPane = contentPanel
+        val adjustLogLevelPanel = JPanel()
+        val adjustLogLevelPanelScrollPane = JScrollPane(adjustLogLevelPanel)
+        adjustLogLevelPanelScrollPane.preferredSize = Dimension(PANEL_WIDTH, 200)
+        adjustLogLevelPanelScrollPane.verticalScrollBarPolicy =
+            JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
+        adjustLogLevelPanelScrollPane.horizontalScrollBarPolicy =
+            JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
+        adjustLogLevelPanel.layout = BoxLayout(adjustLogLevelPanel, BoxLayout.Y_AXIS)
+        adjustLogLevelPanel.border = EmptyBorder(5, 5, 5, 5)
+        val loggerContext = LogManager.getContext(false) as LoggerContext
+        loggerContext.loggers.stream().filter { it.name.startsWith("com.ppaass") }
+            .sorted { o1, o2 -> o1.name.compareTo(o2.name) }.forEach {
+                val loggerPanel = JPanel(FlowLayout(FlowLayout.LEFT))
+                loggerPanel.border = EmptyBorder(0, 5, 5, 5)
+                val selectLogLevelComboBox = JComboBox<String>()
+                Level.values().forEachIndexed { index, item ->
+                    selectLogLevelComboBox.addItem(item.name())
+                    if (it.level == item) {
+                        selectLogLevelComboBox.selectedIndex = index
+                    }
+                }
+                loggerPanel.add(selectLogLevelComboBox)
+                loggerPanel.add(JLabel(":: "+it.name.substring(it.name.lastIndexOf(".") + 1)))
+                selectLogLevelComboBox.addActionListener { event ->
+                    it.level = Level.getLevel(selectLogLevelComboBox.selectedItem as String)
+                }
+                adjustLogLevelPanel.add(loggerPanel)
+            }
+        contentPanel.add(adjustLogLevelPanelScrollPane)
+        adjustLoggerDialog.pack()
     }
 
     private fun getMessage(statusTokenValidationFailMessageKey: String): String {
