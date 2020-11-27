@@ -34,18 +34,20 @@ internal class SocksProxyToAgentTcpChannelHandler(
                               proxyMessage: ProxyMessage) {
         val proxyChannel = proxyChannelContext.channel()
         val tcpConnectionInfo = proxyChannel.attr(SOCKS_TCP_CONNECTION_INFO).get()
-        if (tcpConnectionInfo == null && proxyMessage.body.bodyType != ProxyMessageBodyType.OK_UDP) {
-            logger.error {
-                "Fail to send proxy message to agent because of no connection information attached, proxy channel = ${
-                    proxyChannel.id().asLongText()
-                }"
-            }
-            proxyChannel.close()
-            return
-        }
-        val agentTcpChannel = tcpConnectionInfo.agentTcpChannel
+
+
         when (proxyMessage.body.bodyType) {
             ProxyMessageBodyType.CONNECT_SUCCESS -> {
+                if (tcpConnectionInfo == null) {
+                    logger.error {
+                        "Fail to send proxy message to agent because of no connection information attached, proxy channel = ${
+                            proxyChannel.id().asLongText()
+                        }"
+                    }
+                    proxyChannel.close()
+                    return
+                }
+                val agentTcpChannel = tcpConnectionInfo.agentTcpChannel
                 agentTcpChannel.writeAndFlush(
                     DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS,
                         tcpConnectionInfo.targetAddressType, tcpConnectionInfo.targetHost,
@@ -91,6 +93,16 @@ internal class SocksProxyToAgentTcpChannelHandler(
                 return
             }
             ProxyMessageBodyType.HEARTBEAT -> {
+                if (tcpConnectionInfo == null) {
+                    logger.error {
+                        "Fail to send proxy message to agent because of no connection information attached, proxy channel = ${
+                            proxyChannel.id().asLongText()
+                        }"
+                    }
+                    proxyChannel.close()
+                    return
+                }
+                val agentTcpChannel = tcpConnectionInfo.agentTcpChannel
                 val originalData = proxyMessage.body.data
                 val heartbeat = JSON_OBJECT_MAPPER.readValue(originalData, Heartbeat::class.java)
                 logger.debug {
@@ -115,6 +127,16 @@ internal class SocksProxyToAgentTcpChannelHandler(
                 return
             }
             ProxyMessageBodyType.CONNECT_FAIL -> {
+                if (tcpConnectionInfo == null) {
+                    logger.error {
+                        "Fail to send proxy message to agent because of no connection information attached, proxy channel = ${
+                            proxyChannel.id().asLongText()
+                        }"
+                    }
+                    proxyChannel.close()
+                    return
+                }
+                val agentTcpChannel = tcpConnectionInfo.agentTcpChannel
                 logger.error {
                     "Fail connect to proxy, agent channel = ${
                         agentTcpChannel.id().asLongText()
@@ -131,6 +153,16 @@ internal class SocksProxyToAgentTcpChannelHandler(
                 return
             }
             ProxyMessageBodyType.OK_TCP -> {
+                if (tcpConnectionInfo == null) {
+                    logger.error {
+                        "Fail to send proxy message to agent because of no connection information attached, proxy channel = ${
+                            proxyChannel.id().asLongText()
+                        }"
+                    }
+                    proxyChannel.close()
+                    return
+                }
+                val agentTcpChannel = tcpConnectionInfo.agentTcpChannel
                 logger.debug("Write proxy message to agent: \n{}\n", proxyMessage)
                 agentTcpChannel.writeAndFlush(
                     Unpooled.wrappedBuffer(proxyMessage.body.data))
