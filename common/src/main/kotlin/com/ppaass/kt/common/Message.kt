@@ -42,9 +42,9 @@ class MessageBody<T>(
      */
     val data: ByteArray) where T : MessageBodyType, T : Enum<T> {
     override fun toString(): String {
-        return "MessageBody(id='$id', userToken='$userToken', targetHost='$targetHost', targetPort=$targetPort, bodyType=$bodyType, data=${
+        return "MessageBody(id='$id', userToken='$userToken', targetHost='$targetHost', targetPort=$targetPort, bodyType=$bodyType, data=\n${
             ByteBufUtil.prettyHexDump(Unpooled.wrappedBuffer(data))
-        })"
+        }\n)"
     }
 }
 
