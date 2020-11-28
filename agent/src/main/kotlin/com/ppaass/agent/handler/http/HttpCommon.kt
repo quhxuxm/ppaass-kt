@@ -141,7 +141,7 @@ fun writeAgentMessageToProxy(bodyType: AgentMessageBodyType, userToken: String,
             val tempChannel = EmbeddedChannel(HttpRequestEncoder())
             tempChannel.writeOutbound(input)
             val httpRequestByteBuf = tempChannel.readOutbound<ByteBuf>()
-            return@innerLet ByteBufUtil.getBytes(httpRequestByteBuf)
+            return@let ByteBufUtil.getBytes(httpRequestByteBuf)
         }
         return@let ByteBufUtil.getBytes(input as ByteBuf)
     } ?: byteArrayOf()
