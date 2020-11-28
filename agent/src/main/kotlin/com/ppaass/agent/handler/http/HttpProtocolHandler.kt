@@ -182,15 +182,117 @@ internal class HttpProtocolHandler(private val agentConfiguration: AgentConfigur
 
     override fun channelRead0(agentChannelContext: ChannelHandlerContext, httpProxyInput: Any) {
         val agentChannel = agentChannelContext.channel()
-        if (httpProxyInput !is FullHttpRequest) {
-            //A https request to send data
-            val connectionInfo = agentChannel.attr(HTTP_CONNECTION_INFO).get()
-            if (connectionInfo == null) {
-                logger.error(
-                    "Fail to send https data from agent to proxy because of no connection information attached, agent channel = {}",
-                    agentChannel.id().asLongText())
+        (httpProxyInput as? FullHttpRequest)?.let {
+            //HTTPS CONNECT request or HTTP request
+            val connectionHeader = httpProxyInput.headers()[HttpHeaderNames.PROXY_CONNECTION]
+                ?: httpProxyInput.headers()[HttpHeaderNames.CONNECTION]
+            val connectionKeepAlive =
+                HttpHeaderValues.KEEP_ALIVE.contentEqualsIgnoreCase(connectionHeader)
+            if (HttpMethod.CONNECT == httpProxyInput.method()) {
+                //A https request to setup the connection
+                val connectionInfo = parseConnectionInfo(httpProxyInput.uri())
+                connectionInfo?.let {
+                    logger.debug {
+                        "Incoming HTTPS method is CONNECT, request have a connection information already, agent channel = ${
+                            agentChannel.id().asLongText()
+                        }, connection information: ${
+                            connectionInfo
+                        }, http request: ${
+                            httpProxyInput
+                        }"
+                    }
+                    connectionInfo.isKeepAlive = connectionKeepAlive
+                    proxyBootstrapForHttps.connect(agentConfiguration.proxyHost,
+                        agentConfiguration.proxyPort!!)
+                        .addListener(
+                            HttpProxyConnectListener(agentChannel, connectionInfo,
+                                agentConfiguration,
+                                null,
+                                proxyBootstrapForHttps))
+                    return
+                }
+                logger.error {
+                    "Can not parse connection information from incoming uri (1), uri = ${
+                        httpProxyInput.uri()
+                    }."
+                }
                 agentChannel.close()
                 return
+            }
+            // A http request
+            logger.debug {
+                "Incoming request is a HTTP request, agent channel = ${
+                    agentChannel.id().asLongText()
+                }, http request: ${
+                    httpProxyInput
+                }"
+            }
+            ReferenceCountUtil.retain<Any>(httpProxyInput, 1)
+            var connectionInfo = agentChannel.attr(HTTP_CONNECTION_INFO).get()
+            connectionInfo?.let {
+                //Http connection created already
+                logger.debug {
+                    "Incoming HTTP request have a connection information already, agent channel = ${
+                        agentChannel.id().asLongText()
+                    }, connection information: ${
+                        connectionInfo
+                    }, http request: ${
+                        httpProxyInput
+                    }"
+                }
+                writeAgentMessageToProxy(
+                    bodyType = AgentMessageBodyType.TCP_DATA,
+                    userToken = connectionInfo.userToken!!,
+                    proxyChannel = connectionInfo.proxyChannel!!,
+                    input = httpProxyInput,
+                    targetHost = connectionInfo.targetHost,
+                    targetPort = connectionInfo.targetPort,
+                    writeCallback = HttpWriteDataToProxyListener(agentChannel, httpProxyInput,
+                        connectionInfo,
+                        agentConfiguration))
+                return
+            }
+            //First time create http connection
+            connectionInfo = parseConnectionInfo(httpProxyInput.uri())
+            connectionInfo?.let {
+                logger.debug {
+                    "Incoming HTTP request do not a connection information, parse it from uri, agent channel = ${
+                        agentChannel.id().asLongText()
+                    }, connection information: ${
+                        connectionInfo
+                    }, http request: ${
+                        httpProxyInput
+                    }"
+                }
+                connectionInfo.isKeepAlive = connectionKeepAlive
+                proxyBootstrapForHttp.connect(agentConfiguration.proxyHost,
+                    agentConfiguration.proxyPort!!)
+                    .addListener(
+                        HttpProxyConnectListener(agentChannel, connectionInfo,
+                            agentConfiguration,
+                            httpProxyInput,
+                            proxyBootstrapForHttp))
+                return
+            }
+            logger.error {
+                "Can not parse connection information from incoming uri (2), uri = ${
+                    httpProxyInput.uri()
+                }."
+            }
+            agentChannel.close()
+            return
+        }
+        //A https request to send data
+        val connectionInfo = agentChannel.attr(HTTP_CONNECTION_INFO).get()
+        connectionInfo?.let {
+            logger.debug {
+                "Incoming HTTPS request have a connection information already, agent channel = ${
+                    agentChannel.id().asLongText()
+                }, connection information: ${
+                    connectionInfo
+                }, http request: ${
+                    httpProxyInput
+                }"
             }
             writeAgentMessageToProxy(
                 bodyType = AgentMessageBodyType.TCP_DATA,
@@ -204,67 +306,11 @@ internal class HttpProtocolHandler(private val agentConfiguration: AgentConfigur
                     agentConfiguration))
             return
         }
-        var connectionHeader = httpProxyInput.headers()[HttpHeaderNames.PROXY_CONNECTION]
-        if (connectionHeader == null) {
-            connectionHeader = httpProxyInput.headers()[HttpHeaderNames.CONNECTION]
-        }
-        val connectionKeepAlive =
-            HttpHeaderValues.KEEP_ALIVE.contentEqualsIgnoreCase(connectionHeader)
-        if (HttpMethod.CONNECT == httpProxyInput.method()) {
-            //A https request to setup the connection
-            val connectionInfo = parseConnectionInfo(httpProxyInput.uri())
-            if (connectionInfo == null) {
-                logger.error {
-                    "Can not parse connection information from incoming uri (1), uri = ${
-                        httpProxyInput.uri()
-                    }."
-                }
-                agentChannel.close()
-                return
-            }
-            connectionInfo.isKeepAlive = connectionKeepAlive
-            proxyBootstrapForHttps.connect(agentConfiguration.proxyHost,
-                agentConfiguration.proxyPort!!)
-                .addListener(
-                    HttpProxyConnectListener(agentChannel, connectionInfo, agentConfiguration, null,
-                        proxyBootstrapForHttps))
-            return
-        }
-        // A http request
-        ReferenceCountUtil.retain<Any>(httpProxyInput, 1)
-        var connectionInfo = agentChannel.attr(HTTP_CONNECTION_INFO).get()
-        if (connectionInfo == null) {
-            //First time create http connection
-            connectionInfo = parseConnectionInfo(httpProxyInput.uri())
-            connectionInfo?.let {
-                connectionInfo.isKeepAlive = connectionKeepAlive
-                proxyBootstrapForHttp.connect(agentConfiguration.proxyHost,
-                    agentConfiguration.proxyPort!!)
-                    .addListener(
-                        HttpProxyConnectListener(agentChannel, connectionInfo, agentConfiguration,
-                            httpProxyInput,
-                            proxyBootstrapForHttp))
-                return
-            }
-            logger.error {
-                "Can not parse connection information from incoming uri (2), uri = ${
-                    httpProxyInput.uri()
-                }."
-            }
-            agentChannel.close()
-            return
-        }
-        //Http connection created already
-        writeAgentMessageToProxy(
-            bodyType = AgentMessageBodyType.TCP_DATA,
-            userToken = connectionInfo.userToken!!,
-            proxyChannel = connectionInfo.proxyChannel!!,
-            input = httpProxyInput,
-            targetHost = connectionInfo.targetHost,
-            targetPort = connectionInfo.targetPort,
-            writeCallback = HttpWriteDataToProxyListener(agentChannel, httpProxyInput,
-                connectionInfo,
-                agentConfiguration))
+        logger.error(
+            "Fail to send https data from agent to proxy because of no connection information attached, agent channel = {}",
+            agentChannel.id().asLongText())
+        agentChannel.close()
+        return
     }
 
     override fun exceptionCaught(agentChannelContext: ChannelHandlerContext, cause: Throwable) {

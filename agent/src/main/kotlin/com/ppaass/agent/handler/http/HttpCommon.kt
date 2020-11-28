@@ -56,6 +56,17 @@ data class HttpConnectionInfo(
     var agentChannel: Channel? = null
     var isKeepAlive: Boolean = true
     var httpMessageCarriedOnConnectTime: Any? = null
+    override fun toString(): String {
+        return "HttpConnectionInfo(targetHost='${
+            targetHost
+        }', targetPort=${
+            targetPort
+        }, isHttps=${isHttps}, userToken=${userToken}, proxyChannel=${
+            proxyChannel?.id()?.asLongText()
+        }, agentChannel=${
+            agentChannel?.id()?.asLongText()
+        }, isKeepAlive=${isKeepAlive}, httpMessageCarriedOnConnectTime=${httpMessageCarriedOnConnectTime})"
+    }
 }
 
 fun parseConnectionInfo(uri: String): HttpConnectionInfo? {
@@ -125,17 +136,15 @@ fun writeAgentMessageToProxy(bodyType: AgentMessageBodyType, userToken: String,
                              proxyChannel: Channel, input: Any?,
                              targetHost: String, targetPort: Int,
                              writeCallback: ChannelFutureListener?) {
-    var data: ByteArray = byteArrayOf()
-    if (input != null) {
-        if (input is HttpRequest) {
+    val data = input?.let {
+        (input as? HttpRequest)?.let innerLet@{
             val tempChannel = EmbeddedChannel(HttpRequestEncoder())
             tempChannel.writeOutbound(input)
             val httpRequestByteBuf = tempChannel.readOutbound<ByteBuf>()
-            data = ByteBufUtil.getBytes(httpRequestByteBuf)
-        } else {
-            data = ByteBufUtil.getBytes(input as ByteBuf)
+            return@innerLet ByteBufUtil.getBytes(httpRequestByteBuf)
         }
-    }
+        return@let ByteBufUtil.getBytes(input as ByteBuf)
+    } ?: byteArrayOf()
     val agentMessageBody =
         AgentMessageBody(
             id = generateUuid(),
@@ -150,7 +159,7 @@ fun writeAgentMessageToProxy(bodyType: AgentMessageBodyType, userToken: String,
             encryptionType = EncryptionType.choose(),
             body = agentMessageBody)
     val writeResultFuture = proxyChannel.writeAndFlush(agentMessage)
-    if (writeCallback != null) {
+    writeCallback?.let {
         writeResultFuture.addListener(writeCallback)
     }
 }
@@ -224,7 +233,6 @@ private class HttpConfigure {
             option(ChannelOption.AUTO_CLOSE, false)
             option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
             option(ChannelOption.TCP_NODELAY, true)
-
             option(ChannelOption.SO_LINGER,
                 agentConfiguration.proxyTcpSoLinger)
             option(ChannelOption.SO_RCVBUF,
