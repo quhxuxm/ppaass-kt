@@ -111,9 +111,10 @@ enum class ChannelProtocolCategory {
     HTTP, SOCKS
 }
 
+@JvmField
 internal val CHANNEL_PROTOCOL_CATEGORY: AttributeKey<ChannelProtocolCategory> =
     AttributeKey.valueOf("CHANNEL_PROTOCOL_TYPE")
-internal val LAST_INBOUND_HANDLER = "LAST_INBOUND_HANDLER"
+internal const val LAST_INBOUND_HANDLER = "LAST_INBOUND_HANDLER"
 
 @Configuration
 private class Configure(private val agentConfiguration: AgentConfiguration) {

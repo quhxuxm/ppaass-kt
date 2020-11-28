@@ -20,7 +20,7 @@ import io.netty.handler.codec.compression.Lz4FrameEncoder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
-const val LOCAL_IP_ADDRESS = "127.0.0.1"
+internal const val LOCAL_IP_ADDRESS = "127.0.0.1"
 
 @Configuration
 private class SocksConfigure(private val agentConfiguration: AgentConfiguration) {

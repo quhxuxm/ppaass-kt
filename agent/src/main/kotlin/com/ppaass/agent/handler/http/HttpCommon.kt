@@ -29,14 +29,11 @@ import io.netty.handler.codec.http.HttpObjectAggregator
 import io.netty.handler.codec.http.HttpRequest
 import io.netty.handler.codec.http.HttpRequestEncoder
 import io.netty.handler.codec.http.HttpResponseDecoder
-import io.netty.util.AttributeKey
 import mu.KotlinLogging
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.util.UriComponentsBuilder
 
-internal val HTTP_CONNECTION_INFO: AttributeKey<HttpConnectionInfo> =
-    AttributeKey.valueOf("HTTP_CONNECTION_INFO")
 private val logger = KotlinLogging.logger { }
 private const val HTTP_SCHEMA = "http://"
 private const val HTTPS_SCHEMA = "https://"
@@ -46,30 +43,7 @@ private const val SLASH = "/"
 private const val DEFAULT_HTTP_PORT = 80
 private const val DEFAULT_HTTPS_PORT = 443
 
-data class HttpConnectionInfo(
-    val targetHost: String,
-    val targetPort: Int,
-    val isHttps: Boolean
-) {
-    var userToken: String? = null
-    var proxyChannel: Channel? = null
-    var agentChannel: Channel? = null
-    var isKeepAlive: Boolean = true
-    var httpMessageCarriedOnConnectTime: Any? = null
-    override fun toString(): String {
-        return "HttpConnectionInfo(targetHost='${
-            targetHost
-        }', targetPort=${
-            targetPort
-        }, isHttps=${isHttps}, userToken=${userToken}, proxyChannel=${
-            proxyChannel?.id()?.asLongText()
-        }, agentChannel=${
-            agentChannel?.id()?.asLongText()
-        }, isKeepAlive=${isKeepAlive}, httpMessageCarriedOnConnectTime=${httpMessageCarriedOnConnectTime})"
-    }
-}
-
-fun parseConnectionInfo(uri: String): HttpConnectionInfo? {
+internal fun parseConnectionInfo(uri: String): HttpConnectionInfo? {
     if (uri.startsWith(HTTP_SCHEMA)) {
         val uriComponentsBuilder = UriComponentsBuilder.fromUriString(uri)
         val uriComponents = uriComponentsBuilder.build()
@@ -132,10 +106,10 @@ fun parseConnectionInfo(uri: String): HttpConnectionInfo? {
     return connectionInfo
 }
 
-fun writeAgentMessageToProxy(bodyType: AgentMessageBodyType, userToken: String,
-                             proxyChannel: Channel, input: Any?,
-                             targetHost: String, targetPort: Int,
-                             writeCallback: ChannelFutureListener?) {
+internal fun writeAgentMessageToProxy(bodyType: AgentMessageBodyType, userToken: String,
+                                      proxyChannel: Channel, input: Any?,
+                                      targetHost: String, targetPort: Int,
+                                      writeCallback: ChannelFutureListener?) {
     val data = input?.let {
         (input as? HttpRequest)?.let innerLet@{
             val tempChannel = EmbeddedChannel(HttpRequestEncoder())

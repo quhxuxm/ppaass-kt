@@ -7,8 +7,11 @@ import io.netty.handler.codec.socksx.v5.Socks5AddressType
 import io.netty.util.AttributeKey
 import java.net.InetSocketAddress
 
+@JvmField
 internal val SOCKS_TCP_CONNECTION_INFO: AttributeKey<SocksTcpConnectionInfo> =
     AttributeKey.valueOf("SOCKS_TCP_CONNECTION_INFO")
+
+@JvmField
 internal val SOCKS_UDP_CONNECTION_INFO: AttributeKey<SocksUdpConnectionInfo> =
     AttributeKey.valueOf("SOCKS_UDP_CONNECTION_INFO")
 
