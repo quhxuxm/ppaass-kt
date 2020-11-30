@@ -5,6 +5,7 @@ import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
 import io.netty.util.ReferenceCountUtil
 import mu.KotlinLogging
+import org.apache.commons.codec.binary.Hex
 import org.apache.commons.codec.digest.DigestUtils
 import java.util.*
 
@@ -174,8 +175,8 @@ val JSON_OBJECT_MAPPER = jacksonObjectMapper()
 fun <T> encodeMessage(message: Message<T>,
                       publicKeyString: String,
                       output: ByteBuf) where T : Enum<T>, T : MessageBodyType {
-    val originalMessageBodyEncryptionToken: String =
-        DigestUtils.md5Hex(generateUuid())
+    val originalMessageBodyEncryptionToken =
+        String(Hex.encodeHex(DigestUtils.md5(generateUuid())));
     val encryptedMessageBodyEncryptionToken = rsaEncrypt(originalMessageBodyEncryptionToken,
         publicKeyString)
     output.writeBytes(MAGIC_CODE)
