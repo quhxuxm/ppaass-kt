@@ -167,7 +167,11 @@ fun rsaEncrypt(target: String, publicKeyString: String): String {
         Base64.getEncoder().encodeToString(cipher.doFinal())
     } catch (e: Exception) {
         logger.error(e) {
-            "Fail to encrypt data with rsa public key because of exception. RSA public key: \n$publicKeyString\n"
+            "Fail to encrypt data with rsa public key because of exception. Target data: \n${
+                target
+            }\nRSA public key: \n${
+                publicKeyString
+            }\n"
         }
         throw PpaassException("Fail to encrypt data with rsa public key because of exception.", e)
     }
@@ -191,7 +195,11 @@ fun rsaDecrypt(target: String, privateKeyString: String): String {
         String(cipher.doFinal(), Charsets.UTF_8)
     } catch (e: java.lang.Exception) {
         logger.error(e) {
-            "Fail to decrypt data with rsa private key because of exception. RSA private key: \n$privateKeyString\n"
+            "Fail to decrypt data with rsa private key because of exception. Target data:\n${
+                target
+            }\nRSA private key: \n${
+                privateKeyString
+            }\n"
         }
         throw PpaassException("Fail to decrypt data with rsa private key because of exception.", e)
     }
