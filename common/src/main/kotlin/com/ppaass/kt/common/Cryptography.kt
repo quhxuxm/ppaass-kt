@@ -197,7 +197,7 @@ fun rsaDecrypt(target: String, privateKeyString: String): String {
         logger.error(e) {
             "Fail to decrypt data with rsa private key because of exception. Target data:\n${
                 target
-            }\nRSA private key: \n${
+            }\nRSA private key:\n${
                 privateKeyString
             }\n"
         }
