@@ -1,10 +1,10 @@
 package com.ppaass.kt.common
 
 import mu.KotlinLogging
-import org.apache.commons.codec.binary.Base64
 import java.security.KeyFactory
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
+import java.util.*
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import kotlin.random.Random
@@ -157,13 +157,13 @@ fun blowfishDecrypt(encryptionToken: String, aesData: ByteArray): ByteArray {
  */
 fun rsaEncrypt(target: String, publicKeyString: String): String {
     return try {
-        val publicKeySpec = X509EncodedKeySpec(Base64.decodeBase64(publicKeyString))
+        val publicKeySpec = X509EncodedKeySpec(Base64.getDecoder().decode(publicKeyString))
         val keyFactory = KeyFactory.getInstance(ALGORITHM_RSA)
         val publicKey = keyFactory.generatePublic(publicKeySpec)
         val cipher = Cipher.getInstance(publicKey.algorithm)
         cipher.init(Cipher.ENCRYPT_MODE, publicKey)
         cipher.update(target.toByteArray(Charsets.UTF_8))
-        Base64.encodeBase64String(cipher.doFinal())
+        Base64.getEncoder().encodeToString(cipher.doFinal())
     } catch (e: Exception) {
         logger.error(e) {
             "Fail to encrypt data with rsa public key because of exception. RSA public key: \n$publicKeyString\n"
@@ -181,12 +181,12 @@ fun rsaEncrypt(target: String, publicKeyString: String): String {
  */
 fun rsaDecrypt(target: String, privateKeyString: String): String {
     return try {
-        val privateKeySpec = PKCS8EncodedKeySpec(Base64.decodeBase64(privateKeyString))
+        val privateKeySpec = PKCS8EncodedKeySpec(Base64.getDecoder().decode(privateKeyString))
         val keyFactory = KeyFactory.getInstance(ALGORITHM_RSA)
         val privateKey = keyFactory.generatePrivate(privateKeySpec)
         val cipher = Cipher.getInstance(privateKey.algorithm)
         cipher.init(Cipher.DECRYPT_MODE, privateKey)
-        cipher.update(Base64.decodeBase64(target))
+        cipher.update(Base64.getDecoder().decode(target))
         String(cipher.doFinal(), Charsets.UTF_8)
     } catch (e: java.lang.Exception) {
         logger.error(e) {
