@@ -1,5 +1,7 @@
 package com.ppaass.kt.common
 
+import io.netty.buffer.ByteBufUtil
+import io.netty.buffer.Unpooled
 import mu.KotlinLogging
 import java.security.KeyFactory
 import java.security.KeyPairGenerator
@@ -163,7 +165,13 @@ fun rsaEncrypt(target: String, publicKeyString: String): String {
         val publicKey = keyFactory.generatePublic(publicKeySpec)
         val cipher = Cipher.getInstance(publicKey.algorithm)
         cipher.init(Cipher.ENCRYPT_MODE, publicKey)
-        cipher.update(target.toByteArray(Charsets.UTF_8))
+        val encryptionTokenBytes = target.toByteArray(Charsets.UTF_8)
+        logger.debug {
+            "The encryption token before do rsa: ${
+                ByteBufUtil.prettyHexDump(Unpooled.wrappedBuffer(encryptionTokenBytes))
+            }"
+        }
+        cipher.update(encryptionTokenBytes)
         Base64.getEncoder().encodeToString(cipher.doFinal())
     } catch (e: Exception) {
         logger.error(e) {
@@ -181,7 +189,7 @@ fun rsaEncrypt(target: String, publicKeyString: String): String {
  * Do RSA decryption with private key.
  *
  * @param target Target data to do decrypt.
- * @param publicKeyString The private key.
+ * @param privateKeyString The private key.
  * @return The decrypt result
  */
 fun rsaDecrypt(target: String, privateKeyString: String): String {
@@ -191,7 +199,13 @@ fun rsaDecrypt(target: String, privateKeyString: String): String {
         val privateKey = keyFactory.generatePrivate(privateKeySpec)
         val cipher = Cipher.getInstance(privateKey.algorithm)
         cipher.init(Cipher.DECRYPT_MODE, privateKey)
-        cipher.update(Base64.getDecoder().decode(target))
+        val encryptionTokenBytes = Base64.getDecoder().decode(target)
+        logger.debug {
+            "The encryption token bytes after do rsa: ${
+                ByteBufUtil.prettyHexDump(Unpooled.wrappedBuffer(encryptionTokenBytes))
+            }"
+        }
+        cipher.update(encryptionTokenBytes)
         String(cipher.doFinal(), Charsets.UTF_8)
     } catch (e: java.lang.Exception) {
         logger.error(e) {
