@@ -178,8 +178,8 @@ fun <T> encodeMessage(message: Message<T>,
     val originalMessageBodyEncryptionToken = message.encryptionToken
     val encryptedMessageBodyEncryptionToken = rsaEncrypt(originalMessageBodyEncryptionToken,
         publicKeyString)
-    output.writeInt(encryptedMessageBodyEncryptionToken.length)
-    output.writeCharSequence(encryptedMessageBodyEncryptionToken,Charsets.UTF_8)
+    output.writeInt(encryptedMessageBodyEncryptionToken.toByteArray(Charsets.UTF_8).size)
+    output.writeCharSequence(encryptedMessageBodyEncryptionToken, Charsets.UTF_8)
     output.writeByte(message.encryptionType.value().toInt())
     val bodyByteBuf: ByteBuf = encodeMessageBody<T>(message.body,
         message.encryptionType,
