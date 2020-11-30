@@ -2,6 +2,7 @@ package com.ppaass.kt.common
 
 import mu.KotlinLogging
 import java.security.KeyFactory
+import java.security.KeyPairGenerator
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 import java.util.*
@@ -194,4 +195,39 @@ fun rsaDecrypt(target: String, privateKeyString: String): String {
         }
         throw PpaassException("Fail to decrypt data with rsa private key because of exception.", e)
     }
+}
+
+private class RsaKeyPair {
+    var publicKey: String? = null
+    var privateKey: String? = null
+    override fun toString(): String {
+        return "PUBLIC KEY:\n[$publicKey]\nPRIVATE KEY:\n[$privateKey]"
+    }
+}
+
+private fun generateRsaKeyPair(): RsaKeyPair {
+    val result = RsaKeyPair()
+    try {
+        val keyPairGen = KeyPairGenerator.getInstance(ALGORITHM_RSA)
+        keyPairGen.initialize(1024)
+        val keyPair = keyPairGen.generateKeyPair()
+        val publicKey = keyPair.public.encoded
+        result.publicKey = Base64.getEncoder().encodeToString(publicKey)
+        logger.info("RSA key pair public key:\n\${}", result.publicKey)
+        val privateKey = keyPair.private.encoded
+        result.privateKey = Base64.getEncoder().encodeToString(privateKey)
+        logger.info("RSA key pair private key:\n\${}", result.privateKey)
+    } catch (e: java.lang.Exception) {
+        throw PpaassException()
+    }
+    return result
+}
+
+fun main(args: Array<String>) {
+    println("\nGenerate agent RSA key pair:\n")
+    val agentKeyPair: RsaKeyPair = generateRsaKeyPair()
+    System.out.println(agentKeyPair)
+    println("\nGenerate proxy RSA key pair:\n")
+    val proxyKeyPair: RsaKeyPair = generateRsaKeyPair()
+    System.out.println(proxyKeyPair)
 }
