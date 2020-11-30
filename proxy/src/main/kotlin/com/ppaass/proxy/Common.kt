@@ -82,19 +82,18 @@ internal class ProxyConfiguration(
     proxyPrivateKeyFile: Resource,
     agentPublicKeyFile: Resource,
 ) {
-    val proxyPrivateKey: String by lazy {
-        val result =
+    val proxyPrivateKey: String
+    val agentPublicKey: String
+
+    init {
+        proxyPrivateKey =
             IOUtils.readLines(proxyPrivateKeyFile.inputStream, Charsets.UTF_8).reduce { a, b ->
                 return@reduce a + b
             }
-        result
-    }
-    val agentPublicKey: String by lazy {
-        val result =
+        agentPublicKey =
             IOUtils.readLines(agentPublicKeyFile.inputStream, Charsets.UTF_8).reduce { a, b ->
                 return@reduce a + b
             }
-        result
     }
 }
 

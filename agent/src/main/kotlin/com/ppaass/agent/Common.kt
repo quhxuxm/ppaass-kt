@@ -59,20 +59,8 @@ class AgentConfiguration(
         private const val USER_HOME_PROPERTY = "user.home"
     }
 
-    val proxyPublicKey: String by lazy {
-        val result =
-            IOUtils.readLines(proxyPublicKeyFile.inputStream, Charsets.UTF_8).reduce { a, b ->
-                return@reduce a + b
-            }
-        result
-    }
-    val agentPrivateKey: String by lazy {
-        val result =
-            IOUtils.readLines(agentPrivateKeyFile.inputStream, Charsets.UTF_8).reduce { a, b ->
-                return@reduce a + b
-            }
-        result
-    }
+    val proxyPublicKey: String
+    val agentPrivateKey: String
 
     init {
         val userDirectory = System.getProperty(USER_HOME_PROPERTY)
@@ -87,6 +75,15 @@ class AgentConfiguration(
             this.proxyPort = agentDynamicConfiguration.proxyPort ?: this.proxyPort
             this.userToken = agentDynamicConfiguration.userToken ?: this.userToken
         }
+        proxyPublicKey =
+            IOUtils.readLines(proxyPublicKeyFile.inputStream, Charsets.UTF_8).reduce { a, b ->
+                return@reduce a + b
+            }
+
+        agentPrivateKey =
+            IOUtils.readLines(agentPrivateKeyFile.inputStream, Charsets.UTF_8).reduce { a, b ->
+                return@reduce a + b
+            }
     }
 
     fun save() {
