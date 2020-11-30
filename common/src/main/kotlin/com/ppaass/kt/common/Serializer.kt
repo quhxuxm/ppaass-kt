@@ -6,7 +6,6 @@ import io.netty.buffer.ByteBufUtil
 import io.netty.buffer.Unpooled
 import io.netty.util.ReferenceCountUtil
 import mu.KotlinLogging
-import org.apache.commons.codec.digest.DigestUtils
 import java.util.*
 
 private val logger = KotlinLogging.logger { }
@@ -176,7 +175,7 @@ fun <T> encodeMessage(message: Message<T>,
                       publicKeyString: String,
                       output: ByteBuf) where T : Enum<T>, T : MessageBodyType {
     output.writeBytes(MAGIC_CODE)
-    val originalMessageBodyEncryptionToken = DigestUtils.md5Hex(generateUuid())
+    val originalMessageBodyEncryptionToken = message.encryptionToken
     val encryptedMessageBodyEncryptionToken = rsaEncrypt(originalMessageBodyEncryptionToken,
         publicKeyString)
     output.writeInt(encryptedMessageBodyEncryptionToken.length)
