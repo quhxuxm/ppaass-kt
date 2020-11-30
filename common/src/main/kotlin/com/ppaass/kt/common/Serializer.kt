@@ -2,6 +2,7 @@ package com.ppaass.kt.common
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.netty.buffer.ByteBuf
+import io.netty.buffer.ByteBufUtil
 import io.netty.buffer.Unpooled
 import io.netty.util.ReferenceCountUtil
 import mu.KotlinLogging
@@ -200,7 +201,9 @@ fun decodeAgentMessage(input: ByteBuf,
     val magicCodeByteBuf = input.readBytes(MAGIC_CODE.size)
     if (magicCodeByteBuf.compareTo(Unpooled.wrappedBuffer(MAGIC_CODE)) != 0) {
         logger.error {
-            "Incoming message is not follow Ppaass protocol."
+            "Incoming agent message is not follow Ppaass protocol, incoming message is:\n${
+                ByteBufUtil.prettyHexDump(input)
+            }\n"
         }
         throw PpaassException("Incoming message is not follow Ppaass protocol.")
     }
@@ -234,7 +237,9 @@ fun decodeProxyMessage(input: ByteBuf,
     val magicCodeByteBuf = input.readBytes(MAGIC_CODE.size)
     if (magicCodeByteBuf.compareTo(Unpooled.wrappedBuffer(MAGIC_CODE)) != 0) {
         logger.error {
-            "Incoming message is not follow Ppaass protocol."
+            "Incoming proxy message is not follow Ppaass protocol, incoming message is:\n${
+                ByteBufUtil.prettyHexDump(input)
+            }\n"
         }
         throw PpaassException("Incoming message is not follow Ppaass protocol.")
     }
