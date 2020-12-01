@@ -14,7 +14,7 @@ import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import kotlin.random.Random
 
-private const val ALGORITHM_RSA = "RSA"
+private const val ALGORITHM_RSA = "RSA/ECB/PKCS1Padding"
 private const val ALGORITHM_AES = "AES"
 private const val ALGORITHM_BLOWFISH = "Blowfish"
 private const val AES_CIPHER = "AES/ECB/PKCS5Padding"
