@@ -178,7 +178,7 @@ fun rsaEncrypt(target: ByteArray, publicKeyString: String): ByteArray {
     } catch (e: Exception) {
         logger.error(e) {
             "Fail to encrypt data with rsa public key because of exception. Target data: \n${
-                target
+                ByteBufUtil.prettyHexDump(Unpooled.wrappedBuffer(target))
             }\nRSA public key: \n${
                 publicKeyString
             }\n"
@@ -206,7 +206,7 @@ fun rsaDecrypt(target: ByteArray, privateKeyString: String): ByteArray {
     } catch (e: java.lang.Exception) {
         logger.error(e) {
             "Fail to decrypt data with rsa private key because of exception. Target data:\n${
-                target
+                ByteBufUtil.prettyHexDump(Unpooled.wrappedBuffer(target))
             }\nRSA private key:\n${
                 privateKeyString
             }\n"
