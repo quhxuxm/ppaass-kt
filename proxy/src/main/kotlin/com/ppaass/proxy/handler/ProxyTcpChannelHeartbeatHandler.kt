@@ -6,7 +6,7 @@ import com.ppaass.kt.common.JSON_OBJECT_MAPPER
 import com.ppaass.kt.common.ProxyMessage
 import com.ppaass.kt.common.ProxyMessageBody
 import com.ppaass.kt.common.ProxyMessageBodyType
-import com.ppaass.kt.common.generateUuid
+import com.ppaass.kt.common.generateUuidInBytes
 import com.ppaass.proxy.ProxyConfiguration
 import io.netty.channel.ChannelFuture
 import io.netty.channel.ChannelFutureListener
@@ -82,7 +82,7 @@ internal class ProxyTcpChannelHeartbeatHandler(private val proxyConfiguration: P
         )
         val heartbeatMessage =
             ProxyMessage(
-                encryptionToken = generateUuid(),
+                encryptionToken = generateUuidInBytes(),
                 encryptionType = EncryptionType.choose(),
                 body = messageBody
             )

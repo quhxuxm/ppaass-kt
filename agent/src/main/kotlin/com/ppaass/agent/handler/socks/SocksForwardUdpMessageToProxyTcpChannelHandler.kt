@@ -6,6 +6,7 @@ import com.ppaass.kt.common.AgentMessageBody
 import com.ppaass.kt.common.AgentMessageBodyType
 import com.ppaass.kt.common.EncryptionType
 import com.ppaass.kt.common.generateUuid
+import com.ppaass.kt.common.generateUuidInBytes
 import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
@@ -40,7 +41,7 @@ internal class SocksForwardUdpMessageToProxyTcpChannelHandler(
                 targetPort = socks5UdpMessage.targetPort, data = udpData)
         val agentMessage =
             AgentMessage(
-                encryptionToken = generateUuid(),
+                encryptionToken = generateUuidInBytes(),
                 encryptionType = EncryptionType.choose(),
                 body = agentMessageBody)
         logger.debug { "Send udp message through tcp, agent message = ${agentMessage}" }

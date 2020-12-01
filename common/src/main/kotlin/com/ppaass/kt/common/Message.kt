@@ -55,7 +55,7 @@ class Message<T>(
     /**
      * The encryption token
      */
-    val encryptionToken: String = generateUuid(),
+    val encryptionToken: ByteArray = generateUuidInBytes(),
     /**
      * The encryption type
      */

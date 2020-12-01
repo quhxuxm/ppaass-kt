@@ -1,5 +1,7 @@
 package com.ppaass.kt.common
 
+import io.netty.buffer.ByteBufUtil
+import io.netty.buffer.Unpooled
 import mu.KotlinLogging
 import java.security.KeyFactory
 import java.security.KeyPairGenerator
@@ -62,18 +64,20 @@ enum class EncryptionType(private val value: Byte) {
  * @param data The data to do encryption.
  * @return The encrypt result
  */
-fun aesEncrypt(encryptionToken: String, data: ByteArray): ByteArray {
+fun aesEncrypt(encryptionToken: ByteArray, data: ByteArray): ByteArray {
     return try {
-        val key = SecretKeySpec(encryptionToken.toByteArray(Charsets.UTF_8), ALGORITHM_AES)
+        val key = SecretKeySpec(encryptionToken, ALGORITHM_AES)
         val cipher = Cipher.getInstance(AES_CIPHER)
         cipher.init(Cipher.ENCRYPT_MODE, key)
         cipher.doFinal(data)
     } catch (e: Exception) {
         logger.error(e) {
-            "Fail to encrypt data with encryption token in AES because of exception. Encryption token: \n$encryptionToken\n"
+            "Fail to encrypt data with encryption token in AES because of exception. Encryption token: \n${
+                ByteBufUtil.prettyHexDump(Unpooled.wrappedBuffer(encryptionToken))
+            }\n"
         }
         throw PpaassException(
-            "Fail to encrypt data with encryption token in AES because of exception. Encryption token: $encryptionToken",
+            "Fail to encrypt data with encryption token in AES because of exception.",
             e)
     }
 }
@@ -85,18 +89,20 @@ fun aesEncrypt(encryptionToken: String, data: ByteArray): ByteArray {
  * @param data The data encrypted.
  * @return The original data
  */
-fun aesDecrypt(encryptionToken: String, aesData: ByteArray): ByteArray {
+fun aesDecrypt(encryptionToken: ByteArray, aesData: ByteArray): ByteArray {
     return try {
-        val key = SecretKeySpec(encryptionToken.toByteArray(Charsets.UTF_8), ALGORITHM_AES)
+        val key = SecretKeySpec(encryptionToken, ALGORITHM_AES)
         val cipher = Cipher.getInstance(AES_CIPHER)
         cipher.init(Cipher.DECRYPT_MODE, key)
         cipher.doFinal(aesData)
     } catch (e: Exception) {
         logger.error(e) {
-            "Fail to decrypt data with encryption token in AES because of exception. Encryption token: \n$encryptionToken\n"
+            "Fail to decrypt data with encryption token in AES because of exception. Encryption token: \n${
+                ByteBufUtil.prettyHexDump(Unpooled.wrappedBuffer(encryptionToken))
+            }\n"
         }
         throw PpaassException(
-            "Fail to decrypt data with encryption token in AES because of exception. Encryption token: $encryptionToken",
+            "Fail to decrypt data with encryption token in AES because of exception.",
             e)
     }
 }
@@ -108,19 +114,21 @@ fun aesDecrypt(encryptionToken: String, aesData: ByteArray): ByteArray {
  * @param data The data to do encryption.
  * @return The encrypt result
  */
-fun blowfishEncrypt(encryptionToken: String, data: ByteArray): ByteArray {
+fun blowfishEncrypt(encryptionToken: ByteArray, data: ByteArray): ByteArray {
     return try {
         val key =
-            SecretKeySpec(encryptionToken.toByteArray(Charsets.UTF_8), ALGORITHM_BLOWFISH)
+            SecretKeySpec(encryptionToken, ALGORITHM_BLOWFISH)
         val cipher = Cipher.getInstance(BLOWFISH_CIPHER)
         cipher.init(Cipher.ENCRYPT_MODE, key)
         cipher.doFinal(data)
     } catch (e: Exception) {
         logger.error(e) {
-            "Fail to encrypt data with encryption token in Blowfish because of exception. Encryption token: \n$encryptionToken\n"
+            "Fail to encrypt data with encryption token in Blowfish because of exception. Encryption token: \n${
+                ByteBufUtil.prettyHexDump(Unpooled.wrappedBuffer(encryptionToken))
+            }\n"
         }
         throw PpaassException(
-            "Fail to encrypt data with encryption token in Blowfish because of exception. Encryption token: $encryptionToken",
+            "Fail to encrypt data with encryption token in Blowfish because of exception.",
             e)
     }
 }
@@ -132,19 +140,21 @@ fun blowfishEncrypt(encryptionToken: String, data: ByteArray): ByteArray {
  * @param data The data encrypted.
  * @return The original data
  */
-fun blowfishDecrypt(encryptionToken: String, aesData: ByteArray): ByteArray {
+fun blowfishDecrypt(encryptionToken: ByteArray, aesData: ByteArray): ByteArray {
     return try {
         val key =
-            SecretKeySpec(encryptionToken.toByteArray(Charsets.UTF_8), ALGORITHM_BLOWFISH)
+            SecretKeySpec(encryptionToken, ALGORITHM_BLOWFISH)
         val cipher = Cipher.getInstance(BLOWFISH_CIPHER)
         cipher.init(Cipher.DECRYPT_MODE, key)
         cipher.doFinal(aesData)
     } catch (e: Exception) {
         logger.error(e) {
-            "Fail to decrypt data with encryption token in Blowfish because of exception. Encryption token: \n$encryptionToken\n"
+            "Fail to decrypt data with encryption token in Blowfish because of exception. Encryption token: \n${
+                ByteBufUtil.prettyHexDump(Unpooled.wrappedBuffer(encryptionToken))
+            }\n"
         }
         throw PpaassException(
-            "Fail to decrypt data with encryption token in Blowfish because of exception. Encryption token: $encryptionToken",
+            "Fail to decrypt data with encryption token in Blowfish because of exception.",
             e)
     }
 }
@@ -156,16 +166,15 @@ fun blowfishDecrypt(encryptionToken: String, aesData: ByteArray): ByteArray {
  * @param publicKeyString The public key.
  * @return The encrypt result
  */
-fun rsaEncrypt(target: String, publicKeyString: String): String {
+fun rsaEncrypt(target: ByteArray, publicKeyString: String): ByteArray {
     return try {
         val publicKeySpec = X509EncodedKeySpec(Base64.getDecoder().decode(publicKeyString))
         val keyFactory = KeyFactory.getInstance(ALGORITHM_RSA)
         val publicKey = keyFactory.generatePublic(publicKeySpec)
         val cipher = Cipher.getInstance(publicKey.algorithm)
         cipher.init(Cipher.ENCRYPT_MODE, publicKey)
-        val encryptionTokenBytes = target.toByteArray(Charsets.UTF_8)
-        cipher.update(encryptionTokenBytes)
-        Base64.getEncoder().encodeToString(cipher.doFinal())
+        cipher.update(target)
+        cipher.doFinal()
     } catch (e: Exception) {
         logger.error(e) {
             "Fail to encrypt data with rsa public key because of exception. Target data: \n${
@@ -185,16 +194,15 @@ fun rsaEncrypt(target: String, publicKeyString: String): String {
  * @param privateKeyString The private key.
  * @return The decrypt result
  */
-fun rsaDecrypt(target: String, privateKeyString: String): String {
+fun rsaDecrypt(target: ByteArray, privateKeyString: String): ByteArray {
     return try {
         val privateKeySpec = PKCS8EncodedKeySpec(Base64.getDecoder().decode(privateKeyString))
         val keyFactory = KeyFactory.getInstance(ALGORITHM_RSA)
         val privateKey = keyFactory.generatePrivate(privateKeySpec)
         val cipher = Cipher.getInstance(privateKey.algorithm)
         cipher.init(Cipher.DECRYPT_MODE, privateKey)
-        val encryptionTokenBytes = Base64.getDecoder().decode(target)
-        cipher.update(encryptionTokenBytes)
-        String(cipher.doFinal(), Charsets.UTF_8)
+        cipher.update(target)
+        cipher.doFinal()
     } catch (e: java.lang.Exception) {
         logger.error(e) {
             "Fail to decrypt data with rsa private key because of exception. Target data:\n${

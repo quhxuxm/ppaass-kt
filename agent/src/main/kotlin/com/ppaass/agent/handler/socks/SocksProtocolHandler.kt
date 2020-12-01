@@ -6,6 +6,7 @@ import com.ppaass.kt.common.AgentMessageBody
 import com.ppaass.kt.common.AgentMessageBodyType
 import com.ppaass.kt.common.EncryptionType
 import com.ppaass.kt.common.generateUuid
+import com.ppaass.kt.common.generateUuidInBytes
 import io.netty.bootstrap.Bootstrap
 import io.netty.channel.Channel
 import io.netty.channel.ChannelFuture
@@ -88,7 +89,7 @@ private class SocksProxyTcpChannelConnectListener(
             targetPort = tcpConnectionInfo.targetPort,
             data = byteArrayOf())
         val agentMessage = AgentMessage(
-            encryptionToken = generateUuid(),
+            encryptionToken = generateUuidInBytes(),
             encryptionType = EncryptionType.choose(),
             body = agentMessageBody)
         val agentChannelPipeline = agentChannel.pipeline()

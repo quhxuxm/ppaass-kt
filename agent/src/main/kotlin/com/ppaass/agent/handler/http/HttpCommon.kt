@@ -9,6 +9,7 @@ import com.ppaass.kt.common.EncryptionType
 import com.ppaass.kt.common.PrintExceptionHandler
 import com.ppaass.kt.common.ProxyMessageDecoder
 import com.ppaass.kt.common.generateUuid
+import com.ppaass.kt.common.generateUuidInBytes
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufUtil
@@ -132,7 +133,7 @@ internal fun writeAgentMessageToProxy(bodyType: AgentMessageBodyType, userToken:
             data = data)
     val agentMessage =
         AgentMessage(
-            encryptionToken = generateUuid(),
+            encryptionToken = generateUuidInBytes(),
             encryptionType = EncryptionType.choose(),
             body = agentMessageBody)
     val writeResultFuture = proxyChannel.writeAndFlush(agentMessage)
