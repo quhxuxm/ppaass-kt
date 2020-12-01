@@ -205,7 +205,7 @@ fun rsaDecrypt(target: ByteArray, privateKeyBytes: ByteArray): ByteArray {
         cipher.init(Cipher.DECRYPT_MODE, privateKey)
         cipher.update(target)
         cipher.doFinal()
-    } catch (e: java.lang.Exception) {
+    } catch (e: Exception) {
         logger.error(e) {
             "Fail to decrypt data with rsa private key because of exception. Target data:\n${
                 ByteBufUtil.prettyHexDump(Unpooled.wrappedBuffer(target))
