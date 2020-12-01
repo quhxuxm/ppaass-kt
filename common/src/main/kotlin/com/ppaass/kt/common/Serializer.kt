@@ -177,12 +177,12 @@ val JSON_OBJECT_MAPPER = jacksonObjectMapper()
  * @param output The output byte buffer
  */
 fun <T> encodeMessage(message: Message<T>,
-                      publicKeyString: String,
+                      publicKey: ByteArray,
                       output: ByteBuf) where T : Enum<T>, T : MessageBodyType {
     output.writeBytes(MAGIC_CODE)
     val originalMessageBodyEncryptionToken = message.encryptionToken
     val encryptedMessageBodyEncryptionToken = rsaEncrypt(originalMessageBodyEncryptionToken,
-        publicKeyString)
+        publicKey)
     output.writeInt(encryptedMessageBodyEncryptionToken.size)
     output.writeBytes(encryptedMessageBodyEncryptionToken)
     output.writeByte(message.encryptionType.value().toInt())
@@ -195,11 +195,11 @@ fun <T> encodeMessage(message: Message<T>,
 /**
  * Decode agent message from input byte buffer.
  * @param input The input byte buffer.
- * @param proxyPrivateKeyString The proxy private key base64 string
+ * @param proxyPrivateKey The proxy private key
  * @return The agent message
  */
 fun decodeAgentMessage(input: ByteBuf,
-                       proxyPrivateKeyString: String): AgentMessage {
+                       proxyPrivateKey: ByteArray): AgentMessage {
     val magicCodeByteBuf = input.readBytes(MAGIC_CODE.size)
     if (magicCodeByteBuf.compareTo(Unpooled.wrappedBuffer(MAGIC_CODE)) != 0) {
         logger.error {
@@ -214,7 +214,7 @@ fun decodeAgentMessage(input: ByteBuf,
     input.readBytes(encryptedMessageBodyEncryptionToken)
     val messageBodyEncryptionToken =
         rsaDecrypt(encryptedMessageBodyEncryptionToken,
-            proxyPrivateKeyString)
+            proxyPrivateKey)
     val messageBodyEncryptionType = input.readByte().parseEncryptionType() ?: throw PpaassException(
         "Can not parse encryption type from the message.");
     val messageBodyByteArray = ByteArray(input.readableBytes())
@@ -230,11 +230,11 @@ fun decodeAgentMessage(input: ByteBuf,
 /**
  * Decode proxy message from input byte buffer.
  * @param input The input byte buffer.
- * @param proxyPrivateKeyString The agent private key base64 string
+ * @param agentPrivateKey The agent private key
  * @return The proxy message
  */
 fun decodeProxyMessage(input: ByteBuf,
-                       agentPrivateKeyString: String): ProxyMessage {
+                       agentPrivateKey: ByteArray): ProxyMessage {
     val magicCodeByteBuf = input.readBytes(MAGIC_CODE.size)
     if (magicCodeByteBuf.compareTo(Unpooled.wrappedBuffer(MAGIC_CODE)) != 0) {
         logger.error {
@@ -250,7 +250,7 @@ fun decodeProxyMessage(input: ByteBuf,
     input.readBytes(encryptedMessageBodyEncryptionToken)
     val messageBodyEncryptionToken =
         rsaDecrypt(encryptedMessageBodyEncryptionToken,
-            agentPrivateKeyString)
+            agentPrivateKey)
     val messageBodyEncryptionType = input.readByte().parseEncryptionType() ?: throw PpaassException(
         "Can not parse encryption type from the message.");
     val messageBodyByteArray = ByteArray(input.readableBytes())

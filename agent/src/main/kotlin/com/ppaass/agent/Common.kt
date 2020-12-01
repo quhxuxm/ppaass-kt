@@ -7,7 +7,6 @@ import com.ppaass.kt.common.PrintExceptionHandler
 import io.netty.channel.EventLoopGroup
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.util.AttributeKey
-import org.apache.commons.io.IOUtils
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.context.annotation.Bean
@@ -59,8 +58,8 @@ class AgentConfiguration(
         private const val USER_HOME_PROPERTY = "user.home"
     }
 
-    val proxyPublicKey: String
-    val agentPrivateKey: String
+    val proxyPublicKey: ByteArray
+    val agentPrivateKey: ByteArray
 
     init {
         val userDirectory = System.getProperty(USER_HOME_PROPERTY)
@@ -75,15 +74,8 @@ class AgentConfiguration(
             this.proxyPort = agentDynamicConfiguration.proxyPort ?: this.proxyPort
             this.userToken = agentDynamicConfiguration.userToken ?: this.userToken
         }
-        proxyPublicKey =
-            IOUtils.readLines(proxyPublicKeyFile.inputStream, Charsets.UTF_8).reduce { a, b ->
-                return@reduce a + b
-            }
-
-        agentPrivateKey =
-            IOUtils.readLines(agentPrivateKeyFile.inputStream, Charsets.UTF_8).reduce { a, b ->
-                return@reduce a + b
-            }
+        proxyPublicKey = proxyPublicKeyFile.inputStream.readAllBytes()
+        agentPrivateKey = agentPrivateKeyFile.inputStream.readAllBytes()
     }
 
     fun save() {

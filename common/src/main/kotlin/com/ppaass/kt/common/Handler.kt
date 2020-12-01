@@ -11,9 +11,9 @@ import mu.KotlinLogging
 /**
  * Decode input buffer to agent message.
  *
- * @param proxyPrivateKeyString The private key base 64 string in proxy side.
+ * @param proxyPrivateKey The private key in proxy side.
  */
-class AgentMessageDecoder(private val proxyPrivateKeyString: String) :
+class AgentMessageDecoder(private val proxyPrivateKey: ByteArray) :
     ByteToMessageDecoder() {
     private companion object {
         private val logger = KotlinLogging.logger { }
@@ -21,7 +21,7 @@ class AgentMessageDecoder(private val proxyPrivateKeyString: String) :
 
     override fun decode(ctx: ChannelHandlerContext, input: ByteBuf, out: MutableList<Any>) {
         val message: AgentMessage = decodeAgentMessage(
-            input, proxyPrivateKeyString)
+            input, proxyPrivateKey)
         logger.debug("Decode result:\n{}\n", message)
         out.add(message)
     }
@@ -30,9 +30,9 @@ class AgentMessageDecoder(private val proxyPrivateKeyString: String) :
 /**
  * Encode agent message to output buffer.
  *
- * @param proxyPublicKeyString The public key base 64 string in proxy side.
+ * @param proxyPublicKey The public key in proxy side.
  */
-class AgentMessageEncoder(private val proxyPublicKeyString: String) :
+class AgentMessageEncoder(private val proxyPublicKey: ByteArray) :
     MessageToByteEncoder<AgentMessage>() {
     private companion object {
         private val logger = KotlinLogging.logger { }
@@ -40,16 +40,16 @@ class AgentMessageEncoder(private val proxyPublicKeyString: String) :
 
     override fun encode(ctx: ChannelHandlerContext, msg: AgentMessage, out: ByteBuf) {
         logger.debug("Begin to encode message:\n{}\n", msg)
-        encodeMessage(msg, proxyPublicKeyString, out)
+        encodeMessage(msg, proxyPublicKey, out)
     }
 }
 
 /**
  * Decode input buffer to proxy message.
  *
- * @param agentPrivateKeyString The private key base 64 string in agent side.
+ * @param agentPrivateKey The private key in agent side.
  */
-class ProxyMessageDecoder(private val agentPrivateKeyString: String) :
+class ProxyMessageDecoder(private val agentPrivateKey: ByteArray) :
     ByteToMessageDecoder() {
     private companion object {
         private val logger = KotlinLogging.logger { }
@@ -57,7 +57,7 @@ class ProxyMessageDecoder(private val agentPrivateKeyString: String) :
 
     override fun decode(ctx: ChannelHandlerContext, input: ByteBuf, out: MutableList<Any>) {
         val message: ProxyMessage = decodeProxyMessage(input,
-            agentPrivateKeyString)
+            agentPrivateKey)
         logger.debug("Decode result:\n{}\n", message)
         out.add(message)
     }
@@ -66,9 +66,9 @@ class ProxyMessageDecoder(private val agentPrivateKeyString: String) :
 /**
  * Encode proxy message to output buffer.
  *
- * @param agentPublicKeyString The public key base 64 string in agent side.
+ * @param agentPublicKey The public key in agent side.
  */
-class ProxyMessageEncoder(private val agentPublicKeyString: String) :
+class ProxyMessageEncoder(private val agentPublicKey: ByteArray) :
     MessageToByteEncoder<ProxyMessage>() {
     private companion object {
         private val logger = KotlinLogging.logger { }
@@ -76,7 +76,7 @@ class ProxyMessageEncoder(private val agentPublicKeyString: String) :
 
     override fun encode(ctx: ChannelHandlerContext, msg: ProxyMessage, out: ByteBuf) {
         logger.debug("Begin to encode message:\n{}\n", msg)
-        encodeMessage(msg, agentPublicKeyString, out)
+        encodeMessage(msg, agentPublicKey, out)
     }
 }
 

@@ -26,7 +26,6 @@ import io.netty.handler.codec.compression.Lz4FrameDecoder
 import io.netty.handler.codec.compression.Lz4FrameEncoder
 import io.netty.handler.timeout.IdleStateHandler
 import io.netty.handler.traffic.ChannelTrafficShapingHandler
-import org.apache.commons.io.IOUtils
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.context.annotation.Bean
@@ -82,18 +81,12 @@ internal class ProxyConfiguration(
     proxyPrivateKeyFile: Resource,
     agentPublicKeyFile: Resource,
 ) {
-    val proxyPrivateKey: String
-    val agentPublicKey: String
+    val proxyPrivateKey: ByteArray
+    val agentPublicKey: ByteArray
 
     init {
-        proxyPrivateKey =
-            IOUtils.readLines(proxyPrivateKeyFile.inputStream, Charsets.UTF_8).reduce { a, b ->
-                return@reduce a + b
-            }
-        agentPublicKey =
-            IOUtils.readLines(agentPublicKeyFile.inputStream, Charsets.UTF_8).reduce { a, b ->
-                return@reduce a + b
-            }
+        proxyPrivateKey = proxyPrivateKeyFile.inputStream.readAllBytes()
+        agentPublicKey = agentPublicKeyFile.inputStream.readAllBytes()
     }
 }
 
