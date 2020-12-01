@@ -14,7 +14,8 @@ import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import kotlin.random.Random
 
-private const val ALGORITHM_RSA = "RSA/ECB/PKCS1Padding"
+private const val ALGORITHM_RSA = "RSA"
+private const val RSA_CHIPHER = "RSA/ECB/PKCS1Padding"
 private const val ALGORITHM_AES = "AES"
 private const val ALGORITHM_BLOWFISH = "Blowfish"
 private const val AES_CIPHER = "AES/ECB/PKCS5Padding"
@@ -173,7 +174,7 @@ fun rsaEncrypt(target: ByteArray, publicKeyBytes: ByteArray): ByteArray {
         val publicKeySpec = X509EncodedKeySpec(publicKeyBytes)
         val keyFactory = KeyFactory.getInstance(ALGORITHM_RSA)
         val publicKey = keyFactory.generatePublic(publicKeySpec)
-        val cipher = Cipher.getInstance(publicKey.algorithm)
+        val cipher = Cipher.getInstance(RSA_CHIPHER)
         cipher.init(Cipher.ENCRYPT_MODE, publicKey)
         cipher.update(target)
         cipher.doFinal()
@@ -201,7 +202,7 @@ fun rsaDecrypt(target: ByteArray, privateKeyBytes: ByteArray): ByteArray {
         val privateKeySpec = PKCS8EncodedKeySpec(privateKeyBytes)
         val keyFactory = KeyFactory.getInstance(ALGORITHM_RSA)
         val privateKey = keyFactory.generatePrivate(privateKeySpec)
-        val cipher = Cipher.getInstance(privateKey.algorithm)
+        val cipher = Cipher.getInstance(RSA_CHIPHER)
         cipher.init(Cipher.DECRYPT_MODE, privateKey)
         cipher.update(target)
         cipher.doFinal()
