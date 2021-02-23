@@ -21,6 +21,9 @@ import org.springframework.stereotype.Service
 import java.net.InetSocketAddress
 import java.nio.channels.ClosedChannelException
 
+/**
+ *
+ */
 @ChannelHandler.Sharable
 @Service
 internal class SocksProxyToAgentTcpChannelHandler(
